@@ -1,0 +1,62 @@
+/* login-style.css */
+
+/* --- BƯỚC 1: NHÚNG FONT CHỮ PIXEL --- */
+/* Bạn cần tải một font pixel miễn phí (Ví dụ: "Press Start 2P" hoặc "VT323") 
+   và đặt file .ttf vào cùng thư mục này */
+
+/* --- CẤU HÌNH GỐC CỦA MÀN HÌNH --- */
+.root {
+    -fx-font-family: 'Consolas', 'Courier New', monospace; /* Áp dụng font pixel cho toàn bộ app */
+    -fx-font-size: 16px;
+    -fx-background-color: #1a1a2e; /* Màu nền cực tối (gần đen) lấy từ ảnh */
+    -fx-padding: 30;
+}
+
+/* --- PHONG CÁCH "KHUNG BATTLE MENU" (Lấy từ ảnh của bạn) --- */
+.jrp-box {
+    -fx-background-color: #0c00c4; /* Màu xanh dương đậm của khung menu trong ảnh */
+    -fx-border-color: white;       /* Viền trắng mỏng xung quanh */
+    -fx-border-width: 2px;
+    -fx-padding: 20;
+    -fx-spacing: 15; /* Khoảng cách giữa các phần tử bên trong */
+    -fx-alignment: center;
+}
+
+/* --- CẤU HÌNH NHÃN CHỮ (LABEL) --- */
+.label {
+    -fx-text-fill: white; /* Chữ màu trắng cơ bản */
+}
+
+/* --- CẤU HÌNH TIÊU ĐỀ (Giống con số màu vàng trong ảnh) --- */
+.title-label {
+    -fx-text-fill: #ffff3f; /* Màu vàng tươi lấy từ con số HP/MP trong ảnh */
+    -fx-font-size: 24px;
+}
+
+/* --- CẤU HÌNH Ô NHẬP LIỆU (TextField/PasswordField) --- */
+.text-field, .password-field {
+    -fx-background-color: transparent; /* Nền trong suốt */
+    -fx-border-color: #3f7fff;         /* Viền màu xanh dương nhạt */
+    -fx-border-width: 2px;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #aaaaaa;     /* Màu chữ gợi ý hơi xám */
+}
+
+/* Hiệu ứng khi ô nhập liệu được chọn (giống hộp thoại thoại) */
+.text-field:focused, .password-field:focused {
+    -fx-border-color: #ffff3f; /* Đổi sang viền vàng khi được chọn */
+}
+
+/* --- PHONG CÁCH NÚT BẤM (BUTTON) --- */
+.jrp-button {
+    -fx-background-color: transparent; /* Nền trong suốt */
+    -fx-border-color: white;           /* Viền trắng */
+    -fx-border-width: 2px;
+    -fx-text-fill: white;
+    -fx-cursor: hand;                  /* Đổi con trỏ chuột thành hình bàn tay */
+}
+
+/* Hiệu ứng khi di chuột qua nút (giống chọn menu lệnh trong ảnh) */
+.jrp-button:hover {
+    -fx-background-color: #3f7fff; /* Đổ đầy màu xanh dương nhạt khi hover */
+}

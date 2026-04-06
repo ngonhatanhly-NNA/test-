@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefHeight="720.0" prefWidth="950.0" spacing="20.0" style="-fx-background-color: #F4F4F4; -fx-padding: 30;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+    <children>
+
+        <HBox alignment="CENTER_LEFT">
+            <children>
+                <VBox>
+                    <children>
+                        <Label text="Explore Auctions" textFill="#1a1a1a">
+                            <font>
+                                <Font name="System Bold" size="28.0" />
+                            </font>
+                        </Label>
+                        <Label text="Check out the latest items from our sellers" textFill="#666666" />
+                    </children>
+                </VBox>
+
+                <Region HBox.hgrow="ALWAYS" />
+
+                <ComboBox prefWidth="150.0" promptText="Sort by: Newest" style="-fx-background-color: white; -fx-border-color: #cccccc; -fx-border-radius: 5;" />
+            </children>
+        </HBox>
+
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F4F4F4;" VBox.vgrow="ALWAYS">
+            <content>
+
+                <FlowPane fx:id="itemContainer" hgap="25.0" vgap="25.0">
+                    <children>
+
+                        <VBox alignment="CENTER" prefWidth="220.0" spacing="10.0" style="-fx-background-color: white; -fx-border-color: #E3B04B; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);">
+                            <children>
+
+                                <ImageView fitHeight="120.0" fitWidth="120.0" pickOnBounds="true" preserveRatio="true">
+                                    <image>
+                                        <Image url="@../images/ABRA.png" />
+                                    </image>
+                                </ImageView>
+
+                                <Label text="Rare Pixel Abra" textFill="#333333">
+                                    <font>
+                                        <Font name="System Bold" size="16.0" />
+                                    </font>
+                                </Label>
+
+                                <Label text="Highest Bid: $150" textFill="#e3b04b">
+                                    <font>
+                                        <Font name="System Bold" size="14.0" />
+                                    </font>
+                                </Label>
+
+                                <Button mnemonicParsing="false" prefWidth="150.0" style="-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="Place Bid" />
+                            </children>
+                        </VBox>
+                    </children>
+                </FlowPane>
+            </content>
+        </ScrollPane>
+    </children>
+</VBox>

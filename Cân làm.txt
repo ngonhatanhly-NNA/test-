@@ -1,0 +1,21 @@
+- Nghiên cứu các thread, và cách chỉnh dashboard, giao diện, chức năng, role của từng user, cũng như từng trạng thái
+- Thread sẽ làm gì trong app: Đồng hồ đếm ngược trong mỗi buoir đấu giá nếu status của nó là OPEN, khi nào hetses giờ 
+tự động chuyển trạng thái là CLOSED
+- THread xử lí người dùng ảo: dùng thread để kiểm tra các bot, bot tự động đặt giá kiểm trả logic có hoạt động đúng k
+- Chạy ngầm Background Thread để quét danh sách người dùng xem có ai không làm gì trong 5' thì chuyển thành INACTIVE ở SQL
+
+- THread và sync xử lí race condition, cùng Retrenant Lock, mỗi user có cơ chế Auto-bid có 1 worker thread và nhiệm vụ chạy ngầm
+Kh có ai đặt giá cao hơn, thread tự động nhận diện và đặt giá mới k vượt quá mức cần thiết -> Cuộc chiến giữa các thread
+- Sử dụng thread, client.accept() -> tạo ra new thread handler.start() -> k làm nghẽn nhiều việc
+
+- Logic đáu giá, xử lí concurrency, tập trùng Auction, BidTransaction, concurrency bnawgf ReentrantLock ở Server, và chuyển đổi trạng thái bằng Thread ngâmd
+- WebSocket áp dụng Observer Pattern, khi userA thành công dặt giá, Server push mới xuống các Client đang xem sp đó
+- Honhaf thiệu GUI: Dashboard, màn hình đấu giá, 
+
+
+- HTTPS, Gson sẽ đảm nhiệm truyền dữ liệu client 0-> Server (REST API)
+- sql đến db
+- Serialize dịch các object thành byte chịu trách nhiệm xử lí list vật phẩm dự định cho buổi đấu giá (Caching), 
+Trước buổi đấu giá, server lấy danh sach vật phẩm từ sql, serialize thành JSOn, nhet vào cache, khi mở app thì trả lại json 
+từ RAM ,,,,,, Auto-bidding: serialize đối tượng thành JSON gửi đến websocket lên server, server serialize thông báo và bắn cho
+các người dngf (Broadcasting), serialize list danh sách đạt giá, đem cất json hóa vào 1 DB gb, chờ ngày dọn dẹp, hật kí kiểm toánn
