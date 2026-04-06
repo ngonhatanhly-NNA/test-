@@ -1,5 +1,5 @@
 package com.client.network;
-import com.client.util.SceneController;
+
 import com.google.gson.Gson;
 import java.net.URI;
 import java.net.http.HttpClient;

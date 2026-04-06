@@ -11,6 +11,11 @@ public abstract class Entity implements Serializable {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
+    public Entity(long id) {
+        this.id = id;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
     // Core timestamp management methods
     public void updateTimestamp() {

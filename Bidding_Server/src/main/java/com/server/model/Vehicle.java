@@ -1,5 +1,6 @@
 package com.server.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class Vehicle extends Item {
@@ -9,7 +10,7 @@ public class Vehicle extends Item {
 
 
     public Vehicle(){};
-    public Vehicle(int id, String name, String description, double startingPrice, String condition, List<String> imageUrls, int manufactureYear, int mileage, String vinNumber) {
+    public Vehicle(int id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls, int manufactureYear, int mileage, String vinNumber) {
         super(id, name, description, startingPrice, condition, imageUrls);
         this.manufactureYear = manufactureYear;
         this.mileage = mileage;

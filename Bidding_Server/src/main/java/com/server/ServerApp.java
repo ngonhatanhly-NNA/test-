@@ -1,5 +1,13 @@
 package com.server;
 
+import com.google.gson.Gson;
+import com.server.DAO.AuctionRepository;
+import com.server.DAO.BidTransactionRepository;
+import com.server.service.AuctionService;
+import com.shared.dto.*;
+import com.server.route.*;
+import java.util.*;
+
 import com.server.config.DBConnection;
 import com.server.controller.AuthController;
 import com.server.service.ItemService;
@@ -11,6 +19,8 @@ import org.java_websocket.server.WebSocketServer;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 
+
+import com.shared.network.*;
 public class ServerApp extends WebSocketServer {
 
     public ServerApp(InetSocketAddress address) { super(address); }
@@ -44,22 +54,14 @@ public class ServerApp extends WebSocketServer {
 
         AuthController authController = new AuthController();
         ItemService itemService = new ItemService();
+        AuctionRepository auctionRepo = new AuctionRepository(new DBConnection()); // Cần refactor để lấy singleton DB
+        BidTransactionRepository bidRepo = new BidTransactionRepository(new DBConnection());
+        AuctionService auctionService = new AuctionService(auctionRepo, bidRepo);
+        Gson gson = new Gson();
 
-        // Định tuyến API Đăng ký
-        app.post("/api/register", ctx -> {
-            String jsonBody = ctx.body(); // Lấy JSON Client gửi
-            String jsonResponse = authController.processRegisterRest(jsonBody); // Nhờ AuthService xử lý
-            ctx.contentType("application/json");
-            ctx.result(jsonResponse); // Trả kết quả về
-        });
-
-        // API Đăng nhập:
-        app.post("/api/login", ctx -> {
-			String jsonBody = ctx.body();
-			String jsonResponse = authController.processLoginRest(jsonBody);
-			ctx.contentType("application/json");
-			ctx.result(jsonResponse);
-		});
+        // Hanlde, connect API to Register and Login
+        RegisterRoute.RESTregister(app, authController);
+        LoginRoute.RESTLogin(app, authController);
 
         //TODO: Dinh tuyen API cho Item
         // Định tuyến API cho Item (Ví dụ: Lấy danh sách sản phẩm hiển thị ra Dashboard)
@@ -71,5 +73,21 @@ public class ServerApp extends WebSocketServer {
             ctx.contentType("application/json");
             ctx.result(jsonResponse);
         });
+
+        app.get("/api/auctions/active", ctx -> {
+            // Trả về danh sách đang đấu giá
+            List<AuctionDetailDTO> auctions = auctionService.getActiveAuctions();
+            ctx.json(new Response("SUCCESS", "Lấy danh sách thành công", auctions));
+        });
+
+        app.post("/api/auctions/bid", ctx -> {
+            try {
+                BidRequestDTO bidReq = gson.fromJson(ctx.body(), BidRequestDTO.class);
+                AuctionUpdateDTO result = auctionService.placeBid(bidReq);
+                ctx.json(new Response("SUCCESS", "Đặt giá thành công!", result));
+            } catch (Exception e) {
+                ctx.json(new Response("FAIL", e.getMessage(), null));
+            }
+        });;
     }
 }

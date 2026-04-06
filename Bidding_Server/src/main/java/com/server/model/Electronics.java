@@ -1,5 +1,6 @@
 package com.server.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class Electronics extends Item {
@@ -8,7 +9,7 @@ public class Electronics extends Item {
     private int warrantyMonths;     
 
     public Electronics(){};
-    public Electronics(int id, String name, String description, double startingPrice, String condition, List<String> imageUrls, String brand, String model, int warrantyMonths) {
+    public Electronics(int id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls, String brand, String model, int warrantyMonths) {
         super(id, name, description, startingPrice, condition, imageUrls);
         this.brand = brand;
         this.model = model;

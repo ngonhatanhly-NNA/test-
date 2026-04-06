@@ -1,5 +1,6 @@
 package com.server.model;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class Art extends Item {
@@ -9,7 +10,7 @@ public class Art extends Item {
 
     // Artist phải đc certificated
     public Art(){};
-    public Art(int id, String name, String description, double startingPrice, String condition, List<String> imageUrls, String artistName, String material, boolean hasCertificateOfAuthenticity) {
+    public Art(int id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls, String artistName, String material, boolean hasCertificateOfAuthenticity) {
         super(id, name, description, startingPrice, condition, imageUrls);
         this.artistName = artistName;
         this.material = material;

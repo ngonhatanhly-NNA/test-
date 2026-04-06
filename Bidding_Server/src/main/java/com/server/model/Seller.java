@@ -1,5 +1,7 @@
 package com.server.model;
 
+import java.math.BigDecimal;
+
 public class Seller extends Bidder {
     private String shopName;
     private double rating;           // Điểm đánh giá
@@ -22,7 +24,7 @@ public class Seller extends Bidder {
     // Constructor DÀNH RIÊNG CHO DATABASE (Lấy toàn bộ data cũ) (Construct này thêm 1 tham số là walletBalance)
     public Seller(int id, String username, String passwordHash, String email, String fullName,
                   String phoneNumber, String address, String status, String role,
-                  double walletBalance, String creditCardInfo,
+                  BigDecimal walletBalance, String creditCardInfo,
                   String shopName, String bankAccountNumber, double rating, int totalReviews, boolean isVerified) {
 
         // Gọi thẳng lên Constructor DB của Bidder vừa tạo ở trên!

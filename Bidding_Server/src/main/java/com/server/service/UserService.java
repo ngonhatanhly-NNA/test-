@@ -3,6 +3,8 @@ package com.server.service;
 import com.google.gson.Gson;
 import com.server.DAO.UserRepository;
 import com.server.model.Bidder;
+import com.server.model.User;
+import com.shared.dto.UserProfileUpdateDTO;
 import com.shared.network.Response;
 
 public class UserService {
@@ -17,7 +19,7 @@ public class UserService {
     public String getUserProfile(String username) {
         try {
             // Xuống DB tìm user theo username
-            Bidder user = userRepository.getUserByUsername(username);
+            User user = userRepository.getUserByUsername(username);
 
             if (user != null) {
                 // Đóng gói thành công
@@ -31,11 +33,17 @@ public class UserService {
 
     public String updateProfile(String jsonBody) {
         try {
+            /*
             // Client gửi JSON chứa các thông tin cần sửa
             Bidder updatedInfo = gson.fromJson(jsonBody, Bidder.class);
 
+            Ai làm cái đoạn code này vậy :(((((( Sai tùm lum hết r
+            */
+            // Dòng 36 mới:
+            UserProfileUpdateDTO updatedInfo = gson.fromJson(jsonBody, UserProfileUpdateDTO.class);
+
             // Lấy user cũ từ DB lên để đối chiếu
-            Bidder existingUser = userRepository.getUserByUsername(updatedInfo.getUsername());
+            User existingUser = userRepository.getUserByUsername(updatedInfo.getUsername());    //Ai tạo hộ getter, setter trong UserProfileUpdateDTO với huhu mệt vl
 
             if (existingUser != null) {
                 // Set lại các trường được phép đổi
@@ -61,7 +69,7 @@ public class UserService {
     public String changePassword(String username, String oldPass, String newPass) {
         try {
             // Lấy user từ DB lên
-            Bidder user = userRepository.getUserByUsername(username);
+            User user = userRepository.getUserByUsername(username);
 
             // Kiểm tra user có tồn tại và mật khẩu cũ có khớp không
             if (user != null && user.getPasswordHash().equals(oldPass)) {

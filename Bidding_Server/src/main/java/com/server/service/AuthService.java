@@ -44,9 +44,10 @@ public class AuthService {
 
             // 2. Kĩ thuật KIỂM TRA KIỂU (instanceof)
             // Nếu thằng userInDb này thực chất là Bidder (hoặc Seller vì Seller là con Bidder)
+            // Sửa tại dòng 49 bên trong khối if (userInDb instanceof Bidder)
             if (userInDb instanceof Bidder) {
-                // Ép nó hiện nguyên hình thành Bidder rồi mới thò tay lấy ví (Downcasting)
-                wallet = ((Bidder) userInDb).getWalletBalance();
+                // Ép kiểu và chuyển BigDecimal sang double
+                wallet = ((Bidder) userInDb).getWalletBalance().doubleValue();
             }
 
             // 3. Đóng gói Profile an toàn để gửi về Client

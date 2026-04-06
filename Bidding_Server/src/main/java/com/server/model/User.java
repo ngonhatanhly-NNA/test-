@@ -12,7 +12,7 @@ public abstract class User extends Entity {
     private String role; //Mo rong thanh Enum BIDDER, SELLER, ADMIN
 
     public User(){};
-    public User(int id, String username, String passwordHash, String email, String fullName, String phoneNumber, String address, String status, String role) {
+    public User(long id, String username, String passwordHash, String email, String fullName, String phoneNumber, String address, String status, String role) {
         super(id);
         this.username = username;
         this.passwordHash = passwordHash;

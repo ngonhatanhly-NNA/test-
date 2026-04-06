@@ -33,7 +33,7 @@ public class DBConnection {
 		return instance;
 	}
 
-	private DBConnection(){
+	public DBConnection(){
 		// Khởi tạo trực tiesp DBConnection nếu chưa có
 		try {
             if (connection == null || connection.isClosed()) {

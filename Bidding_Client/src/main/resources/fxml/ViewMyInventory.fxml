@@ -1,14 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.scene.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="CONTROLLER_NAME"
-            prefHeight="400.0" prefWidth="600.0">
+<VBox prefHeight="720.0" prefWidth="950.0" spacing="20.0" style="-fx-background-color: #F4F4F4; -fx-padding: 30;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.MyInventoryController">
+    <children>
+        <HBox alignment="CENTER_LEFT">
+            <children>
+                <VBox>
+                    <children>
+                        <Label text="My Inventory" textFill="#1a1a1a">
+                            <font>
+                                <Font name="System Bold" size="28.0" />
+                            </font>
+                        </Label>
+                        <Label text="Manage your items and winning bids" textFill="#666666" />
+                    </children>
+                </VBox>
 
-</AnchorPane>
+                <Region HBox.hgrow="ALWAYS" />
+
+                <Button fx:id="btnCreateItem" mnemonicParsing="false" onAction="#handleCreateItem" style="-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 8; -fx-padding: 10 20 10 20; -fx-cursor: hand;" text="[+] Create Item">
+                    <font>
+                        <Font size="14.0" />
+                    </font>
+                </Button>
+            </children>
+        </HBox>
+
+        <HBox spacing="30.0" VBox.vgrow="ALWAYS">
+            <children>
+
+                <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label text="Sản Phẩm Đang Bán" textFill="#e3b04b">
+                            <font>
+                                <Font name="System Bold" size="18.0" />
+                            </font>
+                        </Label>
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: white;" VBox.vgrow="ALWAYS">
+                            <content>
+                                <FlowPane fx:id="sellingItemsContainer" hgap="15.0" vgap="15.0" />
+                            </content>
+                        </ScrollPane>
+                    </children>
+                </VBox>
+
+                <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);" HBox.hgrow="ALWAYS">
+                    <children>
+                        <Label text="Đấu Giá Thành Công" textFill="#1a1a1a">
+                            <font>
+                                <Font name="System Bold" size="18.0" />
+                            </font>
+                        </Label>
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: white;" VBox.vgrow="ALWAYS">
+                            <content>
+                                <FlowPane fx:id="wonItemsContainer" hgap="15.0" vgap="15.0" />
+                            </content>
+                        </ScrollPane>
+                    </children>
+                </VBox>
+
+            </children>
+        </HBox>
+    </children>
+</VBox>

@@ -1,7 +1,7 @@
 package com.shared.dto;
 
 public class UserProfileResponseDTO {
-    private int id;
+    private long id;
     private String username;
     private String email;
     private String fullName;
@@ -11,7 +11,7 @@ public class UserProfileResponseDTO {
     private double walletBalance; // Cần thiết để hiển thị số dư
 
     // Constructor nhận các tham số tương ứng
-    public UserProfileResponseDTO(int id, String username, String email, String fullName,
+    public UserProfileResponseDTO(long id, String username, String email, String fullName,
                                   String phoneNumber, String address, String role, double walletBalance) {
         this.id = id;
         this.username = username;

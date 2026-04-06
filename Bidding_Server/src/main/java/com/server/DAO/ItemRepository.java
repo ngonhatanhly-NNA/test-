@@ -6,6 +6,8 @@ import com.server.model.Item;
 import com.server.model.Art;
 import com.server.model.Electronics;
 import com.server.model.Vehicle;
+
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,8 +30,8 @@ public class ItemRepository {
                 "manufactureYear, vinNumber, mileage) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        Connection conn = DBConnection.getDBConnection().getConnection();
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getDBConnection().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             // NHIỆM VỤ 2: Nhét dữ liệu từ Object 'item' vào các dấu '?' ở câu SQL trên
             // SET DỮ LIỆU CHO CÁC THUỘC TÍNH CHUNG (Của lớp Item)
@@ -115,9 +117,9 @@ public class ItemRepository {
         // NHIỆM VỤ 3: Lấy tất cả các cột
         String sql = "SELECT * FROM items";
 
-        Connection conn = DBConnection.getDBConnection().getConnection();   //Cơ chế singleton pattern phải giữ 1 luồng Connection dùng chung
-        // Dùng try-with-resources để tự đóng vòi nước (pstmt) và xô nước (rs)
-        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+        //Cơ chế try-with-resources đa luồng Connection + Thư viện HikariCP ở config giúp chuyển luồng Connect cho người khác dùng, tối ưu luồng
+        try (Connection conn = DBConnection.getDBConnection().getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
@@ -128,7 +130,7 @@ public class ItemRepository {
                 int id = rs.getInt("id");
                 String name = rs.getString("name");
                 String description = rs.getString("description");
-                double startingPrice = rs.getDouble("startingPrice");
+                BigDecimal startingPrice = rs.getBigDecimal("startingPrice");
                 String condition = rs.getString("item_condition");
 
                 // (Xử lý chuỗi ảnh: Cắt cái chuỗi "anh1.jpg,anh2.jpg" thành cái List)

@@ -13,7 +13,7 @@ public abstract class Item extends Entity implements Serializable {
     private List<String> imageUrls;
 
     public Item(){};
-    public Item(int id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls) {
+    public Item(long id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls) {
         super(id);
         this.name = name;
         this.description = description;

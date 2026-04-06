@@ -94,4 +94,11 @@ Details về cách run của trình đang ký - đăng nhập:
         * phương thức:
           * Nâng cấp tài khoản: Seller(oldBidder, ...) – Cho phép chuyển đổi từ người mua (Bidder) sang người bán mà không làm mất số dư ví hay thông tin cá nhân cũ.
           * Quản lý uy tín: addReviewScore(score) – Thuật toán tự động tính toán lại điểm trung bình cộng tích lũy mỗi khi có khách hàng đánh giá mới.
-          * Cập nhật thông tin: setShopName(), setBankAccountNumber() – Thay đổi thông tin cửa hàng và tự động đồng bộ thời gian chỉnh sửa (updateTimestamp).
+          * Cập nhật thông tin: setShopName(), setBankAccountNumber() – Thay đổi thông tin cửa hàng và tự động đồng bộ thời gian chỉnh sửa (updateTimestamp)
+* NOTE(Nhật ký fix bugs lúc 11h40 ngày 5/4): Quy tắc Tối thượng về OOP (Lớp User): 
+* > Khi cập nhật thông tin chung (email, sđt, địa chỉ), bắt buộc phải thao tác trên model cha là User. 
+  > Tôi đã sửa lại UserService (trước đó bị ép kiểu cứng thành Bidder). Nếu giữ nguyên, một ông Admin vào đổi số điện thoại sẽ bị hệ thống âm thầm giáng cấp xuống làm Bidder, hỏng bét logic phân quyền của anh em mình.
+* Sau khi fix bugs ngày 6/4 thì:
+* > AE chú ý code AI hay gì thì phải prompt đủ ngữ cảnh, lấy đúng khu vực code cần thiết để AI code chính xác
+  > Code AI cũng phải mở model hay các class liên quan để còn biết đúng sai. 
+  > Mấy ngày nay có tình trạng copy code xong không check, AI nó bịa thuộc tính, bịa tên hàm cũng chép (Rồi thậm chí copy code còn copy lệch, gây lỗi khai báo lặp hàm và làm t tìm mãi mới thấy)
