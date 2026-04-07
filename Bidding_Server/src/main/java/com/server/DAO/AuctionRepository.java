@@ -8,10 +8,9 @@ import java.sql.*;
 import java.util.*;
 
 public class AuctionRepository {
-    private final DBConnection dbConnection; // Dùng chung 1 luồng kết nối
 
-    public AuctionRepository(DBConnection dbConnection) {
-        this.dbConnection = dbConnection;
+    // ĐÃ XÓA Constructor truyền DBConnection vì chúng ta dùng Singleton
+    public AuctionRepository() {
     }
 
     // Lấy các phiên đấu giá lên Cache khi Server vừa khởi động
@@ -25,8 +24,8 @@ public class AuctionRepository {
         String placeholders = String.join(",", Collections.nCopies(statusList.size(), "?"));
         String sql = "SELECT * FROM auctions WHERE status IN (" + placeholders + ")";
 
-        // Chú ý: Dùng dbConnection.getConnection() trực tiếp là đúng chuẩn
-        try (Connection conn = dbConnection.getConnection();
+        // ĐÃ SỬA: Gọi trực tiếp từ Singleton
+        try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < statusList.size(); i++) {
@@ -52,21 +51,22 @@ public class AuctionRepository {
             WHERE id = ?
             """;
 
-        try (Connection conn = dbConnection.getConnection();
+        // ĐÃ SỬA: Gọi trực tiếp từ Singleton (Code cũ của bạn gọi getDBConnection() bị lỗi)
+        try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            // 1. CHỐNG VĂNG LỖI KHI CHƯA CÓ AI ĐẶT GIÁ (NULL)
+            // 1. CHỐNG VĂNG LỖI KHI CHƯA CÓ AI ĐẶT GIÁ VÀ DÙNG CHUẨN BIG DECIMAL
             if (auction.getCurrentHighestBid() != null) {
-                pstmt.setString(1, auction.getCurrentHighestBid().toString());
+                pstmt.setBigDecimal(1, auction.getCurrentHighestBid()); // Dùng setBigDecimal thay vì setString
             } else {
-                pstmt.setString(1, "0");
+                pstmt.setBigDecimal(1, BigDecimal.ZERO);
             }
 
             // 2. CHỐNG LỖI VỚI WINNER_ID
             if (auction.getWinnerId() != null && auction.getWinnerId() > 0) {
                 pstmt.setLong(2, auction.getWinnerId());
             } else {
-                pstmt.setNull(2, Types.BIGINT); // Lưu NULL vào DB chuẩn xác
+                pstmt.setNull(2, Types.BIGINT); // Lưu NULL vào DB
             }
 
             pstmt.setString(3, auction.getStatus().name());

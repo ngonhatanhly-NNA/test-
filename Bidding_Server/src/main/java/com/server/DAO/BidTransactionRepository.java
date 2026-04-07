@@ -1,15 +1,12 @@
 package com.server.DAO;
-import com.server.config.*;
+import com.server.config.DBConnection;
 import com.server.model.BidTransaction;
-
 
 import java.sql.*;
 
 public class BidTransactionRepository {
-    private final DBConnection dbConnection;
 
-    public BidTransactionRepository(DBConnection dbConnection) {
-        this.dbConnection = dbConnection;
+    public BidTransactionRepository() {
     }
 
     public void save(BidTransaction bid) {
@@ -18,12 +15,16 @@ public class BidTransactionRepository {
             VALUES (?, ?, ?, ?, ?, ?)
             """;
 
-        try (Connection conn = dbConnection.getConnection();
+        // ĐÃ SỬA: Gọi kết nối trực tiếp từ Singleton của HikariCP
+        try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setLong(1, bid.getAuctionId());
             pstmt.setLong(2, bid.getBidderId());
-            pstmt.setString(3, bid.getBidAmount().toString());
+
+            // ĐÃ SỬA: Dùng chuẩn setBigDecimal cho tiền tệ
+            pstmt.setBigDecimal(3, bid.getBidAmount());
+
             pstmt.setTimestamp(4, Timestamp.valueOf(bid.getTimestamp()));
             pstmt.setBoolean(5, bid.isAutoBid());
             pstmt.setTimestamp(6, Timestamp.valueOf(bid.getCreatedAt()));

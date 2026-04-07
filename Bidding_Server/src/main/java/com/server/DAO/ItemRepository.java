@@ -30,8 +30,9 @@ public class ItemRepository {
                 "manufactureYear, vinNumber, mileage) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DBConnection.getDBConnection().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        // ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             // NHIỆM VỤ 2: Nhét dữ liệu từ Object 'item' vào các dấu '?' ở câu SQL trên
             // SET DỮ LIỆU CHO CÁC THUỘC TÍNH CHUNG (Của lớp Item)
@@ -54,7 +55,7 @@ public class ItemRepository {
                 pstmt.setNull(12, java.sql.Types.BOOLEAN);
                 pstmt.setNull(13, java.sql.Types.INTEGER);
                 pstmt.setNull(14, java.sql.Types.VARCHAR);
-                pstmt.setNull(13, java.sql.Types.INTEGER);
+                pstmt.setNull(15, java.sql.Types.INTEGER); // Đã sửa lỗi copy-paste index 13 trùng lặp
 
                 // Điền dữ liệu của Electronics
                 pstmt.setString(7, e.getBrand());
@@ -72,7 +73,7 @@ public class ItemRepository {
                 pstmt.setNull(9, java.sql.Types.INTEGER);
                 pstmt.setNull(13, java.sql.Types.INTEGER);
                 pstmt.setNull(14, java.sql.Types.VARCHAR);
-                pstmt.setNull(13, java.sql.Types.INTEGER);
+                pstmt.setNull(15, java.sql.Types.INTEGER); // Đã sửa lỗi copy-paste index 13 trùng lặp
 
                 // Điền dữ liệu của Art (10, 11, 12)
                 pstmt.setString(10, a.getArtistName());
@@ -117,9 +118,9 @@ public class ItemRepository {
         // NHIỆM VỤ 3: Lấy tất cả các cột
         String sql = "SELECT * FROM items";
 
-        //Cơ chế try-with-resources đa luồng Connection + Thư viện HikariCP ở config giúp chuyển luồng Connect cho người khác dùng, tối ưu luồng
-        try (Connection conn = DBConnection.getDBConnection().getConnection();
-                PreparedStatement pstmt = conn.prepareStatement(sql);
+        // ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {

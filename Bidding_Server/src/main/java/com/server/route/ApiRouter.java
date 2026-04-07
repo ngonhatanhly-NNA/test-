@@ -1,34 +1,35 @@
 package com.server.route;
 
-import com.server.controller.*;
-import com.server.DAO.*;
-import com.server.config.DBConnection;
+import com.server.controller.AuctionController;
+import com.server.controller.AuthController;
+import com.server.DAO.AuctionRepository;
+import com.server.DAO.BidTransactionRepository;
+import com.server.service.ItemService;
 import io.javalin.Javalin;
 
 public class ApiRouter {
 
     public static void setupRoutes(Javalin app) {
-        // 1. Khởi tạo các thành phần (Chỉ khởi tạo 1 lần)
-        DBConnection dbConnection = DBConnection.getDBConnection();
-        
+        // 1. Khởi tạo các Controller và Service
         AuthController authController = new AuthController();
-        ItemController itemController = new ItemController(); // Ví dụ
+        ItemService itemService = new ItemService(); // Dùng tạm ItemService vì chưa có ItemController
+
         AuctionController auctionController = new AuctionController(
-                new AuctionRepository(dbConnection), 
-                new BidTransactionRepository(dbConnection)
+                new AuctionRepository(),
+                new BidTransactionRepository()
         );
 
-        // ==========================================
-        // 2. ĐỊNH TUYẾN CÁC NHÓM API
-        // ==========================================
-
         // --- Nhóm API Xác thực (Auth) ---
-        app.post("/api/login", authController::login);
-        app.post("/api/register", authController::register);
+
+        RegisterRoute.RESTregister(app, authController);
+        LoginRoute.RESTLogin(app, authController);
 
         // --- Nhóm API Sản phẩm (Items) ---
-        app.get("/api/items", itemController::getAllItems);
-        app.post("/api/items", itemController::createItem);
+        app.get("/api/items", ctx -> {
+            String jsonResponse = itemService.getAllItems();
+            ctx.contentType("application/json");
+            ctx.result(jsonResponse);
+        });
 
         // --- Nhóm API Đấu giá (Auctions) ---
         app.get("/api/auctions/active", auctionController::getActiveAuctions);

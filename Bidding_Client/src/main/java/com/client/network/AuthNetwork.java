@@ -1,5 +1,5 @@
 package com.client.network;
-import com.client.util.SceneController;
+
 import com.google.gson.Gson;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,7 +22,7 @@ public class AuthNetwork {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder() // HTTP Request có dạng uri/header/method // build 1 lệnh mới gửi đi
                 .uri(URI.create("http://localhost:7070/api/register")) // Gọi đúng đường dẫn API
-                .header("Content-Type", "application/json")
+                .header("Auction", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 

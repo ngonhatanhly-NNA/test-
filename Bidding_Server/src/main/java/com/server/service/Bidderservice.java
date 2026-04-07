@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Bidderservice {
+public class BidderService {
     private final Gson gson = new Gson();
 
     /**

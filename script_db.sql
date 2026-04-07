@@ -82,3 +82,33 @@ CREATE TABLE sellers (
                          isVerified BOOLEAN DEFAULT FALSE,
                          FOREIGN KEY (bidder_id) REFERENCES bidders(user_id) ON DELETE CASCADE
 );
+
+-- Tạo bảng quản lý phiên đấu giá
+CREATE TABLE auctions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT NOT NULL,
+    seller_id INT NOT NULL,
+    start_time DATETIME,
+    end_time DATETIME,
+    step_price DECIMAL(15,2),
+    current_highest_bid DECIMAL(15,2),
+    winner_id INT,
+    status VARCHAR(20),
+    created_at DATETIME,
+    updated_at DATETIME,
+    FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
+    FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tạo bảng lưu lịch sử đặt giá
+CREATE TABLE bid_transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    auction_id INT NOT NULL,
+    bidder_id INT NOT NULL,
+    bid_amount DECIMAL(15,2),
+    timestamp DATETIME,
+    is_auto_bid BOOLEAN,
+    created_at DATETIME,
+    FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+    FOREIGN KEY (bidder_id) REFERENCES users(id) ON DELETE CASCADE
+);

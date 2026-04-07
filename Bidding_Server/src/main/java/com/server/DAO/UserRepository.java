@@ -19,8 +19,8 @@ public class UserRepository {
 		Connection conn = null;
 
 		try {
-			// Lấy kết nối duy nhất của hệ thống
-			conn = DBConnection.getDBConnection().getConnection();
+			// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
+			conn = DBConnection.getInstance().getConnection();
 
 			// Tạm dừng auto-save để bật chế độ Transaction (Bảo vệ tính toàn vẹn dữ liệu)
 			conn.setAutoCommit(false);
@@ -79,10 +79,11 @@ public class UserRepository {
 			return false;
 
 		} finally {
-			// Trả lại trạng thái bình thường cho Connection (Không đóng vì dùng chung theo cấu trúc của bạn)
+			// Trả lại trạng thái bình thường cho Connection và ĐÓNG/TRẢ VỀ POOL
 			if (conn != null) {
 				try {
 					conn.setAutoCommit(true);
+					conn.close(); // QUAN TRỌNG: Lệnh này với HikariCP là trả kết nối về pool, tránh sập DB.
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
@@ -137,8 +138,8 @@ public class UserRepository {
 				"LEFT JOIN sellers s ON b.user_id = s.bidder_id " +
 				"WHERE u.username = ?";
 
-		// Tạo connection trong try-with-resources để tự động dọn dẹp
-		try (Connection conn = DBConnection.getDBConnection().getConnection();
+		// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
+		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setString(1, username);
@@ -185,7 +186,9 @@ public class UserRepository {
 	public boolean updateUser (User user) {
 		// Basic user, can inlude seller and bidder
 		String sql = "UPDATE users set email = ?, phoneNumber = ?, address = ? WHERE username = ?";
-		try (Connection conn = DBConnection.getDBConnection().getConnection();
+
+		// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
+		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)){
 			pstmt.setString(1, user.getEmail());
 			pstmt.setString(2, user.getPhoneNumber());
@@ -205,7 +208,8 @@ public class UserRepository {
 	public boolean updatePassword(String username, String newPassword) {
 		String sql = "UPDATE users SET passwordHash = ? WHERE username = ?";
 
-		try (Connection conn = DBConnection.getDBConnection().getConnection();
+		// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
+		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setString(1, newPassword);
