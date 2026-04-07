@@ -59,7 +59,6 @@ public class ServerApp extends WebSocketServer {
         AuctionService auctionService = new AuctionService(auctionRepo, bidRepo);
         Gson gson = new Gson();
 
-        // Hanlde, connect API to Register and Login
         RegisterRoute.RESTregister(app, authController);
         LoginRoute.RESTLogin(app, authController);
 

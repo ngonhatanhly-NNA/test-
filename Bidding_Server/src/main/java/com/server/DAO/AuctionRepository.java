@@ -26,7 +26,7 @@ public class AuctionRepository {
         String sql = "SELECT * FROM auctions WHERE status IN (" + placeholders + ")";
 
         // Chú ý: Dùng dbConnection.getConnection() trực tiếp là đúng chuẩn
-        try (Connection conn = dbConnection.getDBConnection().getConnection();
+        try (Connection conn = dbConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             for (int i = 0; i < statusList.size(); i++) {
@@ -52,7 +52,7 @@ public class AuctionRepository {
             WHERE id = ?
             """;
 
-        try (Connection conn = dbConnection.getDBConnection().getConnection();
+        try (Connection conn = dbConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             // 1. CHỐNG VĂNG LỖI KHI CHƯA CÓ AI ĐẶT GIÁ (NULL)
@@ -66,7 +66,7 @@ public class AuctionRepository {
             if (auction.getWinnerId() != null && auction.getWinnerId() > 0) {
                 pstmt.setLong(2, auction.getWinnerId());
             } else {
-                pstmt.setNull(2, Types.BIGINT); // Lưu NULL vào DB
+                pstmt.setNull(2, Types.BIGINT); // Lưu NULL vào DB chuẩn xác
             }
 
             pstmt.setString(3, auction.getStatus().name());

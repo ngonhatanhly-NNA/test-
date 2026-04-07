@@ -7,37 +7,31 @@ import com.shared.dto.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.Duration;
+import java.time.Duration; // Đã thêm import
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class AuctionService {
 
-    // Kết nối với bên DAO
     private final AuctionRepository auctionRepository;
     private final BidTransactionRepository bidRepository;
 
-    // ConcurrentHashMap an toàn hơn Normal do xử lí concurrent
     private final ConcurrentHashMap<Long, Auction> auctionCache = new ConcurrentHashMap<>();
-    // Mỗi phiên đấu giá có 1 ở riêng tránh xung đột v người A vào phòng A, k ảnh hưởng B vào phòng B
     private final ConcurrentHashMap<Long, ReentrantLock> auctionLocks = new ConcurrentHashMap<>();
 
-    // Dùng để theo dõi và hủy các lịch đóng phiên đấu giá (cần cho anti-sniping)
+    // MỚI: Dùng để theo dõi và hủy các lịch đóng phiên đấu giá (cần cho anti-sniping)
     private final ConcurrentHashMap<Long, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
 
-    // Hàng đợi xếp hàng các lượt đặt giá để chờ lưu vào DB
     private final LinkedBlockingQueue<BidTransaction> bidQueue = new LinkedBlockingQueue<>();
-    // Tjw đóng các phiên dấu giá
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
-    // Loa phát thanh trực tếp dùng Ưebsocket
     private AuctionEventListener eventListener;
 
     public AuctionService(AuctionRepository auctionRepo, BidTransactionRepository bidRepo) {
         this.auctionRepository = auctionRepo;
         this.bidRepository = bidRepo;
-        init(); // TÌm các phiên đang hoạt động luôn
+        init();
     }
 
     // Timf cas phien da gia dang hoat dong
@@ -49,14 +43,12 @@ public class AuctionService {
         startBidQueueProcessor();
     }
 
-    // Lấy từ SQL lên RAM và đặt lichj
     private void cacheAndScheduleAuction(Auction auction) {
         auctionCache.put(auction.getId(), auction);
         auctionLocks.putIfAbsent(auction.getId(), new ReentrantLock());
         scheduleAuctionEnd(auction);
     }
 
-    // Khóa ở khóa phòng đấu gi này
     public AuctionUpdateDTO placeBid(BidRequestDTO request) {
         ReentrantLock lock = auctionLocks.get(request.getAuctionId());
         if (lock == null) throw new RuntimeException("Không tìm thấy phiên đấu giá (Auction không có sẵn trong bộ nhớ)");
@@ -85,19 +77,18 @@ public class AuctionService {
             auction.setCurrentHighestBid(request.getBidAmount());
             auction.setWinnerId(request.getBidderId());
 
-            // Anti-sniping , chống giây cuối đặt giá cao hơn
+            // Anti-sniping an toàn
             LocalDateTime now = LocalDateTime.now();
             long secondsRemaining = Duration.between(now, auction.getEndTime()).getSeconds();
 
             if (secondsRemaining > 0 && secondsRemaining < 30) {
-                // Nếu còn dưới 30s thì ccongjt hêm 60s vào giờ
                 auction.setEndTime(now.plusSeconds(60));
                 scheduleAuctionEnd(auction); // Hàm này giờ sẽ an toàn hủy task cũ
             } else if (secondsRemaining <= 0) {
                 throw new RuntimeException("Phiên đấu giá đã kết thúc!");
             }
 
-            // Queue bid transaction, gói thông tin lại và chuyển bị chờ đẩy vào SQL
+            // Queue bid transaction
             BidTransaction transaction = new BidTransaction(
                     request.getAuctionId(), request.getBidderId(), request.getBidAmount());
             bidQueue.offer(transaction);
@@ -121,7 +112,6 @@ public class AuctionService {
         return new AuctionUpdateDTO(auction.getId(), auction.getCurrentHighestBid(), bidderName, Math.max(0, remaining));
     }
 
-    // Đặt lihcj, hẹn giờ kết thúc đấu giá
     private void scheduleAuctionEnd(Auction auction) {
         long delay = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         if (delay > 0) {
@@ -139,7 +129,6 @@ public class AuctionService {
         }
     }
 
-    ///  tự động lấy khóa ra, khóa trong lúc đóng tránh bấm đặt gia 0.01 s cyoois
     private void finishAuction(long auctionId) {
         ReentrantLock lock = auctionLocks.get(auctionId);
         if (lock != null) {
@@ -150,7 +139,7 @@ public class AuctionService {
                     auction.setStatus(Auction.AuctionStatus.FINISHED);
                     auctionRepository.save(auction);
 
-                    // Dọn dẹp cache, nhẹ Server , lư vào DB
+                    // Dọn dẹp cache
                     auctionCache.remove(auctionId);
                     auctionLocks.remove(auctionId);
                     scheduledTasks.remove(auctionId);
@@ -164,7 +153,7 @@ public class AuctionService {
     }
 
     private void startBidQueueProcessor() {
-        new Thread(() -> { // tạo thread chạy vô tận, làm việc tới khi tắt server
+        new Thread(() -> {
             while (true) {
                 try {
                     BidTransaction bid = bidQueue.take();
@@ -186,11 +175,9 @@ public class AuctionService {
     public void setEventListener(AuctionEventListener listener) {
         this.eventListener = listener;
     }
-
-
     // Lấy danh sách đang chạy để hiển thị lên UI Client
     public List<AuctionDetailDTO> getActiveAuctions() {
-        return auctionCache.values().stream() // các phòng đấu giá đặt lên băng chuyền, lọc ra cái đang ở
+        return auctionCache.values().stream()
                 .filter(a -> a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN)
                 .map(a -> {
                     long remaining = java.time.Duration.between(LocalDateTime.now(), a.getEndTime()).toMillis();

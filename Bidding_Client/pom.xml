@@ -45,12 +45,6 @@
 			<artifactId>Java-WebSocket</artifactId>
 			<version>1.5.3</version>
 		</dependency>
-        <dependency>
-            <groupId>com.team13</groupId>
-            <artifactId>Bidding_System</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>

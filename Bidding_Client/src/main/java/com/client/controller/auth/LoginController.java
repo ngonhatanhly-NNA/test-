@@ -47,6 +47,8 @@ public class LoginController {
         // Gói dữ liệu
 		LoginRequestDTO loginData = new LoginRequestDTO(username, password);
 
+
+
         authNetwork.login(loginData).thenAccept(res -> {
 					Platform.runLater(() -> {
 						if ("SUCCESS".equals(res.getStatus())) {

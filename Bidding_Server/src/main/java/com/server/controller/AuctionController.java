@@ -19,7 +19,6 @@ public class AuctionController {
         this.auctionService = new AuctionService(auctionRepo, bidRepo);
     }
 
-    // các Auction, sản phẩm đang đc đấu giá
     public void getActiveAuctions(Context ctx) {
         try {
             List<AuctionDetailDTO> auctions = auctionService.getActiveAuctions();
@@ -29,7 +28,6 @@ public class AuctionController {
         }
     }
 
-    // Controller của placeBid, chuyển json chứ k phải fnction đâu nha
     public void placeBid(Context ctx) {
         try {
             BidRequestDTO bidRequest = gson.fromJson(ctx.body(), BidRequestDTO.class);
