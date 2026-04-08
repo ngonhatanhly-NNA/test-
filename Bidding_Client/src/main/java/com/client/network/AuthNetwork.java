@@ -45,4 +45,31 @@ public class AuthNetwork {
                 response -> gson.fromJson(response.body(), com.shared.network.Response.class)
         );
     }
+
+    // Lấy thông tin User Profile
+    public CompletableFuture<Response> getUserProfile(String username) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:7070/api/users/profile?username=" + username))
+                .GET()
+                .build();
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
+
+    // Cập nhật User Profile
+    public CompletableFuture<Response> updateProfile(UserProfileUpdateDTO updateData) {
+        String jsonBody = gson.toJson(updateData);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:7070/api/users/update"))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(jsonBody)) // Dùng PUT hoặc POST tuỳ backend
+                .build();
+
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
 }

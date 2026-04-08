@@ -102,3 +102,15 @@ Details về cách run của trình đang ký - đăng nhập:
 * > AE chú ý code AI hay gì thì phải prompt đủ ngữ cảnh, lấy đúng khu vực code cần thiết để AI code chính xác
   > Code AI cũng phải mở model hay các class liên quan để còn biết đúng sai. 
   > Mấy ngày nay có tình trạng copy code xong không check, AI nó bịa thuộc tính, bịa tên hàm cũng chép (Rồi thậm chí copy code còn copy lệch, gây lỗi khai báo lặp hàm và làm t tìm mãi mới thấy)
+  > 
+
+
+* Về luồng hoạt động tạm  thời của Auction
+*
+>Mở màn hình -> Gọi API GET lấy danh sách.
+
+>Bấm nút Đặt giá -> Gọi API POST gửi tiền lên Server.
+
+>Server xử lý xong -> Bắn JSON qua WebSocket xuống tất cả Client.
+
+>MyWebSocketClient nhận được JSON -> Gọi ngược vào hàm updatePriceRealtime của Controller -> Platform.runLater

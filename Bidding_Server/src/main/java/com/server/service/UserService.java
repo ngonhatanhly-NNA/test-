@@ -33,17 +33,10 @@ public class UserService {
 
     public String updateProfile(String jsonBody) {
         try {
-            /*
-            // Client gửi JSON chứa các thông tin cần sửa
-            Bidder updatedInfo = gson.fromJson(jsonBody, Bidder.class);
-
-            Ai làm cái đoạn code này vậy :(((((( Sai tùm lum hết r
-            */
-            // Dòng 36 mới:
             UserProfileUpdateDTO updatedInfo = gson.fromJson(jsonBody, UserProfileUpdateDTO.class);
 
             // Lấy user cũ từ DB lên để đối chiếu
-            User existingUser = userRepository.getUserByUsername(updatedInfo.getUsername());    //Ai tạo hộ getter, setter trong UserProfileUpdateDTO với huhu mệt vl
+            User existingUser = userRepository.getUserByUsername(updatedInfo.getUsername());
 
             if (existingUser != null) {
                 // Set lại các trường được phép đổi

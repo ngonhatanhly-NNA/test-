@@ -23,5 +23,36 @@ public class UserProfileResponseDTO {
         this.walletBalance = walletBalance;
     }
 
+    public String getRole() {
+        return this.role;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public double getWalletBalance() {
+        return walletBalance;
+    }
     // Getters để JavaFX xử lí
 }

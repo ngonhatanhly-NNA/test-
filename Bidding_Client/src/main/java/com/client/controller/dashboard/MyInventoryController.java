@@ -15,7 +15,7 @@ public class MyInventoryController {
         String userRole = "BIDDER"; // Fake data để test
 
         if (!"SELLER".equals(userRole)) {
-            // Biến mất hoàn toàn khỏi màn hình (chim cút)
+            // Biến mất hoàn toàn khỏi màn hình
             btnCreateItem.setVisible(false);
             // Căn chỉnh lại bố cục, coi như nút này không tồn tại
             btnCreateItem.setManaged(false);

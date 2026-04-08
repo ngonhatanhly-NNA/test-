@@ -45,8 +45,17 @@ public class UserRepository {
 				// Lấy ID MySQL vừa cấp phát cho User mới
 				try (ResultSet generatedKeys = pstmtUser.getGeneratedKeys()) {
 					if (generatedKeys.next()) {
-						int newUserId = generatedKeys.getInt(1);
-
+						int newUserId = generatedKeys.getLong(1);
+						user.setId(newUserId);
+						
+					// Mặc định tạo ví tiề 0.0 cho user 
+					String sqlBidder = "INSERT INTO bidders (user_id, wallet_balance, creditCardInfo) VALUES (?, ?, ?)";
+					try (PreparedStatement psBidder = conn.prepareStatement(sqlBidder)) {
+						psBidder.setLong(1, generatedId);
+						psBidder.setBigDecimal(2, java.math.BigDecimal.ZERO); // Tiền mặc định = 0
+						psBidder.setString(3, null); 
+						psBidder.executeUpdate();
+					}
 						// CHIA NHÁNH LƯU VÀO CÁC BẢNG CON
 						if (user instanceof Admin) {
 							saveAdminData(conn, newUserId, (Admin) user);

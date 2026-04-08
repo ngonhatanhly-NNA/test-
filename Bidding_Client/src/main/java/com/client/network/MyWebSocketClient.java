@@ -1,5 +1,6 @@
 package com.client.network;
 
+import com.client.controller.dashboard.ViewLiveAuctions;
 import com.google.gson.Gson;
 import com.shared.dto.AuctionUpdateDTO;
 import com.shared.network.Response;
@@ -49,8 +50,9 @@ public class MyWebSocketClient extends WebSocketClient {
 
             // Bắt buộc dùng Platform.runLater để không làm crash JavaFX UI
             Platform.runLater(() -> {
-                // TODO:Tùy theo Controller
-                // ViewLiveAuctionsController.getInstance().updatePriceUI(updateData);
+                if (ViewLiveAuctions.getInstance() != null) {
+                    ViewLiveAuctions.getInstance().updatePriceRealtime(updateData);
+                }
                 System.out.println("GIÁ MỚI REALTIME: " + updateData.getCurrentPrice());
             });
             return; // Dừng hàm tại đây
