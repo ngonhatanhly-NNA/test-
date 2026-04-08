@@ -1,6 +1,7 @@
 package com.client.network;
 
 import com.google.gson.Gson;
+import com.shared.dto.AuctionUpdateDTO;
 import com.shared.network.Response;
 import javafx.application.Platform;
 import org.java_websocket.client.WebSocketClient;
@@ -39,15 +40,32 @@ public class MyWebSocketClient extends WebSocketClient {
     public void onMessage(String message) {
         System.out.println("Server trả lời: " + message);
         Gson gson = new Gson();
-        Response res = gson.fromJson(message, Response.class);
 
-        // NẾU NHẬN ĐƯỢC CHỮ SUCCESS, BÁO LÊN MÀN HÌNH
-        if ("SUCCESS".equals(res.getStatus())) {
-            // LƯU Ý KHI DÙNG JAVAFX: Mọi thay đổi UI phải bọc trong Platform.runLater
+        // 1. NẾU LÀ TIN NHẮN CẬP NHẬT GIÁ ĐẤU
+        if (message.startsWith("AUCTION_UPDATE:")) {
+            // Cắt bỏ phần tiền tố để lấy đúng cục JSON
+            String jsonStr = message.substring("AUCTION_UPDATE:".length());
+            AuctionUpdateDTO updateData = gson.fromJson(jsonStr, AuctionUpdateDTO.class);
+
+            // Bắt buộc dùng Platform.runLater để không làm crash JavaFX UI
             Platform.runLater(() -> {
-                System.out.println("Giao diện: Đăng ký thành công!");
-                // Chút nữa sẽ thêm lệnh chuyển màn hình ở đây
+                // TODO:Tùy theo Controller
+                // ViewLiveAuctionsController.getInstance().updatePriceUI(updateData);
+                System.out.println("GIÁ MỚI REALTIME: " + updateData.getCurrentPrice());
             });
+            return; // Dừng hàm tại đây
+        }
+
+        // 2. NẾU LÀ CÁC THÔNG BÁO KHÁC (ví dụ: đăng nhập, đăng ký)
+        try {
+            Response res = gson.fromJson(message, Response.class);
+            if ("SUCCESS".equals(res.getStatus())) {
+                Platform.runLater(() -> {
+                    System.out.println("Giao diện: Đăng ký thành công!");
+                });
+            }
+        } catch (Exception e) {
+            System.out.println("Không thể parse JSON Response thường: " + e.getMessage());
         }
     }
 

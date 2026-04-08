@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,6 @@ public class ItemRepository {
                 "manufactureYear, vinNumber, mileage) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        // ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -73,7 +71,7 @@ public class ItemRepository {
                 pstmt.setNull(9, java.sql.Types.INTEGER);
                 pstmt.setNull(13, java.sql.Types.INTEGER);
                 pstmt.setNull(14, java.sql.Types.VARCHAR);
-                pstmt.setNull(15, java.sql.Types.INTEGER); // Đã sửa lỗi copy-paste index 13 trùng lặp
+                pstmt.setNull(15, java.sql.Types.INTEGER);
 
                 // Điền dữ liệu của Art (10, 11, 12)
                 pstmt.setString(10, a.getArtistName());
@@ -115,10 +113,9 @@ public class ItemRepository {
     public List<Item> getAllItems() {
         List<Item> itemList = new ArrayList<>();
 
-        // NHIỆM VỤ 3: Lấy tất cả các cột
+        // Lấy tất cả các cột
         String sql = "SELECT * FROM items";
 
-        // ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {

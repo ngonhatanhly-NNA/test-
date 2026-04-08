@@ -37,6 +37,7 @@ public class AuctionService {
     public AuctionService(AuctionRepository auctionRepo, BidTransactionRepository bidRepo) {
         this.auctionRepository = auctionRepo;
         this.bidRepository = bidRepo;
+        setEventListener(new Broadcaster()); //  Cắm điện đến loa phát thanh trong buổi đấu giá
         init(); // TÌm các phiên đang hoạt động luôn
     }
 

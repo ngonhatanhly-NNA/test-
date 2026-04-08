@@ -2,6 +2,7 @@ package com.server;
 
 import com.server.config.DBConnection;
 import com.server.route.ApiRouter;
+import com.server.websocket.Broadcaster;
 import io.javalin.Javalin;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -16,11 +17,17 @@ public class ServerApp extends WebSocketServer {
     public ServerApp(InetSocketAddress address) { super(address); }
 
     // PHẦN WEBSOCKET (CHỈ DÙNG CHO ĐẤU GIÁ SAU NÀY)
-    @Override public void onOpen(WebSocket conn, ClientHandshake handshake) {}
-    @Override public void onClose(WebSocket conn, int code, String reason, boolean remote) {}
+    @Override public void onOpen(WebSocket conn, ClientHandshake handshake) {
+        System.out.println("Client kết nối mới: " + conn.getRemoteSocketAddress());
+        Broadcaster.addClient(conn);
+    }
+    @Override public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+        System.out.println("Cleint ngắt kết nối: " + conn.getRemoteSocketAddress());
+        Broadcaster.removeClient(conn);
+    }
     @Override public void onMessage(WebSocket conn, String message) {
         System.out.println("nhận lệnh đấu giá: " + message);
-        // Code đấu giá
+        /// TODO: Code đấu giá, xử lí các lệnh Websocker khác
     }
     @Override public void onError(WebSocket conn, Exception ex) { ex.printStackTrace(); }
     @Override public void onStart() { System.out.println("=== TRẠM ĐẤU GIÁ CHẠY CỔNG " + getPort() + " ==="); }
@@ -44,7 +51,7 @@ public class ServerApp extends WebSocketServer {
 
         // 3. Khởi động REST API (CỔNG 7070)
         Javalin app = Javalin.create(config -> {
-            config.plugins.enableCors(cors -> cors.add(it -> it.anyHost())); // Chống lỗi CORS bảo mật
+            config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost())); // Chống lỗi CORS bảo mật
         }).start(7070);
         System.out.println("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 

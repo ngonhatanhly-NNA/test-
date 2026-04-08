@@ -12,7 +12,7 @@ public class ApiRouter {
     public static void setupRoutes(Javalin app) {
         // 1. Khởi tạo các Controller và Service
         AuthController authController = new AuthController();
-        ItemService itemService = new ItemService(); // Dùng tạm ItemService vì chưa có ItemController
+        ItemService itemService = new ItemService(); // Dùng tạm ItemService
 
         AuctionController auctionController = new AuctionController(
                 new AuctionRepository(),
@@ -20,15 +20,14 @@ public class ApiRouter {
         );
 
         // --- Nhóm API Xác thực (Auth) ---
-
         RegisterRoute.RESTregister(app, authController);
         LoginRoute.RESTLogin(app, authController);
 
         // --- Nhóm API Sản phẩm (Items) ---
         app.get("/api/items", ctx -> {
+            // Lấy data và trả thẳng về dạng JSON 
             String jsonResponse = itemService.getAllItems();
-            ctx.contentType("application/json");
-            ctx.result(jsonResponse);
+            ctx.json(jsonResponse);
         });
 
         // --- Nhóm API Đấu giá (Auctions) ---

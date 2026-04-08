@@ -21,4 +21,5 @@ public class AuctionUpdateDTO {
     public BigDecimal getCurrentPrice() { return currentPrice; }
     public String getHighestBidderName() { return highestBidderName; }
     public long getRemainingTime() { return remainingTime; }
+
 }

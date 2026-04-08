@@ -2,8 +2,6 @@ package com.server.controller;
 
 import com.server.service.AuthService;
 import com.google.gson.Gson;
-import com.server.DAO.UserRepository;
-import com.server.model.Bidder;
 import com.shared.dto.*;
 import com.shared.network.Response;
 
