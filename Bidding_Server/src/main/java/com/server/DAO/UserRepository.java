@@ -5,6 +5,10 @@ import com.server.model.Admin;
 import com.server.model.Bidder;
 import com.server.model.Seller;
 import com.server.model.User;
+import com.server.model.Role;
+import com.server.model.Status;
+
+import com.shared.dto.UserProfileUpdateDTO;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,7 +23,6 @@ public class UserRepository {
 		Connection conn = null;
 
 		try {
-			// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
 			conn = DBConnection.getInstance().getConnection();
 
 			// Tạm dừng auto-save để bật chế độ Transaction (Bảo vệ tính toàn vẹn dữ liệu)
@@ -33,8 +36,10 @@ public class UserRepository {
 				pstmtUser.setString(4, user.getFullName());
 				pstmtUser.setString(5, user.getPhoneNumber());
 				pstmtUser.setString(6, user.getAddress());
-				pstmtUser.setString(7, user.getStatus());
-				pstmtUser.setString(8, user.getRole());
+
+				// Lấy String từ Enum để lưu vào DB
+				pstmtUser.setString(7, user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
+				pstmtUser.setString(8, user.getRole() != null ? user.getRole().name() : "BIDDER");
 
 				int affectedRows = pstmtUser.executeUpdate();
 				if (affectedRows == 0) {
@@ -42,20 +47,12 @@ public class UserRepository {
 					return false;
 				}
 
-				// Lấy ID MySQL vừa cấp phát cho User mới
+				// Lấy ID MySQL vừa cấp phát cho User mới (ĐÃ FIX SANG long)
 				try (ResultSet generatedKeys = pstmtUser.getGeneratedKeys()) {
 					if (generatedKeys.next()) {
-						int newUserId = generatedKeys.getLong(1);
+						long newUserId = generatedKeys.getLong(1);
 						user.setId(newUserId);
-						
-					// Mặc định tạo ví tiề 0.0 cho user 
-					String sqlBidder = "INSERT INTO bidders (user_id, wallet_balance, creditCardInfo) VALUES (?, ?, ?)";
-					try (PreparedStatement psBidder = conn.prepareStatement(sqlBidder)) {
-						psBidder.setLong(1, generatedId);
-						psBidder.setBigDecimal(2, java.math.BigDecimal.ZERO); // Tiền mặc định = 0
-						psBidder.setString(3, null); 
-						psBidder.executeUpdate();
-					}
+
 						// CHIA NHÁNH LƯU VÀO CÁC BẢNG CON
 						if (user instanceof Admin) {
 							saveAdminData(conn, newUserId, (Admin) user);
@@ -100,32 +97,32 @@ public class UserRepository {
 		}
 	}
 
-	// --- CÁC HÀM HỖ TRỢ CHIA NHỎ (HELPER METHODS) ---
+	// --- CÁC HÀM HỖ TRỢ CHIA NHỎ (ĐÃ ĐỔI int userId THÀNH long userId) ---
 
-	private void saveAdminData(Connection conn, int userId, Admin admin) throws Exception {
+	private void saveAdminData(Connection conn, long userId, Admin admin) throws Exception {
 		String sql = "INSERT INTO admins (user_id, roleLevel, lastLoginIp) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pstmt.setInt(1, userId);
+			pstmt.setLong(1, userId);
 			pstmt.setString(2, admin.getRoleLevel());
 			pstmt.setString(3, admin.getLastLoginIp());
 			pstmt.executeUpdate();
 		}
 	}
 
-	private void saveBidderData(Connection conn, int userId, Bidder bidder) throws Exception {
+	private void saveBidderData(Connection conn, long userId, Bidder bidder) throws Exception {
 		String sql = "INSERT INTO bidders (user_id, walletBalance, creditCardInfo) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pstmt.setInt(1, userId);
+			pstmt.setLong(1, userId);
 			pstmt.setBigDecimal(2, bidder.getWalletBalance());
 			pstmt.setString(3, bidder.getCreditCardInfo());
 			pstmt.executeUpdate();
 		}
 	}
 
-	private void saveSellerData(Connection conn, int userId, Seller seller) throws Exception {
+	private void saveSellerData(Connection conn, long userId, Seller seller) throws Exception {
 		String sql = "INSERT INTO sellers (bidder_id, shopName, rating, totalReviews, bankAccountNumber, isVerified) VALUES (?, ?, ?, ?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pstmt.setInt(1, userId);
+			pstmt.setLong(1, userId);
 			pstmt.setString(2, seller.getShopName());
 			pstmt.setDouble(3, seller.getRating());
 			pstmt.setInt(4, seller.getTotalReviews());
@@ -147,29 +144,37 @@ public class UserRepository {
 				"LEFT JOIN sellers s ON b.user_id = s.bidder_id " +
 				"WHERE u.username = ?";
 
-		// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
 		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setString(1, username);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
-					String role = rs.getString("role");
-					int id = rs.getInt("id");
+					// Parse ra Enum
+					Role roleEnum = Role.valueOf(rs.getString("role").toUpperCase());
+					Status statusEnum = Status.valueOf(rs.getString("status").toUpperCase());
+
+					// Đổi thành long id
+					long id = rs.getLong("id");
 					String pass = rs.getString("passwordHash");
 					String email = rs.getString("email");
 					String fullName = rs.getString("fullName");
 					String phone = rs.getString("phoneNumber");
 					String address = rs.getString("address");
-					String status = rs.getString("status");
 
-					if ("ADMIN".equals(role)) {
-						Admin admin = new Admin(id, username, pass, email, fullName, phone, address, status, role);
-						admin.setRoleLevel(rs.getString("roleLevel"));
+					if (roleEnum == Role.ADMIN) {
+						// Đã fix lỗi cú pháp Admin, truyền luôn roleLevel vào
+						Admin admin = new Admin(id, username, pass, email, fullName, phone, address, statusEnum, rs.getString("roleLevel"));
+
+						// Nếu Database có lưu LastLoginIp thì set luôn vào Object
+						if (rs.getString("lastLoginIp") != null) {
+							admin.updateLoginIp(rs.getString("lastLoginIp"));
+						}
 						return admin;
 
-					} else if ("SELLER".equals(role)) {
-						return new Seller(id, username, pass, email, fullName, phone, address, status, role,
+					} else if (roleEnum == Role.SELLER) {
+						// Sử dụng biến statusEnum và roleEnum
+						return new Seller(id, username, pass, email, fullName, phone, address, statusEnum, roleEnum,
 								rs.getBigDecimal("walletBalance"),
 								rs.getString("creditCardInfo"),
 								rs.getString("shopName"),
@@ -179,7 +184,8 @@ public class UserRepository {
 								rs.getBoolean("isVerified"));
 
 					} else {
-						return new Bidder(id, username, pass, email, fullName, phone, address, status, role,
+						// Sử dụng biến statusEnum và roleEnum
+						return new Bidder(id, username, pass, email, fullName, phone, address, statusEnum, roleEnum,
 								rs.getBigDecimal("walletBalance"),
 								rs.getString("creditCardInfo"));
 					}
@@ -191,33 +197,64 @@ public class UserRepository {
 		return null;
 	}
 
-	// Cập nhật các thông tin còn sót khi đăng ký chưa có
-	public boolean updateUser (User user) {
-		// Basic user, can inlude seller and bidder
-		String sql = "UPDATE users set email = ?, phoneNumber = ?, address = ? WHERE username = ?";
+	public boolean updateFullProfile(UserProfileUpdateDTO dto, Role role, long userId) {
+		Connection conn = null;
+		try {
+			conn = DBConnection.getInstance().getConnection();
+			conn.setAutoCommit(false); // Bật Transaction
 
-		// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
-		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)){
-			pstmt.setString(1, user.getEmail());
-			pstmt.setString(2, user.getPhoneNumber());
-			pstmt.setString(3, user.getAddress());
-			pstmt.setString(4, user.getUsername());
+			// Basic user, can include seller and bidder
+			String sqlUser = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
+			try (PreparedStatement psUser = conn.prepareStatement(sqlUser)) {
+				psUser.setString(1, dto.getEmail());
+				psUser.setString(2, dto.getFullName());
+				psUser.setString(3, dto.getPhoneNumber());
+				psUser.setString(4, dto.getAddress());
+				psUser.setLong(5, userId);
+				psUser.executeUpdate();
+			}
 
-			int rowsAffected = pstmt.executeUpdate();
-			return rowsAffected > 0;
+			// Nếu là BIDDER hoặc SELLER -> Cập nhật bảng bidders
+			if (role == Role.BIDDER || role == Role.SELLER) {
+				String sqlBidder = "UPDATE bidders SET creditCardInfo=? WHERE user_id=?";
+				try (PreparedStatement psBidder = conn.prepareStatement(sqlBidder)) {
+					psBidder.setString(1, dto.getCreditCardInfo());
+					psBidder.setLong(2, userId);
+					psBidder.executeUpdate();
+				}
+			}
+
+			// Nếu là SELLER -> Cập nhật thêm bảng sellers
+			if (role == Role.SELLER) {
+				String sqlSeller = "UPDATE sellers SET shopName=?, bankAccountNumber=? WHERE bidder_id=?";
+				try (PreparedStatement psSeller = conn.prepareStatement(sqlSeller)) {
+					psSeller.setString(1, dto.getShopName());
+					psSeller.setString(2, dto.getBankAccountNumber());
+					psSeller.setLong(3, userId);
+					psSeller.executeUpdate();
+				}
+			}
+
+			conn.commit();
+			return true;
 
 		} catch (Exception e) {
 			System.err.println("LỖI CẬP NHẬT DB VÀO USER");
 			e.printStackTrace();
+			if (conn != null) {
+				try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+			}
 			return false;
+		} finally {
+			if (conn != null) {
+				try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) { e.printStackTrace(); }
+			}
 		}
 	}
 
 	public boolean updatePassword(String username, String newPassword) {
 		String sql = "UPDATE users SET passwordHash = ? WHERE username = ?";
 
-		// ĐÃ THAY ĐỔI: Sử dụng DBConnection.getInstance()
 		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 

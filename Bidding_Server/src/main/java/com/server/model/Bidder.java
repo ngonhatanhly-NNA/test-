@@ -6,65 +6,55 @@ public class Bidder extends User {
     private BigDecimal walletBalance;
     private String creditCardInfo;
 
-    public Bidder(){};
+    public Bidder() {}
 
     // Thiết kế cho riêng Register
-    
-    public Bidder(String username, String passwordHash, String email, String fullname, String role){
-        // Số 0 đầu tiên chính là ID! 
-        // Khi truyền ID = 0 xuống Database, MySQL sẽ tự hiểu và AUTO_INCREMENT sinh ra ID mới.
-        //  null là số điện thoại và địa chỉ (để trống chờ edit sau).
-        // "ACTIVE" là trạng thái cấp cho user để họ login được luôn.
-        super(0, username, passwordHash, email, fullname, null, null, "ACTIVE", "BIDDER");
-        
-        // Tiền ban đầu tất nhiên là 0 đồng. Thẻ tín dụng cũng tự động null.
+    public Bidder(String username, String passwordHash, String email, String fullname) {
+        // TRUYỀN TRỰC TIẾP ENUM: Status.ACTIVE và Role.BIDDER
+        super(0L, username, passwordHash, email, fullname, null, null, Status.ACTIVE, Role.BIDDER);
         this.walletBalance = BigDecimal.ZERO;
     }
-    public Bidder(long id, String username, String passwordHash, String email, String fullName, String role,String phoneNumber, String address, String status, String creditCardInfo) {
-        super(id, username, passwordHash, email, fullName, phoneNumber, address, status, "BIDDER");
-        this.walletBalance = BigDecimal.ZERO; // Balance chỉ có đầu khi khởi tạo, sau phải nạp tiền, rút tiền
+
+    public Bidder(long id, String username, String passwordHash, String email, String fullName, String phoneNumber, String address, Status status, String creditCardInfo) {
+        super(id, username, passwordHash, email, fullName, phoneNumber, address, status, Role.BIDDER);
+        this.walletBalance = BigDecimal.ZERO;
         this.creditCardInfo = creditCardInfo;
     }
 
-    // Constructor DÀNH RIÊNG CHO DATABASE (Lấy toàn bộ data cũ) (Construct này thêm 1 tham số là walletBalance)
+    // Constructor DÀNH RIÊNG CHO DATABASE (Đã đổi kiểu Status, Role)
     public Bidder(long id, String username, String passwordHash, String email, String fullName,
-                  String phoneNumber, String address, String status, String role,
+                  String phoneNumber, String address, Status status, Role role,
                   BigDecimal walletBalance, String creditCardInfo) {
-
         super(id, username, passwordHash, email, fullName, phoneNumber, address, status, role);
-        this.walletBalance = walletBalance; // Gán số dư thật từ DB
+        this.walletBalance = walletBalance;
         this.creditCardInfo = creditCardInfo;
     }
 
-    // Getter
+    // --- GETTERS & SETTERS ---
     public BigDecimal getWalletBalance() { return walletBalance; }
-    public void setWalletBalance(BigDecimal walletBalance) {this.walletBalance = walletBalance;}
-    // Nạp tiền, dung setter ntn de tranh hacker 1 phat set tien am
+    public void setWalletBalance(BigDecimal walletBalance) { this.walletBalance = walletBalance; }
+
+    public String getCreditCardInfo() { return creditCardInfo; }
+    public void setCreditCardInfo(String creditCardInfo) { this.creditCardInfo = creditCardInfo; }
+
+    @Override
+    public long getId() { return super.getId(); }
+
+    // --- NGHIỆP VỤ ---
     public void addFunds(BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) > 0) {
-            this.walletBalance.add(amount);
+        if (amount != null && amount.compareTo(BigDecimal.ZERO) > 0) {
+            this.walletBalance = this.walletBalance.add(amount);
         } else {
             System.out.println("Lỗi: Số tiền nạp phải lớn hơn 0.");
         }
     }
 
-    // Thanh toán trừ tiền
     public boolean deductFunds(BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) > 0 && this.walletBalance.compareTo(amount) > 0) {
-            this.walletBalance.subtract(amount);
-            return true; // Trừ tiền thành công
+        if (amount != null && amount.compareTo(BigDecimal.ZERO) > 0 && this.walletBalance.compareTo(amount) >= 0) {
+            this.walletBalance = this.walletBalance.subtract(amount);
+            return true;
         }
         System.out.println("Lỗi: Số dư không đủ hoặc số tiền không hợp lệ.");
-        return false; // Trừ tiền thất bại
+        return false;
     }
-
-    // Getter and setter
-
-    @Override
-    public long getId() {
-        return super.getId();
-    }
-
-    public String getCreditCardInfo() { return creditCardInfo; }
-    public void setCreditCardInfo(String creditCardInfo) { this.creditCardInfo = creditCardInfo; }
 }

@@ -1,6 +1,5 @@
 package com.server.model;
 
-
 public abstract class User extends Entity {
     private String username;
     private String passwordHash; // Lưu băm (hash), không lưu plain text
@@ -8,11 +7,13 @@ public abstract class User extends Entity {
     private String fullName;
     private String phoneNumber;
     private String address;
-    private String status; //  "ACTIVE", "INACTIVE", "BANNED"
-    private String role; //Mo rong thanh Enum BIDDER, SELLER, ADMIN
+
+    private Status status; //  "ACTIVE", "INACTIVE", "BANNED"
+    private Role role; //Mo rong thanh Enum BIDDER, SELLER, ADMIN
 
     public User(){};
-    public User(long id, String username, String passwordHash, String email, String fullName, String phoneNumber, String address, String status, String role) {
+    // Abstract dung cho con thoi
+    protected User(long id, String username, String passwordHash, String email, String fullName, String phoneNumber, String address, Status status, Role role) {
         super(id);
         this.username = username;
         this.passwordHash = passwordHash;
@@ -51,14 +52,13 @@ public abstract class User extends Entity {
         this.passwordHash = newPasswordHash;
     }
 
-    public String getStatus() { return status; }
-    
-    // Admin sẽ gọi hàm này
-    public void updateStatus(String newStatus) {
+    public Status getStatus() { return status; }
+    public void updateStatus(Status newStatus) {
         this.status = newStatus;
     }
 
-    //Ham set role cho Users
-    public String getRole() {return this.role;}
-    public void setRole(String newRole){this.role = newRole;}
+    public Role getRole() { return role; }
+    public void setRole(Role newRole) {
+        this.role = newRole;
+    }
 }

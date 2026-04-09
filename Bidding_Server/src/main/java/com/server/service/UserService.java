@@ -2,18 +2,22 @@ package com.server.service;
 
 import com.google.gson.Gson;
 import com.server.DAO.UserRepository;
+import com.server.model.Admin;
 import com.server.model.Bidder;
+import com.server.model.Seller;
 import com.server.model.User;
+import com.shared.dto.UserProfileUpdateDTO;
 import com.shared.dto.UserProfileUpdateDTO;
 import com.shared.network.Response;
 
 public class UserService {
     private UserRepository userRepository;
-    private final Gson gson;
+
+    // DESIGN PATTERN: SINGLETON (Dùng 1 object duy nhất cho toàn server, tiết kiệm bộ nhớ)
+    private static final Gson gson = new Gson();
 
     public UserService() {
         this.userRepository = new UserRepository();
-        this.gson = new Gson();
     }
 
     public String getUserProfile(String username) {
@@ -22,8 +26,38 @@ public class UserService {
             User user = userRepository.getUserByUsername(username);
 
             if (user != null) {
-                // Đóng gói thành công
-                return gson.toJson(new Response("SUCCESS", "Lấy profile thành công", user));
+                // Tuyệt đối không trả thẳng object User về vì sẽ lộ PasswordHash cho Hacker
+                UserProfileUpdateDTO dto = new UserProfileUpdateDTO();
+                dto.setId((int) user.getId());
+                dto.setUsername(user.getUsername());
+                dto.setEmail(user.getEmail());
+                dto.setFullName(user.getFullName());
+                dto.setPhoneNumber(user.getPhoneNumber());
+                dto.setAddress(user.getAddress());
+                dto.setRole(user.getRole().name());
+                dto.setStatus(user.getStatus().name());
+
+                // Trích xuất thêm thông tin dựa theo tính đa hình (OOP)
+                if (user instanceof Admin) {
+                    dto.setRoleLevel(((Admin) user).getRoleLevel());
+                    dto.setLastLoginIp(((Admin) user).getLastLoginIp());
+                } else if (user instanceof Seller) {
+                    Seller seller = (Seller) user;
+                    dto.setWalletBalance(seller.getWalletBalance());
+                    dto.setCreditCardInfo(seller.getCreditCardInfo());
+                    dto.setShopName(seller.getShopName());
+                    dto.setBankAccountNumber(seller.getBankAccountNumber());
+                    dto.setRating(seller.getRating());
+                    dto.setTotalReviews(seller.getTotalReviews());
+                    dto.setIsVerified(seller.isVerified());
+                } else if (user instanceof Bidder) {
+                    Bidder bidder = (Bidder) user;
+                    dto.setWalletBalance(bidder.getWalletBalance());
+                    dto.setCreditCardInfo(bidder.getCreditCardInfo());
+                }
+
+                // Đóng gói DTO thành công
+                return gson.toJson(new Response("SUCCESS", "Lấy profile thành công", dto));
             }
             return gson.toJson(new Response("FAIL", "Không tìm thấy người dùng", null));
         } catch (Exception e) {
@@ -31,24 +65,21 @@ public class UserService {
         }
     }
 
-    public String updateProfile(String jsonBody) {
+    // Yêu cầu Controller truyền thêm username vào (vì DTO Update không có trường username)
+    public String updateProfile(String username, String jsonBody) {
         try {
             UserProfileUpdateDTO updatedInfo = gson.fromJson(jsonBody, UserProfileUpdateDTO.class);
 
-            // Lấy user cũ từ DB lên để đối chiếu
-            User existingUser = userRepository.getUserByUsername(updatedInfo.getUsername());
+            // Lấy user cũ từ DB lên để xác định Role và ID
+            User existingUser = userRepository.getUserByUsername(username);
 
             if (existingUser != null) {
-                // Set lại các trường được phép đổi
-                existingUser.setEmail(updatedInfo.getEmail());
-                existingUser.setPhoneNumber(updatedInfo.getPhoneNumber());
-                existingUser.setAddress(updatedInfo.getAddress());
-
-                // Sai DAO đem cất bản cập nhật này xuống Database
-                boolean isSuccess = userRepository.updateUser(existingUser);
+                // ĐỒNG BỘ: Gọi đúng hàm updateFullProfile của DAO (truyền DTO, Role và ID)
+                boolean isSuccess = userRepository.updateFullProfile(updatedInfo, existingUser.getRole(), existingUser.getId());
 
                 if (isSuccess) {
-                    return gson.toJson(new Response("SUCCESS", "Cập nhật thông tin thành công!", existingUser));
+                    // Không trả lại object Entity, chỉ báo Success là đủ
+                    return gson.toJson(new Response("SUCCESS", "Cập nhật thông tin thành công!", null));
                 } else {
                     return gson.toJson(new Response("FAIL", "Lỗi khi lưu vào Database", null));
                 }
@@ -65,6 +96,7 @@ public class UserService {
             User user = userRepository.getUserByUsername(username);
 
             // Kiểm tra user có tồn tại và mật khẩu cũ có khớp không
+            // Thực tế sau này chỗ này phải dùng hàm check Hash (vd: BCrypt.checkpw)
             if (user != null && user.getPasswordHash().equals(oldPass)) {
 
                 // Gọi DAO cập nhật thẳng mật khẩu mới xuống DB

@@ -1,9 +1,6 @@
 
 package com.server.service;
-import com.server.model.Seller;
-import com.server.model.Bidder;
-import com.server.model.User;
-import com.server.model.Admin;
+import com.server.model.*;
 
 public class SellerService {
     public Seller upgradeBidderToSeller(Bidder bidder, String shopName, String bankAccount) {
@@ -12,7 +9,7 @@ public class SellerService {
             throw new IllegalArgumentException("Bidder không đủ điều kiện nâng cấp!");
         }
         Seller seller = new Seller(bidder, shopName, bankAccount);
-        seller.setRole("SELLER");
+        seller.setRole(Role.SELLER);
         return seller;
     }
     // Kiểm tra bidder có đủ điều kiện nâng cấp không
@@ -40,7 +37,7 @@ public class SellerService {
         if (!isAuthorizedAdmin(admin)) return false;
 
         // TODO: Thêm setVerified() vào model Seller
-        seller.changeRole();
+        seller.setRole(Role.SELLER);
         return true;
     }
     // Kiểm tra quyền Admin
@@ -72,7 +69,7 @@ public class SellerService {
         public final String shopName;
         public final String ownerName;
         public final String rating;
-        public final String status;
+        public final Status status;
         public final boolean hasBankAccount;
 
         public SellerInfo(Seller seller) {

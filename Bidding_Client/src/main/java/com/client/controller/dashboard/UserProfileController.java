@@ -2,7 +2,6 @@ package com.client.controller.dashboard;
 
 import com.client.network.AuthNetwork;
 import com.google.gson.Gson;
-import com.shared.dto.UserProfileResponseDTO;
 import com.shared.dto.UserProfileUpdateDTO;
 import com.shared.network.Response;
 import javafx.application.Platform;
@@ -64,22 +63,28 @@ public class UserProfileController {
                 if ("SUCCESS".equals(response.getStatus())) {
                     lblStatus.setText("");
 
-                    // Parse data từ API sang DTO
-                    String jsonData = gson.toJson(response.getData());
-                    UserProfileResponseDTO profile = gson.fromJson(jsonData, UserProfileResponseDTO.class);
+                    try {
+                        String jsonData = gson.toJson(response.getData());
 
-                    // Điền dữ liệu chung vào Form
-                    txtUsername.setText(profile.getUsername());
-                    txtFullName.setText(profile.getFullName()); // Nhớ thêm FullName vào DTO nếu cần update
-                    txtEmail.setText(profile.getEmail());
-                    txtPhone.setText(profile.getPhoneNumber());
-                    txtAddress.setText(profile.getAddress());
+                        UserProfileUpdateDTO profile = gson.fromJson(jsonData, UserProfileUpdateDTO.class);
 
-                    lblHeaderName.setText(profile.getFullName());
-                    lblRoleTag.setText("Vai trò: " + profile.getRole());
+                        // Điền dữ liệu chung vào Form
+                        txtUsername.setText(profile.getUsername());
+                        txtFullName.setText(profile.getFullName());
+                        txtEmail.setText(profile.getEmail());
+                        txtPhone.setText(profile.getPhoneNumber());
+                        txtAddress.setText(profile.getAddress());
 
-                    // Cấu hình form hiển thị theo Role
-                    setupUIByRole(profile);
+                        lblHeaderName.setText(profile.getFullName());
+                        lblRoleTag.setText("Vai trò: " + profile.getRole());
+
+                        // Cấu hình form hiển thị theo Role
+                        setupUIByRole(profile);
+                    } catch (Exception e) {
+                        lblStatus.setText("Lỗi parse dữ liệu từ Server!");
+                        lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                        e.printStackTrace();
+                    }
 
                 } else {
                     lblStatus.setText("Lỗi lấy dữ liệu: " + response.getMessage());
@@ -95,24 +100,35 @@ public class UserProfileController {
         });
     }
 
-    private void setupUIByRole(UserProfileResponseDTO profile) {
+    // Đổi kiểu tham số thành UserProfileUpdateDTO, GIỮ NGUYÊN TÊN BIẾN profile
+    private void setupUIByRole(UserProfileUpdateDTO profile) {
         String role = profile.getRole() != null ? profile.getRole().toUpperCase() : "BIDDER";
 
         if ("ADMIN".equals(role)) {
             vboxAdmin.setVisible(true); vboxAdmin.setManaged(true);
             lblRoleTag.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
-            // txtRoleLevel.setText("SUPER_ADMIN"); // Set data Admin nếu DTO trả về
+
+            // Lấy RoleLevel thật từ DB nếu có
+            if (txtRoleLevel != null) {
+                txtRoleLevel.setText(profile.getRoleLevel() != null ? profile.getRoleLevel() : "N/A");
+            }
 
         } else if ("SELLER".equals(role)) {
             vboxBidder.setVisible(true); vboxBidder.setManaged(true);
             vboxSeller.setVisible(true); vboxSeller.setManaged(true);
             lblRoleTag.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
-            txtWalletBalance.setText(String.format("%,.0f VNĐ", profile.getWalletBalance()));
+
+            if (profile.getWalletBalance() != null) {
+                txtWalletBalance.setText(String.format("%,.0f VNĐ", profile.getWalletBalance().doubleValue()));
+            }
 
         } else { // BIDDER
             vboxBidder.setVisible(true); vboxBidder.setManaged(true);
             lblRoleTag.setStyle("-fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
-            txtWalletBalance.setText(String.format("%,.0f VNĐ", profile.getWalletBalance()));
+
+            if (profile.getWalletBalance() != null) {
+                txtWalletBalance.setText(String.format("%,.0f VNĐ", profile.getWalletBalance().doubleValue()));
+            }
         }
     }
 
@@ -121,15 +137,16 @@ public class UserProfileController {
         lblStatus.setText("Đang lưu thay đổi...");
         lblStatus.setStyle("-fx-text-fill: #E3B04B;");
 
-        // Đóng gói DTO // demo
-        UserProfileUpdateDTO updateData = new UserProfileUpdateDTO(
-                txtUsername.getText(),
-                txtEmail.getText(),
-                txtPhone.getText(),
-                txtAddress.getText()
-        );
+        // GIỮ NGUYÊN TÊN BIẾN updateData
+        UserProfileUpdateDTO updateData = new UserProfileUpdateDTO();
+        updateData.setUsername(txtUsername.getText());
+        updateData.setFullName(txtFullName.getText()); // Bổ sung setFullName
+        updateData.setEmail(txtEmail.getText());
+        updateData.setPhoneNumber(txtPhone.getText());
+        updateData.setAddress(txtAddress.getText());
 
-        // Gọi API cập nhật
+        // Gọi API cập nhật (Giữ nguyên cú pháp authNetwork của bạn)
+
         authNetwork.updateProfile(updateData).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
