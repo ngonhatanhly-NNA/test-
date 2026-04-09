@@ -34,5 +34,9 @@ public class ApiRouter {
         app.get("/api/auctions/active", auctionController::getActiveAuctions);
         app.post("/api/auctions/bid", auctionController::placeBid);
         app.get("/api/auctions/{auctionId}", auctionController::getAuctionDetail);
+
+        // Auto-bidd
+        app.post("/api/auctions/{auctionId}/auto-bid/cancel", auctionController::cancelAutoBid);
+        app.put("/api/auctions/{auctionId}/auto-bid/update", auctionController::updateAutoBidAmount);
     }
 }

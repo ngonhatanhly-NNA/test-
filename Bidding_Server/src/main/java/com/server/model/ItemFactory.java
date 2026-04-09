@@ -1,22 +1,52 @@
 package com.server.model;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ItemFactory {
 
-    /**
-     * @param type         Loại sản phẩm ("ELECTRONICS", "VEHICLE", "ART")
-     * @param id           ID sản phẩm
-     * @param name         Tên sản phẩm
-     * @param description  Mô tả
-     * @param startPrice   Giá khởi điểm (BigDecimal)
-     * @param condition    Tình trạng (Mới, Cũ...)
-     * @param imageUrls    Danh sách ảnh
-     * @param extraProps   Map chứa các thuộc tính đặc thù của từng loại
-     * @return Đối tượng Item tương ứng (Electronics, Vehicle, hoặc Art)
-     */
+    // Functional Interface đại diện cho hàm khởi tạo Item
+    @FunctionalInterface
+    public interface ItemCreator {
+        Item create(int id, String name, String description, BigDecimal startPrice,
+                    String condition, List<String> imageUrls, Map<String, Object> extraProps);
+    }
+
+    // Registry lưu trữ các bộ khởi tạo
+    private static final Map<String, ItemCreator> registry = new HashMap<>();
+
+    // Khối static Đăng ký Creator
+    static {
+        registry.put("ELECTRONICS", (id, name, desc, price, cond, imgs, props) -> {
+            String brand = (String) props.get("brand");
+            String model = (String) props.get("model");
+            int warranty = props.get("warrantyMonths") != null ? (Integer) props.get("warrantyMonths") : 0;
+            return new Electronics(id, name, desc, price, cond, imgs, brand, model, warranty);
+        });
+
+        registry.put("VEHICLE", (id, name, desc, price, cond, imgs, props) -> {
+            int manufactureYear = props.get("manufactureYear") != null ? (Integer) props.get("manufactureYear") : 2000;
+            int mileage = props.get("mileage") != null ? (Integer) props.get("mileage") : 0;
+            String vinNumber = (String) props.get("vinNumber");
+            return new Vehicle(id, name, desc, price, cond, imgs, manufactureYear, mileage, vinNumber);
+        });
+
+        registry.put("ART", (id, name, desc, price, cond, imgs, props) -> {
+            String artistName = (String) props.get("artistName");
+            String material = (String) props.get("material");
+            boolean hasCertificate = props.get("hasCertificateOfAuthenticity") != null ? (Boolean) props.get("hasCertificateOfAuthenticity") : false;
+            return new Art(id, name, desc, price, cond, imgs, artistName, material, hasCertificate);
+        });
+    }
+
+
+    // Sau này có type goị: ItemFactory.registerCreator("REAL_ESTATE", creatorLambda);
+    public static void registerCreator(String type, ItemCreator creator) {
+        registry.put(type.toUpperCase(), creator);
+    }
+
     public static Item createItem(String type, int id, String name, String description,
                                   BigDecimal startPrice, String condition,
                                   List<String> imageUrls, Map<String, Object> extraProps) {
@@ -25,30 +55,11 @@ public class ItemFactory {
             throw new IllegalArgumentException("Loại sản phẩm không được để trống!");
         }
 
-        switch (type.toUpperCase()) {
-            case "ELECTRONICS":
-                String brand = (String) extraProps.get("brand");
-                String model = (String) extraProps.get("model");
-                int warranty = extraProps.get("warrantyMonths") != null ? (Integer) extraProps.get("warrantyMonths") : 0;
-
-                return new Electronics(id, name, description, startPrice, condition, imageUrls, brand, model, warranty);
-
-            case "VEHICLE":
-                int manufactureYear = extraProps.get("manufactureYear") != null ? (Integer) extraProps.get("manufactureYear") : 2000;
-                int mileage = extraProps.get("mileage") != null ? (Integer) extraProps.get("mileage") : 0;
-                String vinNumber = (String) extraProps.get("vinNumber"); // Sửa 'make' ảo tưởng thành vinNumber chuẩn
-
-                return new Vehicle(id, name, description, startPrice, condition, imageUrls, manufactureYear, mileage, vinNumber);
-
-            case "ART":
-                String artistName = (String) extraProps.get("artistName");
-                String material = (String) extraProps.get("material");
-                boolean hasCertificate = extraProps.get("hasCertificateOfAuthenticity") != null ? (Boolean) extraProps.get("hasCertificateOfAuthenticity") : false;
-
-                return new Art(id, name, description, startPrice, condition, imageUrls, artistName, material, hasCertificate);
-
-            default:
-                throw new IllegalArgumentException("Hệ thống không hỗ trợ loại sản phẩm: " + type);
+        ItemCreator creator = registry.get(type.toUpperCase());
+        if (creator == null) {
+            throw new IllegalArgumentException("Hệ thống không hỗ trợ loại sản phẩm: " + type);
         }
+
+        return creator.create(id, name, description, startPrice, condition, imageUrls, extraProps);
     }
 }

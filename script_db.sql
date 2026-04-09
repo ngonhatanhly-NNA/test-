@@ -112,3 +112,18 @@ CREATE TABLE bid_transactions (
     FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
     FOREIGN KEY (bidder_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Tạo bảng quản lý tự động đặt giá (Auto-bid)
+CREATE TABLE auto_bids (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    auction_id INT NOT NULL,
+    bidder_id INT NOT NULL,
+    max_bid_amount DECIMAL(15,2) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
+    FOREIGN KEY (bidder_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_auction_bidder (auction_id, bidder_id)
+);
+

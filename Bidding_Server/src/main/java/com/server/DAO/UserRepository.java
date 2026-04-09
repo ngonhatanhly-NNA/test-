@@ -14,9 +14,36 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.*;
 
 public class UserRepository {
 
+	private interface RoleDataSaver {
+		void save (Connection conn, long userID, User user) throws Exception;
+	}
+	private static final Map<Class<? extends User>, RoleDataSaver> roleSavers = new HashMap<>();
+	static {
+		roleSavers.put(Admin.class, (conn, id, user) -> saveAdminData(conn, id, (Admin) user));
+		roleSavers.put(Bidder.class, (conn, id, user) -> saveBidderData(conn, id, (Bidder) user));
+		roleSavers.put(Seller.class, (conn, id, user) -> {
+			saveBidderData(conn, id, (Seller) user); // Seller kế thừa Bidder
+			saveSellerData(conn, id, (Seller) user);
+		});
+	}
+
+	private interface RoleDataUpdater {
+		void update(Connection conn, long userId, UserProfileUpdateDTO dto) throws Exception;
+	}
+
+	private static final Map<Role, RoleDataUpdater> roleUpdaters = new HashMap<>();
+	static {
+		roleUpdaters.put(Role.ADMIN, (conn, id, dto) -> { /* Admin không có profile phụ trong DTO này */ });
+		roleUpdaters.put(Role.BIDDER, (conn, id, dto) -> updateBidderData(conn, id, dto));
+		roleUpdaters.put(Role.SELLER, (conn, id, dto) -> {
+			updateBidderData(conn, id, dto);
+			updateSellerData(conn, id, dto);
+		});
+	}
 	// Hàm lưu User tổng quát (Sử dụng tính đa hình OOP)
 	public boolean saveUser(User user) {
 		String insertUserSql = "INSERT INTO users (username, passwordHash, email, fullName, phoneNumber, address, status, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -54,15 +81,9 @@ public class UserRepository {
 						user.setId(newUserId);
 
 						// CHIA NHÁNH LƯU VÀO CÁC BẢNG CON
-						if (user instanceof Admin) {
-							saveAdminData(conn, newUserId, (Admin) user);
-						} else if (user instanceof Seller) {
-							// Seller kế thừa Bidder nên phải lưu ở cả 2 bảng
-							saveBidderData(conn, newUserId, (Seller) user);
-							saveSellerData(conn, newUserId, (Seller) user);
-						} else if (user instanceof Bidder) {
-							saveBidderData(conn, newUserId, (Bidder) user);
-						}
+						// Nay tuan theo tieu chuan OOP, Closed gi a :))
+						RoleDataSaver saver = roleSavers.get(user.getClass());
+						if (saver != null) saver.save(conn, newUserId, user);
 					}
 				}
 
@@ -97,9 +118,9 @@ public class UserRepository {
 		}
 	}
 
-	// --- CÁC HÀM HỖ TRỢ CHIA NHỎ (ĐÃ ĐỔI int userId THÀNH long userId) ---
+	// --- CÁC HÀM HỖ TRỢ CHIA NHỎ ---
 
-	private void saveAdminData(Connection conn, long userId, Admin admin) throws Exception {
+	private static void saveAdminData(Connection conn, long userId, Admin admin) throws Exception {
 		String sql = "INSERT INTO admins (user_id, roleLevel, lastLoginIp) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setLong(1, userId);
@@ -109,7 +130,7 @@ public class UserRepository {
 		}
 	}
 
-	private void saveBidderData(Connection conn, long userId, Bidder bidder) throws Exception {
+	private static void saveBidderData(Connection conn, long userId, Bidder bidder) throws Exception {
 		String sql = "INSERT INTO bidders (user_id, walletBalance, creditCardInfo) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setLong(1, userId);
@@ -119,7 +140,7 @@ public class UserRepository {
 		}
 	}
 
-	private void saveSellerData(Connection conn, long userId, Seller seller) throws Exception {
+	private static void saveSellerData(Connection conn, long userId, Seller seller) throws Exception {
 		String sql = "INSERT INTO sellers (bidder_id, shopName, rating, totalReviews, bankAccountNumber, isVerified) VALUES (?, ?, ?, ?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setLong(1, userId);
@@ -132,17 +153,21 @@ public class UserRepository {
 		}
 	}
 
+	// HELPER_FUNCTION for update
+	private static void updateBidderData(Connection conn, long userId, UserProfileUpdateDTO dto) throws Exception {
+		try (PreparedStatement pstmt = conn.prepareStatement("UPDATE bidders SET creditCardInfo=? WHERE user_id=?")) {
+			pstmt.setString(1, dto.getCreditCardInfo()); pstmt.setLong(2, userId); pstmt.executeUpdate();
+		}
+	}
+	private static void updateSellerData(Connection conn, long userId, UserProfileUpdateDTO dto) throws Exception {
+		try (PreparedStatement pstmt = conn.prepareStatement("UPDATE sellers SET shopName=?, bankAccountNumber=? WHERE bidder_id=?")) {
+			pstmt.setString(1, dto.getShopName()); pstmt.setString(2, dto.getBankAccountNumber()); pstmt.setLong(3, userId); pstmt.executeUpdate();
+		}
+	}
+
 	// Login & Lấy Profile
 	public User getUserByUsername(String username) {
-		String sql = "SELECT u.*, " +
-				"a.roleLevel, a.lastLoginIp, " +
-				"b.walletBalance, b.creditCardInfo, " +
-				"s.shopName, s.rating, s.totalReviews, s.bankAccountNumber, s.isVerified " +
-				"FROM users u " +
-				"LEFT JOIN admins a ON u.id = a.user_id " +
-				"LEFT JOIN bidders b ON u.id = b.user_id " +
-				"LEFT JOIN sellers s ON b.user_id = s.bidder_id " +
-				"WHERE u.username = ?";
+		String sql = UserQueryFactory.getFullUserQuery();
 
 		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -152,45 +177,10 @@ public class UserRepository {
 				if (rs.next()) {
 					// Parse ra Enum
 					Role roleEnum = Role.valueOf(rs.getString("role").toUpperCase());
-					Status statusEnum = Status.valueOf(rs.getString("status").toUpperCase());
-
-					// Đổi thành long id
-					long id = rs.getLong("id");
-					String pass = rs.getString("passwordHash");
-					String email = rs.getString("email");
-					String fullName = rs.getString("fullName");
-					String phone = rs.getString("phoneNumber");
-					String address = rs.getString("address");
-
-					if (roleEnum == Role.ADMIN) {
-						// Đã fix lỗi cú pháp Admin, truyền luôn roleLevel vào
-						Admin admin = new Admin(id, username, pass, email, fullName, phone, address, statusEnum, rs.getString("roleLevel"));
-
-						// Nếu Database có lưu LastLoginIp thì set luôn vào Object
-						if (rs.getString("lastLoginIp") != null) {
-							admin.updateLoginIp(rs.getString("lastLoginIp"));
-						}
-						return admin;
-
-					} else if (roleEnum == Role.SELLER) {
-						// Sử dụng biến statusEnum và roleEnum
-						return new Seller(id, username, pass, email, fullName, phone, address, statusEnum, roleEnum,
-								rs.getBigDecimal("walletBalance"),
-								rs.getString("creditCardInfo"),
-								rs.getString("shopName"),
-								rs.getString("bankAccountNumber"),
-								rs.getDouble("rating"),
-								rs.getInt("totalReviews"),
-								rs.getBoolean("isVerified"));
-
-					} else {
-						// Sử dụng biến statusEnum và roleEnum
-						return new Bidder(id, username, pass, email, fullName, phone, address, statusEnum, roleEnum,
-								rs.getBigDecimal("walletBalance"),
-								rs.getString("creditCardInfo"));
-					}
-				}
-			}
+					// Sử dụng Factory method để tránh ì, else, sau update dễ hơn
+					UserRowMapper mapper = UserRowMapperFactory.getMapperByRole(roleEnum);
+					return mapper.mapRow(rs);
+			}}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -214,33 +204,14 @@ public class UserRepository {
 				psUser.executeUpdate();
 			}
 
-			// Nếu là BIDDER hoặc SELLER -> Cập nhật bảng bidders
-			if (role == Role.BIDDER || role == Role.SELLER) {
-				String sqlBidder = "UPDATE bidders SET creditCardInfo=? WHERE user_id=?";
-				try (PreparedStatement psBidder = conn.prepareStatement(sqlBidder)) {
-					psBidder.setString(1, dto.getCreditCardInfo());
-					psBidder.setLong(2, userId);
-					psBidder.executeUpdate();
-				}
-			}
-
-			// Nếu là SELLER -> Cập nhật thêm bảng sellers
-			if (role == Role.SELLER) {
-				String sqlSeller = "UPDATE sellers SET shopName=?, bankAccountNumber=? WHERE bidder_id=?";
-				try (PreparedStatement psSeller = conn.prepareStatement(sqlSeller)) {
-					psSeller.setString(1, dto.getShopName());
-					psSeller.setString(2, dto.getBankAccountNumber());
-					psSeller.setLong(3, userId);
-					psSeller.executeUpdate();
-				}
-			}
+			RoleDataUpdater updater = roleUpdaters.get(role);
+			if (updater != null) updater.update(conn, userId, dto);
 
 			conn.commit();
 			return true;
 
 		} catch (Exception e) {
 			System.err.println("LỖI CẬP NHẬT DB VÀO USER");
-			e.printStackTrace();
 			if (conn != null) {
 				try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
 			}
