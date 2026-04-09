@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.util.EnumMap;
 import java.util.Map;
 
+// Mapper xuwr lis cac du lieu tho tu DB len Java
 interface UserRowMapper {
     User mapRow(ResultSet rs) throws Exception;
 }

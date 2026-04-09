@@ -3,7 +3,7 @@ package com.shared.dto;
 import java.math.BigDecimal;
 
 /**
- * DTO để cập nhật giá tối đa auto-bid
+ * DTO để cập nhật giá tối đa auto-bid, hanlde client chỉnh chế đọ auto-manual
  */
 public class AutoBidUpdateDTO {
     private long bidderId;

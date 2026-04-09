@@ -6,21 +6,23 @@ import com.server.model.Bidder;
 import com.server.model.Seller;
 import com.server.model.User;
 import com.server.model.Role;
-import com.server.model.Status;
 
-import com.shared.dto.UserProfileUpdateDTO;
-
+import com.shared.dto.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.*;
 
-public class UserRepository {
+public class UserRepository implements IUserRepository {
 
+	// ==========================================
+	// 1. STRATEGY LƯU DỮ LIỆU TẠO MỚI (SAVE)
+	// ==========================================
 	private interface RoleDataSaver {
-		void save (Connection conn, long userID, User user) throws Exception;
+		void save(Connection conn, long userID, User user) throws Exception;
 	}
+
 	private static final Map<Class<? extends User>, RoleDataSaver> roleSavers = new HashMap<>();
 	static {
 		roleSavers.put(Admin.class, (conn, id, user) -> saveAdminData(conn, id, (Admin) user));
@@ -31,28 +33,42 @@ public class UserRepository {
 		});
 	}
 
+	// ==========================================
+	// 2. STRATEGY CẬP NHẬT DỮ LIỆU (UPDATE)
+	// ==========================================
 	private interface RoleDataUpdater {
-		void update(Connection conn, long userId, UserProfileUpdateDTO dto) throws Exception;
+		void update(Connection conn, long userId, BaseProfileUpdateDTO dto) throws Exception;
 	}
 
 	private static final Map<Role, RoleDataUpdater> roleUpdaters = new HashMap<>();
 	static {
-		roleUpdaters.put(Role.ADMIN, (conn, id, dto) -> { /* Admin không có profile phụ trong DTO này */ });
-		roleUpdaters.put(Role.BIDDER, (conn, id, dto) -> updateBidderData(conn, id, dto));
+		// Đã sửa lỗi thiếu/dư ngoặc nhọn ở đây
+		roleUpdaters.put(Role.ADMIN, (conn, id, dto) -> {
+			// AdminProfileUpdateDTO adminDto = (AdminProfileUpdateDTO) dto;
+		});
+
+		roleUpdaters.put(Role.BIDDER, (conn, id, dto) -> {
+			BidderProfileUpdateDTO bidderDto = (BidderProfileUpdateDTO) dto;
+			updateBidderData(conn, id, bidderDto);
+		});
+
 		roleUpdaters.put(Role.SELLER, (conn, id, dto) -> {
-			updateBidderData(conn, id, dto);
-			updateSellerData(conn, id, dto);
+			SellerProfileUpdateDTO sellerDto = (SellerProfileUpdateDTO) dto;
+			// Seller kế thừa Bidder nên nhét SellerDTO vào hàm của Bidder đc
+			updateBidderData(conn, id, sellerDto);
+			updateSellerData(conn, id, sellerDto);
 		});
 	}
-	// Hàm lưu User tổng quát (Sử dụng tính đa hình OOP)
+
+	// ==========================================
+	// 3. HÀM LƯU USER CHÍNH (Đã tuân thủ OCP)
+	// ==========================================
 	public boolean saveUser(User user) {
 		String insertUserSql = "INSERT INTO users (username, passwordHash, email, fullName, phoneNumber, address, status, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 		Connection conn = null;
 
 		try {
 			conn = DBConnection.getInstance().getConnection();
-
-			// Tạm dừng auto-save để bật chế độ Transaction (Bảo vệ tính toàn vẹn dữ liệu)
 			conn.setAutoCommit(false);
 
 			try (PreparedStatement pstmtUser = conn.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS)) {
@@ -63,63 +79,49 @@ public class UserRepository {
 				pstmtUser.setString(4, user.getFullName());
 				pstmtUser.setString(5, user.getPhoneNumber());
 				pstmtUser.setString(6, user.getAddress());
-
-				// Lấy String từ Enum để lưu vào DB
 				pstmtUser.setString(7, user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
 				pstmtUser.setString(8, user.getRole() != null ? user.getRole().name() : "BIDDER");
 
 				int affectedRows = pstmtUser.executeUpdate();
 				if (affectedRows == 0) {
-					conn.rollback(); // Lỗi thì quay xe
+					conn.rollback();
 					return false;
 				}
 
-				// Lấy ID MySQL vừa cấp phát cho User mới (ĐÃ FIX SANG long)
 				try (ResultSet generatedKeys = pstmtUser.getGeneratedKeys()) {
 					if (generatedKeys.next()) {
 						long newUserId = generatedKeys.getLong(1);
 						user.setId(newUserId);
 
-						// CHIA NHÁNH LƯU VÀO CÁC BẢNG CON
-						// Nay tuan theo tieu chuan OOP, Closed gi a :))
+						// Delegate việc lưu dữ liệu con cho Strategy
 						RoleDataSaver saver = roleSavers.get(user.getClass());
 						if (saver != null) saver.save(conn, newUserId, user);
 					}
 				}
 
-				// Mọi thứ hoàn hảo -> Xác nhận lưu vĩnh viễn (Commit)
 				conn.commit();
 				return true;
 			}
 
 		} catch (Exception e) {
-			// Có lỗi -> Hủy toàn bộ thao tác, rollback dữ liệu
 			if (conn != null) {
-				try {
-					conn.rollback();
-					System.err.println("LỖI LƯU DATABASE - ĐÃ ROLLBACK DỮ LIỆU!");
-				} catch (Exception rollbackEx) {
-					rollbackEx.printStackTrace();
-				}
+				try { conn.rollback(); System.err.println("LỖI LƯU DATABASE - ĐÃ ROLLBACK DỮ LIỆU!"); }
+				catch (Exception rollbackEx) { rollbackEx.printStackTrace(); }
 			}
 			e.printStackTrace();
 			return false;
 
 		} finally {
-			// Trả lại trạng thái bình thường cho Connection và ĐÓNG/TRẢ VỀ POOL
 			if (conn != null) {
-				try {
-					conn.setAutoCommit(true);
-					conn.close(); // QUAN TRỌNG: Lệnh này với HikariCP là trả kết nối về pool, tránh sập DB.
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				try { conn.setAutoCommit(true); conn.close(); }
+				catch (Exception ex) { ex.printStackTrace(); }
 			}
 		}
 	}
 
-	// --- CÁC HÀM HỖ TRỢ CHIA NHỎ ---
-
+	// ==========================================
+	// 4. CÁC HÀM HELPER LƯU & CẬP NHẬT BẢNG CON
+	// ==========================================
 	private static void saveAdminData(Connection conn, long userId, Admin admin) throws Exception {
 		String sql = "INSERT INTO admins (user_id, roleLevel, lastLoginIp) VALUES (?, ?, ?)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -153,19 +155,26 @@ public class UserRepository {
 		}
 	}
 
-	// HELPER_FUNCTION for update
-	private static void updateBidderData(Connection conn, long userId, UserProfileUpdateDTO dto) throws Exception {
+	private static void updateBidderData(Connection conn, long userId, BidderProfileUpdateDTO dto) throws Exception {
 		try (PreparedStatement pstmt = conn.prepareStatement("UPDATE bidders SET creditCardInfo=? WHERE user_id=?")) {
-			pstmt.setString(1, dto.getCreditCardInfo()); pstmt.setLong(2, userId); pstmt.executeUpdate();
-		}
-	}
-	private static void updateSellerData(Connection conn, long userId, UserProfileUpdateDTO dto) throws Exception {
-		try (PreparedStatement pstmt = conn.prepareStatement("UPDATE sellers SET shopName=?, bankAccountNumber=? WHERE bidder_id=?")) {
-			pstmt.setString(1, dto.getShopName()); pstmt.setString(2, dto.getBankAccountNumber()); pstmt.setLong(3, userId); pstmt.executeUpdate();
+			pstmt.setString(1, dto.getCreditCardInfo());
+			pstmt.setLong(2, userId);
+			pstmt.executeUpdate();
 		}
 	}
 
-	// Login & Lấy Profile
+	private static void updateSellerData(Connection conn, long userId, SellerProfileUpdateDTO dto) throws Exception {
+		try (PreparedStatement pstmt = conn.prepareStatement("UPDATE sellers SET shopName=?, bankAccountNumber=? WHERE bidder_id=?")) {
+			pstmt.setString(1, dto.getShopName());
+			pstmt.setString(2, dto.getBankAccountNumber());
+			pstmt.setLong(3, userId);
+			pstmt.executeUpdate();
+		}
+	}
+
+	// ==========================================
+	// 5. CÁC HÀM GET & UPDATE PHÍA NGOÀI GỌI VÀO
+	// ==========================================
 	public User getUserByUsername(String username) {
 		String sql = UserQueryFactory.getFullUserQuery();
 
@@ -175,25 +184,26 @@ public class UserRepository {
 			pstmt.setString(1, username);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
-					// Parse ra Enum
-					Role roleEnum = Role.valueOf(rs.getString("role").toUpperCase());
-					// Sử dụng Factory method để tránh ì, else, sau update dễ hơn
+					String roleStr = rs.getString("role");
+					Role roleEnum = (roleStr != null) ? Role.valueOf(roleStr.toUpperCase()) : Role.BIDDER;
+
 					UserRowMapper mapper = UserRowMapperFactory.getMapperByRole(roleEnum);
 					return mapper.mapRow(rs);
-			}}
+				}
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
 
-	public boolean updateFullProfile(UserProfileUpdateDTO dto, Role role, long userId) {
+	public boolean updateFullProfile(BaseProfileUpdateDTO dto, Role role, long userId) {
 		Connection conn = null;
 		try {
 			conn = DBConnection.getInstance().getConnection();
-			conn.setAutoCommit(false); // Bật Transaction
+			conn.setAutoCommit(false);
 
-			// Basic user, can include seller and bidder
+			// Update thông tin chung (
 			String sqlUser = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
 			try (PreparedStatement psUser = conn.prepareStatement(sqlUser)) {
 				psUser.setString(1, dto.getEmail());
@@ -204,6 +214,7 @@ public class UserRepository {
 				psUser.executeUpdate();
 			}
 
+			//Strategy để cập nhật các bảng con tuỳ theo role
 			RoleDataUpdater updater = roleUpdaters.get(role);
 			if (updater != null) updater.update(conn, userId, dto);
 
@@ -232,8 +243,7 @@ public class UserRepository {
 			pstmt.setString(1, newPassword);
 			pstmt.setString(2, username);
 
-			int rowsAffected = pstmt.executeUpdate();
-			return rowsAffected > 0;
+			return pstmt.executeUpdate() > 0;
 
 		} catch (Exception e) {
 			System.err.println("LỖI ĐỔI MẬT KHẨU TRONG DATABASE: ");

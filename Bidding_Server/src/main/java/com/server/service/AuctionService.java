@@ -129,7 +129,7 @@ public class AuctionService {
             // Process bid
             bidProcessor.process(request, auction, bidQueue);
 
-            // Step 3: Handle anti-sniping
+            //Handle anti-sniping
             handleAntiSniping(auction);
 
             //Handle auto-bid registration
@@ -137,10 +137,10 @@ public class AuctionService {
                 registerAutoBid(request);
             }
 
-            // Step 5: Process auto-bids from other users
+            // Process auto-bids from other users
             processAutoBidsFromOtherUsers(auction);
 
-            // Step 6: Broadcast update
+            //Broadcast update
             AuctionUpdateDTO update = createUpdateDTO(auction);
             if (eventListener != null) {
                 eventListener.onAuctionUpdate(update);
@@ -186,11 +186,11 @@ public class AuctionService {
             AutoBidTracker autoBid = new AutoBidTracker(
                 request.getAuctionId(),
                 request.getBidderId(),
-                request.getBidAmount()
+                request.getMaxAutoBidAmount()
             );
             autoBidRepository.saveOrUpdate(autoBid);
             AuctionLogger.logAutoBidEnabled(request.getAuctionId(), request.getBidderId(),
-                request.getBidAmount().toString());
+                request.getMaxAutoBidAmount().toString());
         }
     }
 
@@ -386,9 +386,7 @@ public class AuctionService {
         );
     }
 
-    /**
-     * Shutdown gracefully
-     */
+    // Sập nguồn :)))
     public void shutdown() {
         scheduler.shutdown();
         try {
@@ -401,5 +399,4 @@ public class AuctionService {
         }
         AuctionLogger.logInfo("AuctionService đã shutdown");
     }
-}
 }

@@ -1,7 +1,8 @@
 package com.server.DAO;
 
 import com.server.model.User;
-import com.shared.dto.UserProfileUpdateDTO;
+import com.server.model.Role;
+import com.shared.dto.BaseProfileUpdateDTO;
 
 /**
  * Interface Repository cho User - thỏa mãn Dependency Inversion Principle
@@ -18,14 +19,10 @@ public interface IUserRepository {
      */
     User getUserByUsername(String username);
 
-    /**
-     * Cập nhật toàn bộ profile của User
-     */
-    boolean updateFullProfile(UserProfileUpdateDTO dto, long userId);
+    boolean updateFullProfile(BaseProfileUpdateDTO dto, Role role, long userId);
 
     /**
      * Cập nhật mật khẩu User
      */
     boolean updatePassword(String username, String newPassword);
 }
-

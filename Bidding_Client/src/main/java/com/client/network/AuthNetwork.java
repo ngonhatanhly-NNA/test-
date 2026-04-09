@@ -58,8 +58,8 @@ public class AuthNetwork {
         );
     }
 
-    // Cập nhật User Profile
-    public CompletableFuture<Response> updateProfile(UserProfileUpdateDTO updateData) {
+    // Cập nhật User Profile, BaseProfile theo poly thi thoai mai voi Seller, Admin nha
+    public CompletableFuture<Response> updateProfile(BaseProfileUpdateDTO updateData) {
         String jsonBody = gson.toJson(updateData);
 
         HttpRequest request = HttpRequest.newBuilder()

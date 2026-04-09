@@ -2,8 +2,7 @@ package com.client.controller.dashboard;
 
 import com.client.network.AuthNetwork;
 import com.google.gson.Gson;
-import com.shared.dto.UserProfileUpdateDTO;
-import com.shared.network.Response;
+import com.shared.dto.BaseProfileUpdateDTO;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
@@ -66,10 +65,9 @@ public class UserProfileController {
                     try {
                         String jsonData = gson.toJson(response.getData());
 
-                        UserProfileUpdateDTO profile = gson.fromJson(jsonData, UserProfileUpdateDTO.class);
+                        BaseProfileUpdateDTO profile = gson.fromJson(jsonData, BaseProfileUpdateDTO.class);
 
                         // Điền dữ liệu chung vào Form
-                        txtUsername.setText(profile.getUsername());
                         txtFullName.setText(profile.getFullName());
                         txtEmail.setText(profile.getEmail());
                         txtPhone.setText(profile.getPhoneNumber());
@@ -100,8 +98,8 @@ public class UserProfileController {
         });
     }
 
-    // Đổi kiểu tham số thành UserProfileUpdateDTO, GIỮ NGUYÊN TÊN BIẾN profile
-    private void setupUIByRole(UserProfileUpdateDTO profile) {
+    // N chắc sa cũng thay dần Factory :)
+    private void setupUIByRole(BaseProfileUpdateDTO profile) {
         String role = profile.getRole() != null ? profile.getRole().toUpperCase() : "BIDDER";
 
         if ("ADMIN".equals(role)) {
@@ -137,9 +135,8 @@ public class UserProfileController {
         lblStatus.setText("Đang lưu thay đổi...");
         lblStatus.setStyle("-fx-text-fill: #E3B04B;");
 
-        // GIỮ NGUYÊN TÊN BIẾN updateData
-        UserProfileUpdateDTO updateData = new UserProfileUpdateDTO();
-        updateData.setUsername(txtUsername.getText());
+        com.shared.dto.BaseProfileUpdateDTO updateData = new BaseProfileUpdateDTO() {
+        };
         updateData.setFullName(txtFullName.getText()); // Bổ sung setFullName
         updateData.setEmail(txtEmail.getText());
         updateData.setPhoneNumber(txtPhone.getText());

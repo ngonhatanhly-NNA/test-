@@ -3,12 +3,13 @@ package com.server.service.auction.logging;
 /**
  * Facade Pattern: Centralized logging cho Auction Service
  * Dễ bảo trì và mở rộng sau này
+ * Log lịch sử s
  */
 public class AuctionLogger {
     private static final String PREFIX = "[AUCTION]";
 
     public static void logBidPlaced(long auctionId, long bidderId, String bidAmount, boolean isAuto) {
-        String type = isAuto ? "AUTO" : "MANUAL";
+        String type = isAuto ? "AUTO" : "MANUAL"; // auto-bidding hay người đang đặt, sau chắc lại chỉnh status :"> dcm
         System.out.println(String.format("%s %s Bid - Auction: %d, User: %d, Amount: %s",
             PREFIX, type, auctionId, bidderId, bidAmount));
     }

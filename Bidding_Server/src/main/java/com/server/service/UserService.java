@@ -1,116 +1,138 @@
 package com.server.service;
 
-import com.google.gson.Gson;
 import com.server.DAO.UserRepository;
-import com.server.model.Admin;
-import com.server.model.Bidder;
-import com.server.model.Seller;
-import com.server.model.User;
-import com.shared.dto.UserProfileUpdateDTO;
-import com.shared.dto.UserProfileUpdateDTO;
+import com.server.model.*;
+import com.shared.dto.*;
 import com.shared.network.Response;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class UserService {
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    // DESIGN PATTERN: SINGLETON (Dùng 1 object duy nhất cho toàn server, tiết kiệm bộ nhớ)
-    private static final Gson gson = new Gson();
+    // ==========================================
+    // MAPPER, OCP
+    // ==========================================
+    private interface ProfileMapper {
+        Map<String, Object> map(User user);
+    }
 
+    private static final Map<Class<? extends User>, ProfileMapper> mappers = new HashMap<>();
+
+    static {
+        mappers.put(Admin.class, user -> {
+            Admin admin = (Admin) user;
+            Map<String, Object> map = createBaseProfileMap(admin);
+            map.put("roleLevel", admin.getRoleLevel());
+            map.put("lastLoginIp", admin.getLastLoginIp());
+            return map;
+        });
+
+        mappers.put(Bidder.class, user -> {
+            Bidder bidder = (Bidder) user;
+            Map<String, Object> map = createBaseProfileMap(bidder);
+            map.put("walletBalance", bidder.getWalletBalance());
+            map.put("creditCardInfo", bidder.getCreditCardInfo());
+            return map;
+        });
+
+        mappers.put(Seller.class, user -> {
+            Seller seller = (Seller) user;
+            Map<String, Object> map = createBaseProfileMap(seller);
+            map.put("walletBalance", seller.getWalletBalance());
+            map.put("creditCardInfo", seller.getCreditCardInfo());
+            map.put("shopName", seller.getShopName());
+            map.put("bankAccountNumber", seller.getBankAccountNumber());
+            map.put("rating", seller.getRating());
+            map.put("totalReviews", seller.getTotalReviews());
+            map.put("isVerified", seller.isVerified());
+            return map;
+        });
+    }
+
+    public static void registerMapper(Class<? extends User> clazz, ProfileMapper mapper) {
+        mappers.put(clazz, mapper);
+    }
+
+    // Hàm tạo base map dùng chung
+    private static Map<String, Object> createBaseProfileMap(User user) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", user.getId());
+        map.put("username", user.getUsername());
+        map.put("email", user.getEmail());
+        map.put("fullName", user.getFullName());
+        map.put("phoneNumber", user.getPhoneNumber());
+        map.put("address", user.getAddress());
+        map.put("role", user.getRole().name());
+        map.put("status", user.getStatus().name());
+        return map;
+    }
+
+    // ==========================================
+    // Logic HAnlde here
+    // ==========================================
     public UserService() {
         this.userRepository = new UserRepository();
     }
 
-    public String getUserProfile(String username) {
+    public Role getUserRole(String username) {
+        User user = userRepository.getUserByUsername(username);
+        return (user != null) ? user.getRole() : null;
+    }
+
+    public Response getUserProfile(String username) {
         try {
-            // Xuống DB tìm user theo username
             User user = userRepository.getUserByUsername(username);
-
             if (user != null) {
-                // Tuyệt đối không trả thẳng object User về vì sẽ lộ PasswordHash cho Hacker
-                UserProfileUpdateDTO dto = new UserProfileUpdateDTO();
-                dto.setId((int) user.getId());
-                dto.setUsername(user.getUsername());
-                dto.setEmail(user.getEmail());
-                dto.setFullName(user.getFullName());
-                dto.setPhoneNumber(user.getPhoneNumber());
-                dto.setAddress(user.getAddress());
-                dto.setRole(user.getRole().name());
-                dto.setStatus(user.getStatus().name());
+                ProfileMapper mapper = mappers.get(user.getClass());
 
-                // Trích xuất thêm thông tin dựa theo tính đa hình (OOP)
-                if (user instanceof Admin) {
-                    dto.setRoleLevel(((Admin) user).getRoleLevel());
-                    dto.setLastLoginIp(((Admin) user).getLastLoginIp());
-                } else if (user instanceof Seller) {
-                    Seller seller = (Seller) user;
-                    dto.setWalletBalance(seller.getWalletBalance());
-                    dto.setCreditCardInfo(seller.getCreditCardInfo());
-                    dto.setShopName(seller.getShopName());
-                    dto.setBankAccountNumber(seller.getBankAccountNumber());
-                    dto.setRating(seller.getRating());
-                    dto.setTotalReviews(seller.getTotalReviews());
-                    dto.setIsVerified(seller.isVerified());
-                } else if (user instanceof Bidder) {
-                    Bidder bidder = (Bidder) user;
-                    dto.setWalletBalance(bidder.getWalletBalance());
-                    dto.setCreditCardInfo(bidder.getCreditCardInfo());
+                if (mapper != null) {
+                    return new Response("SUCCESS", "Lấy profile thành công", mapper.map(user));
+                } else {
+                    // Fallback: Nếu lỡ thiếu mapper, trả về thông tin cơ bản
+                    return new Response("SUCCESS", "Lấy profile cơ bản", createBaseProfileMap(user));
                 }
-
-                // Đóng gói DTO thành công
-                return gson.toJson(new Response("SUCCESS", "Lấy profile thành công", dto));
             }
-            return gson.toJson(new Response("FAIL", "Không tìm thấy người dùng", null));
+            return new Response("FAIL", "Không tìm thấy người dùng", null);
         } catch (Exception e) {
-            return gson.toJson(new Response("ERROR", "Lỗi hệ thống: " + e.getMessage(), null));
+            return new Response("ERROR", "Lỗi hệ thống: " + e.getMessage(), null);
         }
     }
 
-    // Yêu cầu Controller truyền thêm username vào (vì DTO Update không có trường username)
-    public String updateProfile(String username, String jsonBody) {
+    public Response updateProfile(String username, BaseProfileUpdateDTO updatedInfo) {
         try {
-            UserProfileUpdateDTO updatedInfo = gson.fromJson(jsonBody, UserProfileUpdateDTO.class);
-
-            // Lấy user cũ từ DB lên để xác định Role và ID
             User existingUser = userRepository.getUserByUsername(username);
 
             if (existingUser != null) {
-                // ĐỒNG BỘ: Gọi đúng hàm updateFullProfile của DAO (truyền DTO, Role và ID)
                 boolean isSuccess = userRepository.updateFullProfile(updatedInfo, existingUser.getRole(), existingUser.getId());
-
                 if (isSuccess) {
-                    // Không trả lại object Entity, chỉ báo Success là đủ
-                    return gson.toJson(new Response("SUCCESS", "Cập nhật thông tin thành công!", null));
+                    return new Response("SUCCESS", "Cập nhật thông tin thành công!", null);
                 } else {
-                    return gson.toJson(new Response("FAIL", "Lỗi khi lưu vào Database", null));
+                    return new Response("FAIL", "Lỗi khi lưu vào Database", null);
                 }
             }
-            return gson.toJson(new Response("FAIL", "Người dùng không tồn tại", null));
+            return new Response("FAIL", "Người dùng không tồn tại", null);
         } catch (Exception e) {
-            return gson.toJson(new Response("ERROR", "Lỗi cập nhật: " + e.getMessage(), null));
+            return new Response("ERROR", "Lỗi cập nhật: " + e.getMessage(), null);
         }
     }
 
-    public String changePassword(String username, String oldPass, String newPass) {
+    public Response changePassword(String username, String oldPass, String newPass) {
         try {
-            // Lấy user từ DB lên
             User user = userRepository.getUserByUsername(username);
 
-            // Kiểm tra user có tồn tại và mật khẩu cũ có khớp không
-            // Thực tế sau này chỗ này phải dùng hàm check Hash (vd: BCrypt.checkpw)
             if (user != null && user.getPasswordHash().equals(oldPass)) {
-
-                // Gọi DAO cập nhật thẳng mật khẩu mới xuống DB
                 boolean isSuccess = userRepository.updatePassword(username, newPass);
-
                 if (isSuccess) {
-                    return gson.toJson(new Response("SUCCESS", "Đổi mật khẩu thành công!", null));
+                    return new Response("SUCCESS", "Đổi mật khẩu thành công!", null);
                 } else {
-                    return gson.toJson(new Response("FAIL", "Lỗi khi lưu mật khẩu mới vào Database", null));
+                    return new Response("FAIL", "Lỗi khi lưu mật khẩu mới", null);
                 }
             }
-            return gson.toJson(new Response("FAIL", "Mật khẩu cũ không chính xác!", null));
+            return new Response("FAIL", "Mật khẩu cũ không chính xác!", null);
         } catch (Exception e) {
-            return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
+            return new Response("ERROR", "Lỗi: " + e.getMessage(), null);
         }
     }
 }
