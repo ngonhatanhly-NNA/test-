@@ -7,12 +7,12 @@ public class ProfileUIStrategyFactory {
     private static final Map<String, IProfileUIStrategy> strategies = new HashMap<>();
 
     static {
-        strategies.put("ADMIN", new AdminUIStrategy()); // Bạn tạo tương tự AdminUIStrategy nhé
-        strategies.put("BIDDER", new BidderUIStrategy());
-        strategies.put("SELLER", new SellerUIStrategy());
+        strategies.put("ADMIN", new AdminProfileUIStrategy());
+        strategies.put("BIDDER", new BidderProfileUIStrategy());
+        strategies.put("SELLER", new SellerProfileUIStrategy());
     }
 
     public static IProfileUIStrategy getStrategy(String role) {
-        return strategies.getOrDefault(role.toUpperCase(), new BidderUIStrategy());
+        return strategies.getOrDefault(role.toUpperCase(), new BidderProfileUIStrategy());
     }
 }

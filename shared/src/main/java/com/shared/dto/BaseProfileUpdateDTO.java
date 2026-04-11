@@ -1,10 +1,23 @@
 package com.shared.dto;
 
+import java.io.Serializable;
+import java.util.Objects;
+import com.google.gson.annotations.SerializedName;
+
 // dùng chung cho 3 người dùng
-public abstract class BaseProfileUpdateDTO implements IUserProfileDTO {
+public class BaseProfileUpdateDTO implements IUserProfileDTO, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    @SerializedName("email")
     protected String email;
+
+    @SerializedName("fullName")
     protected String fullName;
+
+    @SerializedName("phoneNumber")
     protected String phoneNumber;
+
+    @SerializedName("address")
     protected String address;
 
     public BaseProfileUpdateDTO() {}
@@ -31,4 +44,28 @@ public abstract class BaseProfileUpdateDTO implements IUserProfileDTO {
     @Override
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BaseProfileUpdateDTO that = (BaseProfileUpdateDTO) o;
+        return Objects.equals(email, that.email) && Objects.equals(fullName, that.fullName) &&
+                Objects.equals(phoneNumber, that.phoneNumber) && Objects.equals(address, that.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(email, fullName, phoneNumber, address);
+    }
+
+    @Override
+    public String toString() {
+        return "BaseProfileUpdateDTO{" +
+                "email='" + email + '\'' +
+                ", fullName='" + fullName + '\'' +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", address='" + address + '\'' +
+                '}';
+    }
 }

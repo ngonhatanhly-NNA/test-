@@ -2,31 +2,43 @@ package com.server.service;
 
 import com.server.DAO.ItemRepository;
 import com.server.model.Item;
-// Import thư viện biến đổi JSON của nhóm (Thường là Gson hoặc Jackson)
 import com.google.gson.Gson;
+import com.shared.dto.ItemResponseDTO; // Nhớ import cái hộp DTO của em
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ItemService {
 
-    // Gọi thằng nhân viên đi kho (DAO)
     private ItemRepository itemRepo;
-    // Cái máy xay JSON
-    private Gson gson;
+    // ====================================================================
+    // CODE MỚI (CHUẨN SOLID DÀNH CHO LUỒNG DTO)
+    // ====================================================================
 
-    public ItemService() {
-        this.itemRepo = new ItemRepository();
-        this.gson = new Gson();
+    // Constructor kiểu Dependency Injection: Không tự dùng chữ 'new' nữa,
+    // ai xài Service này thì tự truyền Repo vào.
+    public ItemService(ItemRepository itemRepo) {
+        this.itemRepo = itemRepo;
     }
 
-    // Hàm này sẽ được ServerApp gọi
-    public String getAllItems() {
-        // Sai thằng DAO xuống DB lấy danh sách lên và gửi cho dashboard của client
-        List<Item> items = itemRepo.getAllItems();
+    // Hàm trả về List các hộp DTO (ItemResponseDTO) thay vì chuỗi String cứng nhắc
+    public List<ItemResponseDTO> getAllItemsDTO() {
+        // 1. Nhờ thủ kho lấy danh sách gốc từ DB
+        List<Item> rawItems = itemRepo.getAllItems();
 
-        // 2. Cho vào máy xay, biến List Object thành chuỗi String JSON
-        String jsonResponse = gson.toJson(items);
+        // 2. Dùng băng chuyền (Stream) gọt bớt dữ liệu thừa, đóng gói vào DTO
+        return rawItems.stream().map(item -> {
+            // Tự động trích xuất loại "VEHICLE", "ART", "ELECTRONICS" từ tên Class
+            String type = item.getClass().getSimpleName().toUpperCase();
 
-        // 3. Trả cục JSON đó cho ServerApp
-        return jsonResponse;
+            return new ItemResponseDTO(
+                    item.getId(),
+                    item.getName(),
+                    item.getDescription(),
+                    item.getStartingPrice(),
+                    type,
+                    item.getImageUrls()
+            );
+        }).collect(Collectors.toList());
     }
 }

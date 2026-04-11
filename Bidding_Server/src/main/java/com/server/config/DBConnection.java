@@ -16,7 +16,7 @@ public class DBConnection {
         // BẠN ĐỔI LẠI THÔNG TIN BÊN DƯỚI CHO ĐÚNG NHÉ
         config.setJdbcUrl("jdbc:mysql://localhost:3306/auction_db");
         config.setUsername("root");
-        config.setPassword("");
+        config.setPassword("phong2007");
 
         config.setMaximumPoolSize(20);
         config.setMinimumIdle(5);
