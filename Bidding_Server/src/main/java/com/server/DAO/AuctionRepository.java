@@ -7,10 +7,37 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 
-public class AuctionRepository {
+public class AuctionRepository implements IAuctionRepository {
 
     // ĐÃ XÓA Constructor truyền DBConnection vì chúng ta dùng Singleton
     public AuctionRepository() {
+    }
+    public ItemRepository itemRepository = new ItemRepository();
+
+    /**
+     * Chi tiết một phiên đấu giá (kể cả đã kết thúc / không còn trong cache).
+     */
+    public Optional<Auction> findById(long auctionId) {
+        String sql = "SELECT * FROM auctions WHERE id = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, auctionId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToAuction(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tìm phiên đấu giá theo id: " + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Tên sản phẩm (bảng items) — dùng cho DTO chi tiết phiên đấu giá.
+     */
+    public String findItemNameByItemId(long itemId) {
+        return itemRepository.findItemNameByItemId(itemId);
     }
 
     // Lấy các phiên đấu giá lên Cache khi Server vừa khởi động

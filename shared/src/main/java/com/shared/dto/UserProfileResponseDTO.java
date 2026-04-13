@@ -31,6 +31,9 @@ public class UserProfileResponseDTO implements Serializable {
     @SerializedName("walletBalance")
     private double walletBalance; // Cần thiết để hiển thị số dư
 
+    public UserProfileResponseDTO() {
+    }
+
     // Constructor nhận các tham số tương ứng
     public UserProfileResponseDTO(long id, String username, String email, String fullName,
                                   String phoneNumber, String address, String role, double walletBalance) {

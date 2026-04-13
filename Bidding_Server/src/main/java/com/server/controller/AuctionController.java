@@ -70,8 +70,10 @@ public class AuctionController {
     public void getAuctionDetail(Context ctx) {
         try {
             long auctionId = Long.parseLong(ctx.pathParam("auctionId"));
-            // TODO: Implement getAuctionById in AuctionService
-            ctx.json(new Response("INFO", "Lấy chi tiết auction #" + auctionId + " (Chưa implement)", null));
+            AuctionDetailDTO detail = auctionService.getAuctionDetail(auctionId);
+            ctx.json(new Response("SUCCESS", "Đã tải chi tiết phiên đấu giá", detail));
+        } catch (AuctionException e) {
+            handleAuctionException(ctx, e);
         } catch (NumberFormatException e) {
             ctx.status(400).json(new Response("ERROR", "ID phiên đấu giá không hợp lệ", null));
         } catch (Exception e) {

@@ -18,6 +18,7 @@ import javafx.application.Platform;
 
 import com.shared.dto.*;
 import com.shared.network.*;
+
 public class LoginController {
 
     // Khai báo các biến khớp với fx:id bên file FXML
@@ -47,17 +48,28 @@ public class LoginController {
         // Gói dữ liệu
 		LoginRequestDTO loginData = new LoginRequestDTO(username, password);
 
+        Gson gson = new Gson();
         authNetwork.login(loginData).thenAccept(res -> {
-					Platform.runLater(() -> {
-						if ("SUCCESS".equals(res.getStatus())) {
-							lblMessage.setText("Đang vào Dashboard...");
-							// Chuyển cảnh sang Dashboard
-							SceneController.switchScene(event, "Dashboard.fxml");
-						} else {
-							lblMessage.setText(res.getMessage());
-						}
-					});
-				});	
+            Platform.runLater(() -> {
+                if ("SUCCESS".equals(res.getStatus())) {
+                    if (res.getData() != null) {
+                        try {
+                            UserProfileResponseDTO profile = gson.fromJson(
+                                    gson.toJson(res.getData()),
+                                    UserProfileResponseDTO.class);
+                            ClientSession.setUser(profile);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            ClientSession.clear();
+                        }
+                    }
+                    lblMessage.setText("Đang vào Dashboard...");
+                    SceneController.switchScene(event, "Dashboard.fxml");
+                } else {
+                    lblMessage.setText(res.getMessage());
+                }
+            });
+        });
     }
 
 

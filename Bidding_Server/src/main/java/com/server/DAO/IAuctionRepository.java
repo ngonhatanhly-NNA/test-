@@ -2,6 +2,7 @@ package com.server.DAO;
 
 import com.server.model.Auction;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Interface for Auction Repository
@@ -9,6 +10,9 @@ import java.util.List;
  */
 public interface IAuctionRepository {
     List<Auction> findByStatusIn(List<Auction.AuctionStatus> statuses);
+
+    Optional<Auction> findById(long auctionId);
+
     void save(Auction auction);
 }
 

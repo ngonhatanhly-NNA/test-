@@ -15,6 +15,7 @@ import java.io.IOException;
 
 import com.client.util.SwitchPane;
 import com.client.util.SceneController;
+import com.client.util.ClientSession;
 
 public class DashboardController {
 
@@ -42,7 +43,11 @@ public class DashboardController {
     public void initialize() { // Tự động
         // Cập nhật tên user đăng nhập (Sau này lấy từ Utils/Session)
          mainPane = new SwitchPane(mainBorderPane);
-        lblUsername.setText("admin_team13");
+        if (ClientSession.isLoggedIn()) {
+            lblUsername.setText(ClientSession.getUsername());
+        } else {
+            lblUsername.setText("Khách");
+        }
 
         // Tự động load màn hình Dashboard đầu tiên
         handleBtnDashboard(null);

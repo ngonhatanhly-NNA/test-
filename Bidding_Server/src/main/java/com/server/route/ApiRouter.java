@@ -5,6 +5,7 @@ import com.server.controller.AuctionController;
 import com.server.controller.AuthController;
 import com.server.DAO.AuctionRepository;
 import com.server.DAO.BidTransactionRepository;
+import com.server.controller.CreateItemCommand;
 import com.server.controller.GetAllItemsCommand;
 import com.server.service.ItemService;
 import com.shared.dto.ItemResponseDTO;
@@ -31,6 +32,8 @@ public class ApiRouter {
         // --- Nhóm API Sản phẩm (Items) ---
         // Thay vì viết ctx -> { ... }, ta nhét nguyên cái class Command vào đây
         app.get("/api/items", new GetAllItemsCommand(itemService));
+        app.post("/api/items", new CreateItemCommand(itemService));
+        //Lưu ý là dùng POST dùng để gửi dữ liệu lên, GET dùng để lấy dữ liệu về.
 
         // --- Nhóm API Đấu giá (Auctions) ---
         app.get("/api/auctions/active", auctionController::getActiveAuctions);

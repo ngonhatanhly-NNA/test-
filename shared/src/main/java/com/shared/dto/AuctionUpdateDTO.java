@@ -20,6 +20,9 @@ public class AuctionUpdateDTO implements Serializable {
     @SerializedName("remainingTime")
     private long remainingTime;
 
+    public AuctionUpdateDTO() {
+    }
+
     public AuctionUpdateDTO(long auctionId, BigDecimal currentPrice,
                             String highestBidderName, long remainingTime) {
         this.auctionId = auctionId;

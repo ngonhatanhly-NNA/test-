@@ -22,7 +22,7 @@ public class AuthNetwork {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder() // HTTP Request có dạng uri/header/method // build 1 lệnh mới gửi đi
                 .uri(URI.create("http://localhost:7070/api/register")) // Gọi đúng đường dẫn API
-                .header("Auction", "application/json")
+                .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 

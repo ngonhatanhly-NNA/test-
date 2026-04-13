@@ -159,6 +159,37 @@ public class AuctionService {
         }
     }
 
+    /**
+     * Chi tiết phiên đấu giá: ưu tiên bản trong cache (giá / gia hạn giờ mới nhất),
+     * nếu không có thì đọc từ DB (phiên đã kết thúc hoặc chưa load cache).
+     */
+    public AuctionDetailDTO getAuctionDetail(long auctionId) throws AuctionException {
+        Auction auction = auctionCache.get(auctionId);
+        if (auction == null) {
+            auction = auctionRepository.findById(auctionId)
+                    .orElseThrow(() -> new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND));
+        }
+        return toDetailDto(auction);
+    }
+
+    private AuctionDetailDTO toDetailDto(Auction auction) {
+        long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
+        String bidderName = auction.getWinnerId() != null ? "User_" + auction.getWinnerId() : "No bids";
+        String itemName = auctionRepository.findItemNameByItemId(auction.getItemId());
+        if (itemName == null || itemName.isBlank()) {
+            itemName = "Item #" + auction.getItemId();
+        }
+        return new AuctionDetailDTO(
+                auction.getId(),
+                auction.getItemId(),
+                itemName,
+                auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
+                bidderName,
+                Math.max(0, remaining),
+                auction.getStepPrice()
+        );
+    }
+
     private AuctionUpdateDTO createUpdateDTO(Auction auction) {
         String bidderName = auction.getWinnerId() != null ? "User_" + auction.getWinnerId() : "No bids";
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();

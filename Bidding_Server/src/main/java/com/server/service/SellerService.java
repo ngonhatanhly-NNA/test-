@@ -1,89 +1,120 @@
-
 package com.server.service;
-import com.server.model.*;
 
+import com.server.DAO.ISellerRepository;
+import com.server.model.Seller;
+import com.server.model.Status;
+import com.server.model.User;
+import com.shared.network.Response;
+
+/**
+ * Lớp Service xử lý các nghiệp vụ liên quan đến Seller,
+ * giao tiếp với tầng Database thông qua Repository.
+ */
 public class SellerService {
-    public Seller upgradeBidderToSeller(Bidder bidder, String shopName, String bankAccount) {
-        // Kiểm tra điều kiện trước khi nâng cấp
-        if (!isValidForUpgrade(bidder)) {
-            throw new IllegalArgumentException("Bidder không đủ điều kiện nâng cấp!");
-        }
-        Seller seller = new Seller(bidder, shopName, bankAccount);
-        seller.setRole(Role.SELLER);
-        return seller;
+
+    private final ISellerRepository sellerRepository;
+
+    // Sử dụng Dependency Injection để truyền Repository vào
+    public SellerService(ISellerRepository sellerRepository) {
+        this.sellerRepository = sellerRepository;
     }
-    // Kiểm tra bidder có đủ điều kiện nâng cấp không
-    private boolean isValidForUpgrade(Bidder bidder) {
-        return "ACTIVE".equals(bidder.getStatus())
-                && bidder.getEmail() != null
-                && !bidder.getEmail().trim().isEmpty();
-    }
-    // 2. QUẢN LÝ THÔNG TIN CỬA HÀNG
-    public void updateShop(Seller seller, String shopName, String bankAccount) {
-        if (shopName != null && !shopName.trim().isEmpty()) {
-            seller.setShopName(shopName.trim());
+
+    /**
+     * Cập nhật thông tin cửa hàng và lưu vào DB.
+     * @param sellerId ID của người bán.
+     * @param newShopName Tên cửa hàng mới.
+     * @param newBankAccount Tài khoản ngân hàng mới.
+     * @return Response cho biết thành công hay thất bại.
+     */
+    public Response updateShopInfo(long sellerId, String newShopName, String newBankAccount) {
+        if (newShopName == null || newShopName.trim().isEmpty()) {
+            return new Response("FAIL", "Tên cửa hàng không được để trống!", null);
         }
-        if (bankAccount != null && !bankAccount.trim().isEmpty()) {
-            seller.setBankAccountNumber(bankAccount.trim());
+        boolean success = sellerRepository.updateShopDetails(sellerId, newShopName.trim(), newBankAccount);
+        if (success) {
+            return new Response("SUCCESS", "Cập nhật thông tin cửa hàng thành công!", null);
+        } else {
+            return new Response("ERROR", "Lỗi khi cập nhật database.", null);
         }
     }
-    // 3. HỆ THỐNG ĐÁNH GIÁ
-    // Model đã validate 1-5 sao sẵn
-    public void addReview(Seller seller, double score) {
+
+    /**
+     * Thêm một đánh giá mới cho Seller và cập nhật vào DB.
+     * @param sellerId ID của người bán được đánh giá.
+     * @param score Điểm số của đánh giá (từ 1-5).
+     * @return Response cho biết thành công hay thất bại.
+     */
+    public Response addReview(long sellerId, double score) {
+        // 1. Lấy thông tin seller hiện tại từ DB để có rating và totalReviews cũ
+        Seller seller = sellerRepository.findSellerByUserId(sellerId);
+        if (seller == null) {
+            return new Response("FAIL", "Không tìm thấy người bán!", null);
+        }
+
+        // 2. Dùng logic trong model để tính toán rating mới (thao tác trên RAM)
         seller.addReviewScore(score);
-    }
-    // 4. XÁC THỰC SELLER (Chỉ Admin)
-    public boolean verifySeller(Admin admin, Seller seller) {
-        if (!isAuthorizedAdmin(admin)) return false;
 
-        // TODO: Thêm setVerified() vào model Seller
-        seller.setRole(Role.SELLER);
-        return true;
-    }
-    // Kiểm tra quyền Admin
-    private boolean isAuthorizedAdmin(Admin admin) {
-        return admin != null &&
-                ("SUPER_ADMIN".equals(admin.getRoleLevel()) ||
-                        "ADMIN".equals(admin.getRoleLevel()));
+        // 3. Lưu rating và totalReviews mới vào DB
+        boolean success = sellerRepository.updateRating(sellerId, seller.getRating(), seller.getTotalReviews());
+
+        if (success) {
+            return new Response("SUCCESS", "Cảm ơn bạn đã đánh giá!", null);
+        } else {
+            return new Response("ERROR", "Lỗi khi lưu đánh giá vào database.", null);
+        }
     }
 
-    // 5. KIỂM TRA TRẠNG THÁI
-    public boolean isActiveSeller(Seller seller) {
-        return seller != null &&
-                "ACTIVE".equals(seller.getStatus()) &&
-                "SELLER".equals(seller.getRole()) &&
-                seller.getShopName() != null;
-    }
-    // 6. THÔNG TIN & BÁO CÁO
-    public SellerInfo getSellerInfo(Seller seller) {
-        return new SellerInfo(seller);
+    /**
+     * Lấy thông tin chi tiết của một Seller.
+     * @param sellerId ID của người bán.
+     * @return Response chứa thông tin Seller.
+     */
+    public Response getSellerDetails(long sellerId) {
+        Seller seller = sellerRepository.findSellerByUserId(sellerId);
+        if (seller != null) {
+            // Dùng lớp tĩnh SellerInfo để đóng gói dữ liệu trả về
+            SellerInfo info = new SellerInfo(seller);
+            return new Response("SUCCESS", "Lấy thông tin người bán thành công.", info);
+        } else {
+            return new Response("FAIL", "Không tìm thấy người bán.", null);
+        }
     }
 
 
-    // 7. TIỆN ÍCH TĨNH( không cần tạo đối tượng vẫn có thể gọi được)
+    // --- CÁC LỚP VÀ HÀM TIỆN ÍCH TĨNH (GIỮ NGUYÊN) ---
+
+    /**
+     * Hàm tiện ích để kiểm tra một User có phải là Seller hay không.
+     */
     public static boolean isSeller(User user) {
-        return user instanceof Seller seller && "SELLER".equals(seller.getRole());
+        return user instanceof Seller;
     }
-    // Lớp helper chứa thông tin seller
+
+    /**
+     * Lớp Helper để đóng gói thông tin của Seller một cách an toàn,
+     * chỉ hiển thị những gì cần thiết cho Client.
+     */
     public static class SellerInfo {
         public final String shopName;
         public final String ownerName;
         public final String rating;
         public final Status status;
         public final boolean hasBankAccount;
+        public final boolean isVerified;
 
         public SellerInfo(Seller seller) {
             this.shopName = seller.getShopName();
             this.ownerName = seller.getFullName();
-            this.rating = String.format("%.1f Sao (%d)", seller.getRating(), seller.getTotalReviews());
+            this.rating = String.format("%.1f Sao (%d đánh giá)", seller.getRating(), seller.getTotalReviews());
             this.status = seller.getStatus();
-            this.hasBankAccount = seller.getBankAccountNumber() != null;
+            this.hasBankAccount = seller.getBankAccountNumber() != null && !seller.getBankAccountNumber().isEmpty();
+            this.isVerified = seller.isVerified();
         }
+
         @Override
         public String toString() {
-            return String.format("%s | %s | %s | %s",
+            return String.format("Cửa hàng: %s | Chủ sở hữu: %s | Đánh giá: %s | Trạng thái: %s",
                     shopName, ownerName, rating, status);
         }
     }
 }
-

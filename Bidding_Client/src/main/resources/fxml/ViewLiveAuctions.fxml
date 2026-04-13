@@ -2,6 +2,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
@@ -22,10 +23,10 @@
                     <Font name="System Bold" size="28.0" />
                 </font>
             </Label>
-            <Label text="Auction start" textFill="#666666" />
+            <Label text="Dữ liệu từ server — bấm Làm mới nếu giá chưa cập nhật" textFill="#666666" />
         </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        <Button style="-fx-background-color: transparent; -fx-border-color: #E3B04B; -fx-border-radius: 5; -fx-text-fill: #E3B04B; -fx-cursor: hand;" text="🔄 Làm mới" />
+        <Button fx:id="refreshButton" onAction="#handleRefreshAuctions" style="-fx-background-color: transparent; -fx-border-color: #E3B04B; -fx-border-radius: 5; -fx-text-fill: #E3B04B; -fx-cursor: hand;" text="🔄 Làm mới" />
     </HBox>
 
     <HBox spacing="30.0" VBox.vgrow="ALWAYS">
@@ -39,32 +40,33 @@
                 </ImageView>
             </Pane>
 
-            <Label text="Rare Pixel Gardevoir" textFill="#1a1a1a">
+            <Label fx:id="itemNameLabel" text="Đang tải tên sản phẩm..." textFill="#1a1a1a" wrapText="true">
                 <font>
                     <Font name="System Bold" size="22.0" />
                 </font>
             </Label>
-            <Label text="Seller: admin_team13" textFill="#888888" />
+            <Label text="Seller: (xem chi tiết trên server)" textFill="#888888" />
             <Separator />
-            <Label text="Mô tả: Một thẻ bài hiếm trong bộ sưu tập với tình trạng hoàn hảo (Mint Condition)." textFill="#555555" wrapText="true" />
+            <Label text="Mô tả: Thông tin chi tiết có thể mở rộng từ API items sau." textFill="#555555" wrapText="true" />
         </VBox>
 
         <VBox spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);" HBox.hgrow="ALWAYS">
 
-            <Label text="Tình trạng: ĐANG MỞ" textFill="#28a745">
+            <Label fx:id="statusLabel" text="Tình trạng: —" textFill="#28a745">
                 <font>
                     <Font name="System Bold" size="14.0" />
                 </font>
             </Label>
+            <Label fx:id="remainingLabel" text="Còn lại: —" textFill="#666666" />
 
             <VBox spacing="5.0" style="-fx-background-color: #fffbf0; -fx-border-color: #E3B04B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;">
                 <Label text="GIÁ CAO NHẤT HIỆN TẠI:" textFill="#666666" />
-                <Label fx:id="currentPriceLabel" text="1,500,000 VNĐ" textFill="#e3b04b">
+                <Label fx:id="currentPriceLabel" text="— VNĐ" textFill="#e3b04b">
                     <font>
                         <Font name="System Bold" size="36.0" />
                     </font>
                 </Label>
-                <Label text="Người dẫn đầu: Bidder_007" textFill="#333333" />
+                <Label fx:id="leaderLabel" text="Người dẫn đầu: —" textFill="#333333" />
             </VBox>
 
             <Separator />
@@ -83,9 +85,25 @@
                         </font>
                     </Button>
                 </HBox>
-                <Label text="* Bước giá tối thiểu: 50,000 VNĐ" textFill="#999999" />
+                <Label fx:id="stepHintLabel" text="* Bước giá tối thiểu: —" textFill="#999999" />
             </VBox>
 
+            <Separator />
+
+            <VBox spacing="10.0">
+                <Label text="Auto-bid (tùy chọn)" textFill="#1a1a1a">
+                    <font>
+                        <Font name="System Bold" size="14.0" />
+                    </font>
+                </Label>
+                <CheckBox fx:id="enableAutoBidCheckBox" text="Bật auto-bid (giá tối đa)" />
+                <TextField fx:id="maxAutoBidField" prefHeight="40.0" promptText="Giá tối đa hệ thống được phép đấu thay bạn" style="-fx-background-radius: 8; -fx-border-color: #cccccc; -fx-border-radius: 8;" />
+                <HBox spacing="10.0">
+                    <Button onAction="#handleUpdateAutoBid" prefHeight="36.0" style="-fx-background-color: #333; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;" text="Cập nhật mức tối đa" />
+                    <Button onAction="#handleCancelAutoBid" prefHeight="36.0" style="-fx-background-color: transparent; -fx-border-color: #c00; -fx-text-fill: #c00; -fx-border-radius: 6; -fx-cursor: hand;" text="Hủy auto-bid" />
+                </HBox>
+                <Label fx:id="autoBidStatusLabel" text="" textFill="#666666" />
+            </VBox>
         </VBox>
     </HBox>
 </VBox>

@@ -164,13 +164,18 @@ public class UserRepository implements IUserRepository {
 	}
 
 	private static void updateSellerData(Connection conn, long userId, SellerProfileUpdateDTO dto) throws Exception {
-		try (PreparedStatement pstmt = conn.prepareStatement("UPDATE sellers SET shopName=?, bankAccountNumber=? WHERE bidder_id=?")) {
+		// SỬ DỤNG UPSERT: Nếu chưa có thì INSERT, nếu có ID này rồi thì tự động chuyển sang UPDATE (Nếu chỉ update thì khi từ bidder update role seller sẽ bị lỗi vì chưa có record nào trong bảng sellers, còn nếu dùng UPSERT thì sẽ tự động thêm record mới vào nếu chưa có, hoặc cập nhật nếu đã tồn tại)
+		String sql = "INSERT INTO sellers (bidder_id, shopName, bankAccountNumber) VALUES (?, ?, ?) " +
+				"ON DUPLICATE KEY UPDATE shopName = VALUES(shopName), bankAccountNumber = VALUES(bankAccountNumber)";
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, dto.getShopName());
 			pstmt.setString(2, dto.getBankAccountNumber());
 			pstmt.setLong(3, userId);
 			pstmt.executeUpdate();
 		}
 	}
+
+	//Todo: Update admin profile nếu có thêm trường nào cần update sau này thì làm tương tự như bidder/seller, tạo DTO riêng cho admin rồi thêm vào RoleDataUpdater
 
 	// ==========================================
 	// 5. CÁC HÀM GET & UPDATE PHÍA NGOÀI GỌI VÀO

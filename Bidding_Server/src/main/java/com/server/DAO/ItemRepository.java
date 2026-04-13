@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -175,5 +176,22 @@ public class ItemRepository {
         }
 
         return itemList;
+    }
+
+    // Tao them cai nay de phuc vu cho Auction nha
+    public String findItemNameByItemId(long itemId) {
+        String sql = "SELECT name FROM items WHERE id = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, itemId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("name");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi lấy tên sản phẩm: " + e.getMessage());
+        }
+        return null;
     }
 }

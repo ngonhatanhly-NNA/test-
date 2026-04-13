@@ -114,3 +114,13 @@ Details về cách run của trình đang ký - đăng nhập:
 >Server xử lý xong -> Bắn JSON qua WebSocket xuống tất cả Client.
 
 >MyWebSocketClient nhận được JSON -> Gọi ngược vào hàm updatePriceRealtime của Controller -> Platform.runLater
+
+* Luồng đi của ... UpdateProfileCommand trong thư mục controller như sau:
+
+> Nhận Request: Client (JavaFX) gửi cục JSON chứa thông tin người dùng nhập.
+
+> Parse DTO: Tùy vào người đó đang gửi form gì (Bidder hay Seller) mà ép kiểu Gson cho đúng. (Chỗ này hơi tricky vì Gson cần biết chính xác loại DTO để parse).
+
+> Gọi Service: Ném cái DTO đó vào userService.updateProfile().
+
+> Trả Response: Báo Thành công/Thất bại.

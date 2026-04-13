@@ -3,6 +3,7 @@ package com.server.service;
 import com.server.DAO.ItemRepository;
 import com.server.model.Item;
 import com.google.gson.Gson;
+import com.shared.dto.CreateItemRequestDTO;
 import com.shared.dto.ItemResponseDTO; // Nhớ import cái hộp DTO của em
 
 import java.util.List;
@@ -40,5 +41,30 @@ public class ItemService {
                     item.getImageUrls()
             );
         }).collect(Collectors.toList());
+    }
+
+    // Hàm nhận DTO từ Command, biến thành Model và lưu xuống DB
+    public boolean createNewItem(CreateItemRequestDTO dto) {
+        try {
+            // Sức mạnh của Factory: Không cần if-else, chỉ cần truyền type và extraProps
+            // Factory sẽ tự biết nó là Electronics, Art hay Vehicle để đúc ra đúng khuôn
+            Item newItem = com.server.model.ItemFactory.createItem(
+                    dto.getType(),
+                    0, // ID truyền 0 vì MySQL sẽ tự động tăng (AUTO_INCREMENT)
+                    dto.getName(),
+                    dto.getDescription(),
+                    dto.getStartingPrice(),
+                    dto.getCondition(),
+                    dto.getImageUrls(),
+                    dto.getExtraProps()
+            );
+
+            // Giao cho thủ kho (Repository) cất vào database
+            return itemRepo.saveItem(newItem);
+
+        } catch (Exception e) {
+            System.out.println("Lỗi khi đúc sản phẩm từ DTO: " + e.getMessage());
+            return false;
+        }
     }
 }
