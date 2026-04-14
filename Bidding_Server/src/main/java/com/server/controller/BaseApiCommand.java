@@ -5,28 +5,36 @@
 package com.server.controller;
 
 import com.google.gson.Gson;
-import com.shared.network.Response;
+import com.server.exception.AppException;
+import com.server.util.ResponseUtils;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 // Class này implements Handler của Javalin để có thể nhét thẳng vào Router
 public abstract class BaseApiCommand implements Handler {
 
     // Cung cấp sẵn Gson cho các class con dùng
     protected final Gson gson = new Gson();
+    private static final Logger logger = Logger.getLogger(BaseApiCommand.class.getName());
 
     @Override
     public void handle(Context ctx) {
         try {
             execute(ctx);
+        } catch (AppException e) {
+            String json = gson.toJson(ResponseUtils.fromAppException(e));
+            ctx.status(e.getHttpStatus()).result(json).contentType("application/json");
         } catch (IllegalArgumentException e) {
             // Sửa dòng ctx.json thành ctx.result
-            String errorJson = gson.toJson(new Response("FAIL", e.getMessage(), null));
+            String errorJson = gson.toJson(ResponseUtils.fail("VALIDATION", e.getMessage()));
             ctx.status(400).result(errorJson).contentType("application/json");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Unhandled server error", e);
             // Sửa dòng ctx.json thành ctx.result
-            String fatalJson = gson.toJson(new Response("ERROR", "Lỗi máy chủ: " + e.getMessage(), null));
+            String fatalJson = gson.toJson(ResponseUtils.internalError("Lỗi máy chủ."));
             ctx.status(500).result(fatalJson).contentType("application/json");
         }
     }

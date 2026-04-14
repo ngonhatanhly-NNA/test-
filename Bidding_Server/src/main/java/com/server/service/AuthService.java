@@ -1,6 +1,11 @@
 package com.server.service;
 
 import com.server.DAO.UserRepository;
+import com.server.exception.AppException;
+import com.server.exception.AuthValidationException;
+import com.server.exception.DuplicateUserException;
+import com.server.exception.InvalidCredentialException;
+import com.server.exception.UserNotFoundException;
 import com.server.model.User;
 import com.server.model.Bidder;
 import com.shared.dto.*;
@@ -8,11 +13,35 @@ import com.shared.network.Response;
 
 public class AuthService {
     // GIỮ NGUYÊN: Tự khởi tạo UserRepository bên trong
-    private UserRepository userRepository = new UserRepository();
+    private final UserRepository userRepository;
+
+    public AuthService() {
+        this(new UserRepository());
+    }
+
+    public AuthService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public Response register (RegisterRequestDTO dto){
+        if (dto == null) {
+            throw new AuthValidationException("Dữ liệu đăng ký không hợp lệ!");
+        }
+        if (isBlank(dto.getUsername())) {
+            throw new AuthValidationException("Vui lòng nhập tài khoản!");
+        }
+        if (isBlank(dto.getPassword())) {
+            throw new AuthValidationException("Vui lòng nhập mật khẩu!");
+        }
+        if (isBlank(dto.getEmail())) {
+            throw new AuthValidationException("Vui lòng nhập email!");
+        }
+        if (isBlank(dto.getFullName())) {
+            throw new AuthValidationException("Vui lòng nhập họ và tên!");
+        }
+
         if (userRepository.getUserByUsername(dto.getUsername()) != null){
-            return new Response("FAIL", "Lỗi: Tài khoản đã tồn tại!", null);
+            throw new DuplicateUserException(dto.getUsername());
         }
 
         // FIX OOP: Dùng Constructor 4 tham số của Bidder mà chúng ta đã làm
@@ -26,18 +55,28 @@ public class AuthService {
 
         // Đưa về controller để controller đóng gói lại và trả cho Client
         if (isSaved) {
-            return new Response("SUCCESS", "Đăng ký thành công nha!", null);
+            return new Response("SUCCESS", null, "Đăng ký thành công nha!", null);
         } else {
-            return new Response("FAIL", "Lỗi: Đăng ký thất bại do hệ thống!", null); // Đổi text tí cho chuẩn logic
+            throw new AppException("REGISTER_FAILED", "Đăng ký thất bại do hệ thống!", 500);
         }
     }
 
     public Response login (LoginRequestDTO loginData){
+        if (loginData == null) {
+            throw new AuthValidationException("Dữ liệu đăng nhập không hợp lệ!");
+        }
+        if (isBlank(loginData.getUsername())) {
+            throw new AuthValidationException("Vui lòng nhập tài khoản!");
+        }
+        if (isBlank(loginData.getPassword())) {
+            throw new AuthValidationException("Vui lòng nhập mật khẩu!");
+        }
+
         User userInDb = userRepository.getUserByUsername(loginData.getUsername());
 
         // Kiểm tra tồn tại
         if (userInDb == null) {
-            return new Response("FAIL", "Tài khoản không tồn tại!", null);
+            throw new UserNotFoundException(loginData.getUsername());
         }
 
         // So khớp mật khẩu (Logic quan trọng nhất)
@@ -65,9 +104,13 @@ public class AuthService {
                     userInDb.getRole().name(), // Thêm .name() ở đây là hết đỏ!
                     wallet
             );
-            return new Response("SUCCESS", "Đăng nhập thành công!", profileDTO);
+            return new Response("SUCCESS", null, "Đăng nhập thành công!", profileDTO);
         } else {
-            return new Response("FAIL", "Sai mật khẩu rồi bạn ơi!", null);
+            throw new InvalidCredentialException();
         }
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
     }
 }

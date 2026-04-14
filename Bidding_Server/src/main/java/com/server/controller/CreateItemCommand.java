@@ -1,15 +1,13 @@
 package com.server.controller;
 
-import com.google.gson.Gson;
+import com.server.util.ResponseUtils;
 import com.shared.dto.CreateItemRequestDTO;
-import com.shared.network.Response;
 import com.server.service.ItemService;
 import io.javalin.http.Context;
 
 public class CreateItemCommand extends BaseApiCommand {
 
     private final ItemService itemService;
-    private final Gson gson = new Gson(); // Khởi tạo Gson cục bộ để xài
 
     public CreateItemCommand(ItemService itemService) {
         this.itemService = itemService;
@@ -26,12 +24,12 @@ public class CreateItemCommand extends BaseApiCommand {
         // 3. Nhờ Service đúc thành Object Model và lưu xuống DB
         boolean isSuccess = itemService.createNewItem(requestDTO);
 
-        // 4. Báo cáo kết quả về cho Client (Dùng trick ctx.result để né Jackson)
+        // 4. Báo cáo kết quả về cho Client
         if (isSuccess) {
-            String jsonSuccess = gson.toJson(new Response("SUCCESS", "Đăng bán sản phẩm thành công!", null));
+            String jsonSuccess = gson.toJson(ResponseUtils.success("Đăng bán sản phẩm thành công!", null));
             ctx.status(200).result(jsonSuccess).contentType("application/json");
         } else {
-            String jsonFail = gson.toJson(new Response("FAIL", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu.", null));
+            String jsonFail = gson.toJson(ResponseUtils.fail("ITEM_SAVE_FAILED", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu."));
             ctx.status(500).result(jsonFail).contentType("application/json");
         }
     }

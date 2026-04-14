@@ -1,12 +1,17 @@
 package com.server.route;
 
 import com.server.DAO.ItemRepository;
-import com.server.controller.AuctionController;
 import com.server.controller.AuthController;
 import com.server.DAO.AuctionRepository;
 import com.server.DAO.BidTransactionRepository;
 import com.server.controller.CreateItemCommand;
+import com.server.controller.GetActiveAuctionsCommand;
+import com.server.controller.PlaceBidCommand;
+import com.server.controller.GetAuctionDetailCommand;
+import com.server.controller.CancelAutoBidCommand;
+import com.server.controller.UpdateAutoBidAmountCommand;
 import com.server.controller.GetAllItemsCommand;
+import com.server.service.AuctionService;
 import com.server.service.ItemService;
 import com.shared.dto.ItemResponseDTO;
 import io.javalin.Javalin;
@@ -19,8 +24,7 @@ public class ApiRouter {
         // 1. Khởi tạo các Controller và Service
         AuthController authController = new AuthController();
         ItemService itemService = new ItemService(new ItemRepository()); // Sửa ItemService thành method mới nhé
-
-        AuctionController auctionController = new AuctionController(
+        AuctionService auctionService = new AuctionService(
                 new AuctionRepository(),
                 new BidTransactionRepository()
         );
@@ -36,12 +40,12 @@ public class ApiRouter {
         //Lưu ý là dùng POST dùng để gửi dữ liệu lên, GET dùng để lấy dữ liệu về.
 
         // --- Nhóm API Đấu giá (Auctions) ---
-        app.get("/api/auctions/active", auctionController::getActiveAuctions);
-        app.post("/api/auctions/bid", auctionController::placeBid);
-        app.get("/api/auctions/{auctionId}", auctionController::getAuctionDetail);
+        app.get("/api/auctions/active", new GetActiveAuctionsCommand(auctionService));
+        app.post("/api/auctions/bid", new PlaceBidCommand(auctionService));
+        app.get("/api/auctions/{auctionId}", new GetAuctionDetailCommand(auctionService));
 
         // Auto-bidd
-        app.post("/api/auctions/{auctionId}/auto-bid/cancel", auctionController::cancelAutoBid);
-        app.put("/api/auctions/{auctionId}/auto-bid/update", auctionController::updateAutoBidAmount);
+        app.post("/api/auctions/{auctionId}/auto-bid/cancel", new CancelAutoBidCommand(auctionService));
+        app.put("/api/auctions/{auctionId}/auto-bid/update", new UpdateAutoBidAmountCommand(auctionService));
     }
 }

@@ -34,10 +34,10 @@ public class SceneController {
             stage.show();
 
         } catch (IOException e) {
-            System.err.println("🚨 LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);
+            System.err.println("LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);
             e.printStackTrace(); // In chi tiết lỗi ra Console để dễ tìm
         } catch (NullPointerException e) {
-            System.err.println("🚨 LỖI ĐƯỜNG DẪN: File /fxml/" + fxmlFile + " không tồn tại!");
+            System.err.println("LỖI ĐƯỜNG DẪN: File /fxml/" + fxmlFile + " không tồn tại!");
             e.printStackTrace();
         }
     }
