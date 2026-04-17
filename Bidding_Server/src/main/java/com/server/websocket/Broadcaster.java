@@ -1,7 +1,6 @@
 package com.server.websocket;
 
 import com.google.gson.Gson;
-import com.server.service.AuctionItem;
 import com.shared.dto.*;
 import org.java_websocket.WebSocket;
 

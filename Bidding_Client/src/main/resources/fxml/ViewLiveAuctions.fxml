@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
@@ -14,7 +15,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="720.0" prefWidth="950.0" spacing="20.0" style="-fx-background-color: #F4F4F4; -fx-padding: 30;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.ViewLiveAuctions">
+<VBox prefHeight="720.0" prefWidth="1150.0" spacing="20.0" style="-fx-background-color: #F4F4F4; -fx-padding: 30;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.ViewLiveAuctions">
 
     <HBox alignment="CENTER_LEFT">
         <VBox>
@@ -29,11 +30,27 @@
         <Button fx:id="refreshButton" onAction="#handleRefreshAuctions" style="-fx-background-color: transparent; -fx-border-color: #E3B04B; -fx-border-radius: 5; -fx-text-fill: #E3B04B; -fx-cursor: hand;" text="🔄 Làm mới" />
     </HBox>
 
-    <HBox spacing="30.0" VBox.vgrow="ALWAYS">
+    <HBox spacing="20.0" VBox.vgrow="ALWAYS">
 
-        <VBox prefWidth="350.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+        <VBox prefWidth="300.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
+            <Label text="Đang diễn ra" textFill="#1a1a1a">
+                <font>
+                    <Font name="System Bold" size="18.0" />
+                </font>
+            </Label>
+            <Separator />
+
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: white; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                <content>
+                    <VBox fx:id="auctionsContainer" spacing="15.0" style="-fx-background-color: white;" />
+                </content>
+            </ScrollPane>
+        </VBox>
+
+
+        <VBox prefWidth="320.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
             <Pane prefHeight="250.0" style="-fx-background-color: #f8f9fa; -fx-background-radius: 8;">
-                <ImageView fitHeight="200.0" fitWidth="200.0" layoutX="75.0" layoutY="25.0" pickOnBounds="true" preserveRatio="true">
+                <ImageView fitHeight="200.0" fitWidth="200.0" layoutX="60.0" layoutY="25.0" pickOnBounds="true" preserveRatio="true">
                     <image>
                         <Image url="@../images/Gardevoir.png" />
                     </image>
@@ -49,6 +66,7 @@
             <Separator />
             <Label text="Mô tả: Thông tin chi tiết có thể mở rộng từ API items sau." textFill="#555555" wrapText="true" />
         </VBox>
+
 
         <VBox spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);" HBox.hgrow="ALWAYS">
 

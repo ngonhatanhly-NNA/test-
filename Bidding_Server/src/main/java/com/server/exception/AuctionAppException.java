@@ -5,6 +5,7 @@ public class AuctionAppException extends AppException {
         super(errorCode, message, httpStatus);
     }
 
+    // Các error từ AuctionApp
     public static AuctionAppException from(AuctionException e) {
         AuctionException.ErrorCode code = e.getErrorCode();
         int status = switch (code) {

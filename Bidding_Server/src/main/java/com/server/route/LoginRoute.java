@@ -13,8 +13,7 @@ public class LoginRoute {
         // API Đăng nhập:
         app.post("/api/login", ctx -> {
             try {
-                String jsonBody = ctx.body();
-                Response response = authController.processLoginRest(jsonBody);
+                Response response = authController.processLoginRest(ctx);
                 ctx.status(200).contentType("application/json").result(gson.toJson(response));
             } catch (AppException e) {
                 ctx.status(e.getHttpStatus()).contentType("application/json")

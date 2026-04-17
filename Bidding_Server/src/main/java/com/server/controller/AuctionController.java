@@ -9,7 +9,6 @@ import com.shared.network.Response;
 import io.javalin.http.Context;
 import com.google.gson.Gson;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**

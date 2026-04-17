@@ -8,8 +8,8 @@ public interface PaymentProcessor {
 class VNPayAdapter implements PaymentProcessor {
     @Override
     public boolean processDeposit(long userId, double amount) {
-        System.out.println("Đang mã hóa dữ liệu gửi sang VNPay...");
-        System.out.println("Thực hiện nạp " + amount + " VNĐ qua VNPay.");
+        System.out.println("Đang mã hóa dữ liệu...");
+        System.out.println("Thực hiện nạp " + amount + " VNĐ.");
         return true;
     }
 }
@@ -18,7 +18,7 @@ class VNPayAdapter implements PaymentProcessor {
 class MomoAdapter implements PaymentProcessor {
     @Override
     public boolean processDeposit(long userId, double amount) {
-        System.out.println("Gọi API Momo...");
+        System.out.println("...");
         return true;
     }
 }

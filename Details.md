@@ -124,3 +124,11 @@ Details về cách run của trình đang ký - đăng nhập:
 > Gọi Service: Ném cái DTO đó vào userService.updateProfile().
 
 > Trả Response: Báo Thành công/Thất bại.
+
+* Giải thích Cookie, Session, luồng đi, cơ chế hoạt động:
+> Cookie: Là nơi lưu ID phiên làm việc của người dùng trên trình duyệt. Khi người dùng đăng nhập, server sẽ tạo một session và gửi ID của session đó về client dưới dạng cookie. Cookie này sẽ được trình duyệt lưu lại và tự động gửi kèm trong mỗi yêu cầu tiếp theo đến server.
+> Session: Là nơi lưu trữ thông tin phiên làm việc của người dùng trên server. Khi server nhận được yêu cầu từ client, nó sẽ kiểm tra cookie để lấy ID phiên làm việc, sau đó truy xuất session tương ứng để xác định xem người dùng đã đăng nhập hay chưa và có quyền truy cập vào tài nguyên hay không.
+> Luồng đi: Khi client thao tác trên màn UI(Khách hàng) -> Tín hiệu sẽ biến thành hộp DTO, chuyển thành JSON -> Gửi cho network và HTTP (Shipper) -> Chở hàng tới Server -> Server nhận JSON, chuyển thành DTO -> Gọi Service để xử lý logic -> Trả về kết quả (thành công/ thất bại) -> Server gửi JSON qua HTTP Response -> Client nhận JSON, chuyển thành DTO -> Cập nhật UI theo kết quả.
+> Cơ chế hoạt động: Khi người dùng đăng nhập, server sẽ tạo một session mới và lưu thông tin người dùng vào đó. Server sẽ gửi ID của session này về client dưới dạng cookie. Mỗi khi client gửi yêu cầu tiếp theo, cookie này sẽ được gửi kèm để server có thể xác định phiên làm việc hiện tại và truy xuất thông tin người dùng từ session. Nếu session hợp lệ, server sẽ cho phép truy cập vào tài nguyên; nếu không, server sẽ trả về lỗi hoặc yêu cầu đăng nhập lại.
+> Lưu ý: Trong ứng dụng JavaFX, chúng ta không có trình duyệt để quản lý cookie và session như trong web, nên chúng ta sẽ phải tự quản lý phiên làm việc bằng cách lưu trữ thông tin người dùng đã đăng nhập trong bộ nhớ của ứng dụng hoặc sử dụng một cơ chế tương tự để giữ trạng thái đăng nhập.
+> Ngoài ra t có tạo NetworkClient để quản lý kết nối giữa client và server, khi nhận được JSON từ server, nó sẽ gọi ngược vào hàm updatePriceRealtime của Controller để cập nhật giá đấu thầu theo thời gian thực.

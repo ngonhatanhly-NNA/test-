@@ -14,6 +14,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -44,6 +45,7 @@ public class ViewLiveAuctions {
     private Label remainingLabel;
     @FXML
     private Button refreshButton;
+    @FXML private FlowPane auctionContainer;
 
     private long currentAuctionId;
     private final ExecutorService ioPool = Executors.newSingleThreadExecutor(r -> {
@@ -99,10 +101,20 @@ public class ViewLiveAuctions {
                         showError(res != null ? res.getMessage() : "Không tải được danh sách đấu giá.");
                         return;
                     }
+                    if (auctionContainer != null ){
+                        auctionContainer.getChildren().clear();// Xóa thẻ mỗi lần refresh
+                    }
                     if (list.isEmpty()) {
                         showError("Chưa có phiên đấu giá đang mở trên server (hoặc DB/cache trống).");
                         return;
                     }
+
+                    for (AuctionDetailDTO a : list) {
+                        if (auctionContainer != null) {
+                            auctionContainer.getChildren().add(createAuctionCard(a));
+                        }
+                    }
+                    // Auto load sản phẩm đầu tiên
                     applyAuctionDetail(list.get(0));
                 });
                 return null;
@@ -297,6 +309,43 @@ public class ViewLiveAuctions {
             }
         });
     }
+
+    private javafx.scene.layout.VBox createAuctionCard(AuctionDetailDTO a) {
+        // Tạo một khối VBox làm thẻ (Card)
+        javafx.scene.layout.VBox card = new javafx.scene.layout.VBox(8);
+        card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        card.setPrefWidth(220); // Chiều rộng mỗi thẻ
+
+        // Tên sản phẩm
+        Label nameLbl = new Label(a.getItemName() != null ? a.getItemName() : "Item #" + a.getItemId());
+        nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2c3e50;");
+        nameLbl.setWrapText(true);
+
+        // Giá hiện tại
+        Label priceLbl = new Label("Giá: " + formatMoney(a.getCurrentPrice()) + " đ");
+        priceLbl.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 14px;");
+
+        // Người dẫn đầu & Thời gian
+        Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
+        Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
+        timeLbl.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+
+        // Nút bấm để xem chi tiết / Đặt giá
+        Button btnSelect = new Button("Vào đấu giá");
+        btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
+        btnSelect.setMaxWidth(Double.MAX_VALUE);
+
+        // LUỒNG QUAN TRỌNG: Khi bấm nút, bơm dữ liệu của thẻ này vào Form Detail hiện tại của bạn
+        btnSelect.setOnAction(e -> {
+            applyAuctionDetail(a);
+            showInfo("Đã chọn: " + a.getItemName() + ". Bạn có thể đặt giá ngay bên cạnh!");
+        });
+
+        // Gắn tất cả vào Thẻ
+        card.getChildren().addAll(nameLbl, priceLbl, leaderLbl, timeLbl, btnSelect);
+        return card;
+    }
+
 
     private void showError(String message) {
         Alert a = new Alert(Alert.AlertType.ERROR);

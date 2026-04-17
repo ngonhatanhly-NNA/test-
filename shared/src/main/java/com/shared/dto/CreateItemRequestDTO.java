@@ -36,7 +36,7 @@ public class CreateItemRequestDTO {
         this.extraProps = extraProps;
     }
 
-    // --- GETTERS (Để Server mở hộp ra lấy đồ) ---
+    // --- GETTERS (Để Server mở hộp DTO ra lấy đồ) ---
     public String getName() { return name; }
     public String getDescription() { return description; }
     public BigDecimal getStartingPrice() { return startingPrice; }
@@ -45,8 +45,7 @@ public class CreateItemRequestDTO {
     public String getType() { return type; }
     public Map<String, Object> getExtraProps() { return extraProps; }
 
-    // --- SETTERS (Để an toàn, có thể bỏ qua Setters nếu em muốn DTO chỉ đọc, nhưng cứ tạo cho đầy đủ) ---
-    // (Em có thể tự dùng chức năng Generate của IntelliJ: Alt + Insert -> Setter để tạo cho nhanh)
+    // --- SETTERS (Để an toàn, có thể bỏ qua Setters nếu muốn DTO chỉ đọc, nhưng cứ tạo cho đầy đủ) ---
     public void setName(String name) { this.name = name; }
     public void setDescription(String description) { this.description = description; }
     public void setStartingPrice(BigDecimal startingPrice) { this.startingPrice = startingPrice; }
@@ -54,4 +53,27 @@ public class CreateItemRequestDTO {
     public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
     public void setType(String type) { this.type = type; }
     public void setExtraProps(Map<String, Object> extraProps) { this.extraProps = extraProps; }
+
+    // --- BUILDER PATTERN ---
+    public static class Builder {
+        private String name;
+        private String description;
+        private BigDecimal startingPrice;
+        private String condition;
+        private List<String> imageUrls;
+        private String type;
+        private Map<String, Object> extraProps;
+
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder description(String description) { this.description = description; return this; }
+        public Builder startingPrice(BigDecimal price) { this.startingPrice = price; return this; }
+        public Builder condition(String condition) { this.condition = condition; return this; }
+        public Builder imageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; return this; }
+        public Builder type(String type) { this.type = type; return this; }
+        public Builder extraProps(Map<String, Object> extraProps) { this.extraProps = extraProps; return this; }
+
+        public CreateItemRequestDTO build() {
+            return new CreateItemRequestDTO(name, description, startingPrice, condition, imageUrls, type, extraProps);
+        }
+    }
 }

@@ -1,9 +1,17 @@
 package com.client.controller.dashboard;
 
+import com.client.util.ClientSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
-// Import UserSession hoặc DTO chứa thông tin user đăng nhập của team em
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+// Import UserSession hoặc DTO chứa thông tin user đăng nhập
 
 public class MyInventoryController {
 
@@ -11,8 +19,8 @@ public class MyInventoryController {
 
     @FXML
     public void initialize() {
-        // Giả sử em lấy được role của user đang đăng nhập từ Session
-        String userRole = "BIDDER"; // Fake data để test
+        // Lấy được role của user đang đăng nhập từ Session
+        String userRole = ClientSession.getRole(); //
 
         if (!"SELLER".equals(userRole)) {
             // Biến mất hoàn toàn khỏi màn hình
@@ -24,6 +32,22 @@ public class MyInventoryController {
 
     @FXML
     void handleCreateItem(ActionEvent event) {
-        // Gắn code mở Dialog/Popup FXML ở đây (dùng Stage hoặc Dialog của JavaFX)
+        // Code mở màn hình Popup CreateItemPopup.fxml
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/CreateItemPopup.fxml"));
+            Parent root = loader.load();
+
+            Stage stage = new Stage();
+            stage.initModality(Modality.APPLICATION_MODAL); // Bắt buộc người dùng xử lý popup xong mới quay lại màn chính
+            stage.setTitle("Thêm Sản Phẩm Mới");
+            stage.setScene(new Scene(root));
+            stage.showAndWait(); // Đợi popup đóng lại
+
+            // TODO: (Sau khi đóng popup) Nên có hàm refresh lại danh sách sản phẩm ở đây
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("Không thể mở cửa sổ Tạo sản phẩm!");
+        }
     }
 }

@@ -2,12 +2,12 @@ package com.client.network;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.shared.dto.CreateItemRequestDTO;
 import com.shared.dto.ItemResponseDTO;
 import com.shared.network.Response;
 
 import java.lang.reflect.Type;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
@@ -15,16 +15,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class ItemNetwork {
-    private final HttpClient client;
-    private final Gson gson;
+    // Không cần thuộc tính HttpClient client nữa
+    private final Gson gson = new Gson();
 
-    // Địa chỉ của cái Lễ tân Server em setup ở ApiRouter
     private static final String SERVER_URL = "http://localhost:7070/api/items";
-
-    public ItemNetwork() {
-        this.client = HttpClient.newHttpClient();
-        this.gson = new Gson(); // Lúc này Client MỚI CẦN dùng Gson để dịch JSON về lại Object
-    }
 
     // Hàm gọi mạng (Trả về CompletableFuture để không làm đơ màn hình JavaFX)
     public CompletableFuture<List<ItemResponseDTO>> getAllItems() {
@@ -37,7 +31,7 @@ public class ItemNetwork {
                 .build();
 
         // 2. Giao cho Shipper chạy đi lấy hàng (Bất đồng bộ)
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     // 3. Khui thùng hàng từ Server gửi về (Chuỗi String JSON)
                     String jsonString = response.body();
@@ -66,6 +60,24 @@ public class ItemNetwork {
                     // Bắt lỗi nếu Server bị tắt ngang, đứt cáp mạng...
                     System.out.println("Lỗi kết nối mạng: " + e.getMessage());
                     return new ArrayList<ItemResponseDTO>();
+                });
+    }
+    // Hàm gửi yêu cầu tạo sản phẩm lên Server
+    public CompletableFuture<Response> createItem(CreateItemRequestDTO itemDTO) {
+        String jsonBody = gson.toJson(itemDTO);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(SERVER_URL))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        // GỌI THẲNG TỔNG ĐÀI (SERVER) ĐỂ LẤY SHIPPER (HTTP) CHUNG (Chứa Cookie)
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> gson.fromJson(response.body(), Response.class))
+                .exceptionally(e -> {
+                    System.out.println("Lỗi mạng khi tạo Item: " + e.getMessage());
+                    return new Response("ERROR", "Mất kết nối mạng cục bộ!", null);
                 });
     }
 }

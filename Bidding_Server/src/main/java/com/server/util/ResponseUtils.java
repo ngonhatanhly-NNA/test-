@@ -7,7 +7,7 @@ public final class ResponseUtils {
     private ResponseUtils() {}
 
     public static Response success(String message, Object data) {
-        return new Response("SUCCESS", null, message, data);
+        return new Response("SUCCESS",  message, data);
     }
 
     public static Response fail(String errorCode, String message) {

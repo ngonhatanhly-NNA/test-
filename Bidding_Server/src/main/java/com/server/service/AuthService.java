@@ -8,6 +8,7 @@ import com.server.exception.InvalidCredentialException;
 import com.server.exception.UserNotFoundException;
 import com.server.model.User;
 import com.server.model.Bidder;
+import com.server.util.ResponseUtils;
 import com.shared.dto.*;
 import com.shared.network.Response;
 
@@ -55,7 +56,7 @@ public class AuthService {
 
         // Đưa về controller để controller đóng gói lại và trả cho Client
         if (isSaved) {
-            return new Response("SUCCESS", null, "Đăng ký thành công nha!", null);
+            return ResponseUtils.success("Đăng ký thành công!", null);
         } else {
             throw new AppException("REGISTER_FAILED", "Đăng ký thất bại do hệ thống!", 500);
         }
@@ -104,7 +105,7 @@ public class AuthService {
                     userInDb.getRole().name(), // Thêm .name() ở đây là hết đỏ!
                     wallet
             );
-            return new Response("SUCCESS", null, "Đăng nhập thành công!", profileDTO);
+            return ResponseUtils.success("Đăng nhập thành công!", null);
         } else {
             throw new InvalidCredentialException();
         }

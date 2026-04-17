@@ -1,6 +1,9 @@
 package com.client.network;
 
 import com.google.gson.Gson;
+
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,13 +16,11 @@ import javafx.application.Platform;
 import javafx.scene.paint.Color;
 
 public class AuthNetwork {
-    private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
 
     public CompletableFuture<Response> register (RegisterRequestDTO dto){
         String jsonBody = gson.toJson(dto);
 
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder() // HTTP Request có dạng uri/header/method // build 1 lệnh mới gửi đi
                 .uri(URI.create("http://localhost:7070/api/register")) // Gọi đúng đường dẫn API
                 .header("Content-Type", "application/json")
@@ -27,7 +28,7 @@ public class AuthNetwork {
                 .build();
 
         //  Gửi đi và chờ Server trả lời
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response ->
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response ->
                 gson.fromJson(response.body(), Response.class));
     }
 
@@ -41,7 +42,7 @@ public class AuthNetwork {
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), com.shared.network.Response.class)
         );
     }
@@ -53,7 +54,7 @@ public class AuthNetwork {
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -68,7 +69,7 @@ public class AuthNetwork {
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonBody)) // Dùng PUT hoặc POST tuỳ backend
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
