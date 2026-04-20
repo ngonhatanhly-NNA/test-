@@ -2,8 +2,6 @@ package com.client.controller.dashboard;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -15,7 +13,7 @@ import java.io.IOException;
 
 import com.client.util.SwitchPane;
 import com.client.util.SceneController;
-import com.client.util.ClientSession;
+import com.client.session.ClientSession;
 
 public class DashboardController {
 

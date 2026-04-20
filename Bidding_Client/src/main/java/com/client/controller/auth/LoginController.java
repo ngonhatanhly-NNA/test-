@@ -1,5 +1,6 @@
 package com.client.controller.auth;
 import com.client.network.AuthNetwork;
+import com.client.session.ClientSession;
 import com.client.util.*;
 
 import javafx.event.ActionEvent;
@@ -10,14 +11,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.paint.Color;
 
 import com.google.gson.Gson;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import javafx.application.Platform;
 
 import com.shared.dto.*;
-import com.shared.network.*;
 
 public class LoginController {
 

@@ -3,6 +3,7 @@ package com.client.controller.dashboard;
 import com.client.network.AuthNetwork;
 import com.client.controller.dashboard.strategy.ProfileUIStrategyFactory;
 import com.client.controller.dashboard.strategy.IProfileUIStrategy;
+import com.client.session.ClientSession;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,7 +17,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
-import java.math.BigDecimal;
 
 public class UserProfileController {
 
@@ -52,11 +52,20 @@ public class UserProfileController {
     private BaseProfileUpdateDTO currentProfile;
 
     // Temp for user đang đăng nhập
-    private String loggedInUsername = "admin_team13";
+    private String loggedInUsername = "";
 
     @FXML
     public void initialize() {
         hideAllRoleSections();
+
+        // Lấy user thật từ session (được set sau khi Login thành công)
+        loggedInUsername = ClientSession.getUsername();
+
+        if (loggedInUsername == null || loggedInUsername.trim().isEmpty()) {
+            lblStatus.setText("Bạn chưa đăng nhập (không có session username)");
+            lblStatus.setStyle("-fx-text-fill: #dc3545;");
+            return;
+        }
         loadUserDataFromAPI();
     }
 
@@ -124,9 +133,12 @@ public class UserProfileController {
     }
 
     private BaseProfileUpdateDTO parseProfileByRole(JsonObject jsonData, String role) {
+        long id = getLongValue(jsonData, "id");
+
         switch(role) {
             case "ADMIN":
                 AdminProfileUpdateDTO adminProfile = new AdminProfileUpdateDTO();
+                adminProfile.setId(id);
                 adminProfile.setFullName(getStringValue(jsonData, "fullName"));
                 adminProfile.setEmail(getStringValue(jsonData, "email"));
                 adminProfile.setPhoneNumber(getStringValue(jsonData, "phoneNumber"));
@@ -137,6 +149,7 @@ public class UserProfileController {
 
             case "SELLER":
                 SellerProfileUpdateDTO sellerProfile = new SellerProfileUpdateDTO();
+                sellerProfile.setId(id);
                 sellerProfile.setFullName(getStringValue(jsonData, "fullName"));
                 sellerProfile.setEmail(getStringValue(jsonData, "email"));
                 sellerProfile.setPhoneNumber(getStringValue(jsonData, "phoneNumber"));
@@ -149,6 +162,7 @@ public class UserProfileController {
             case "BIDDER":
             default:
                 BidderProfileUpdateDTO bidderProfile = new BidderProfileUpdateDTO();
+                bidderProfile.setId(id);
                 bidderProfile.setFullName(getStringValue(jsonData, "fullName"));
                 bidderProfile.setEmail(getStringValue(jsonData, "email"));
                 bidderProfile.setPhoneNumber(getStringValue(jsonData, "phoneNumber"));
@@ -156,6 +170,16 @@ public class UserProfileController {
                 bidderProfile.setCreditCardInfo(getStringValue(jsonData, "creditCardInfo"));
                 return bidderProfile;
         }
+    }
+
+    private long getLongValue(JsonObject jsonObject, String key) {
+        try {
+            if (jsonObject.has(key) && !jsonObject.get(key).isJsonNull()) {
+                return jsonObject.get(key).getAsLong();
+            }
+        } catch (Exception ignored) {
+        }
+        return 0L;
     }
 
     private String getStringValue(JsonObject jsonObject, String key) {
@@ -197,6 +221,13 @@ public class UserProfileController {
         IProfileUIStrategy strategy = ProfileUIStrategyFactory.getStrategy(currentUserRole);
         BaseProfileUpdateDTO updateData = strategy.collectData(this);
 
+        // Backward-compatible: nếu backend cần id (AuthService.updateProfile), thì gửi kèm id.
+        // Với backend mới dùng session, id có/không đều OK.
+        long id = (currentProfile != null && currentProfile.getId() > 0) ? currentProfile.getId() : ClientSession.getUserId();
+        if (id > 0) {
+            updateData.setId(id);
+        }
+
         authNetwork.updateProfile(updateData).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
@@ -211,7 +242,7 @@ public class UserProfileController {
             });
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
-                lblStatus.setText("Mất kết nối tới Server!");
+                lblStatus.setText("Mất kết nối tới Server! (" + (ex.getMessage() != null ? ex.getMessage() : "unknown") + ")");
                 lblStatus.setStyle("-fx-text-fill: #dc3545;");
             });
             return null;

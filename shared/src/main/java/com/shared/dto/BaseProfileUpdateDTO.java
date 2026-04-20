@@ -8,6 +8,9 @@ import com.google.gson.annotations.SerializedName;
 public class BaseProfileUpdateDTO implements IUserProfileDTO, Serializable {
     private static final long serialVersionUID = 1L;
 
+    @SerializedName("id")
+    protected long id;
+
     @SerializedName("email")
     protected String email;
 
@@ -22,11 +25,26 @@ public class BaseProfileUpdateDTO implements IUserProfileDTO, Serializable {
 
     public BaseProfileUpdateDTO() {}
 
+    public BaseProfileUpdateDTO(long id, String email, String fullName, String phoneNumber, String address) {
+        this.id = id;
+        this.email = email;
+        this.fullName = fullName;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+    }
+
     public BaseProfileUpdateDTO(String email, String fullName, String phoneNumber, String address) {
         this.email = email;
         this.fullName = fullName;
         this.phoneNumber = phoneNumber;
         this.address = address;
+    }
+
+    public long getId() {
+        return id;
+    }
+    public void setId(long id) {
+        this.id = id;
     }
 
     @Override
@@ -50,19 +68,20 @@ public class BaseProfileUpdateDTO implements IUserProfileDTO, Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BaseProfileUpdateDTO that = (BaseProfileUpdateDTO) o;
-        return Objects.equals(email, that.email) && Objects.equals(fullName, that.fullName) &&
+        return id == that.id && Objects.equals(email, that.email) && Objects.equals(fullName, that.fullName) &&
                 Objects.equals(phoneNumber, that.phoneNumber) && Objects.equals(address, that.address);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(email, fullName, phoneNumber, address);
+        return Objects.hash(id, email, fullName, phoneNumber, address);
     }
 
     @Override
     public String toString() {
         return "BaseProfileUpdateDTO{" +
-                "email='" + email + '\'' +
+                "id=" + id +
+                ", email='" + email + '\'' +
                 ", fullName='" + fullName + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", address='" + address + '\'' +

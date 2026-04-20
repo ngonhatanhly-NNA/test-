@@ -1,73 +1,105 @@
-# Team13_Bidding_System
-* Bài tập lớp thiết kế hệ thống đấu giá 
+# 🏷️ Team 13 Bidding System - Enterprise Online Auction Platform
 
-## Thành viên nhóm 13:
-* Ngô Nhật Ánh - 25020030 - Vai trò
-* Đinh Anh Vũ - - 
-* Hoàng Văn Tưởng - - 
-* Mai Thế Phong - -
-## I-Công nghệ sử dụng (Tech requirement)
-*Ngôn ngữ: Java
-*Giao diện(FE): JavaFX (FXML & CSS)
-*Cơ sở dũ liệu(DB): MYSQL 
-*Kết nối Database: JDBC Driver
-*Quản lí dự án và thư viện: Maven
-*Mạng(Networking): REST API, WebSocket (Javalin)
-*Github
+Một hệ thống đấu giá trực tuyến được xây dựng dựa trên kiến trúc **N-Tier (Đa tầng)** và **Multi-module Maven**, tuân thủ nghiêm ngặt các nguyên tắc thiết kế phần mềm hướng đối tượng (OOP), SOLID và vận dụng đa dạng các Design Patterns. Dự án tập trung vào khả năng mở rộng, quản lý trạng thái thời gian thực (real-time), và bảo mật luồng dữ liệu.
 
-## II - Kiến trúc hệ thống: (Project structure)
-## 🗂️ Kiến trúc hệ thống (Enterprise Multi-module Architecture)
+## 👥 Thành viên nhóm 13
 
-Dự án được xây dựng theo kiến trúc N-Tier (Đa tầng) chuẩn Doanh nghiệp, phân tách nghiêm ngặt giữa giao diện (UI), xử lý mạng (Networking), logic nghiệp vụ (Business Logic) và truy xuất dữ liệu (Data Access). Hệ thống bao gồm 3 module độc lập:
+| STT | Họ và Tên | Mã Sinh Viên | Vai trò (Role) |
+|:---:|:---|:---|:---|
+| 1 | Ngô Nhật Ánh | 25020030 | Developer / UI-UX / Core Backend |
+| 2 | Đinh Anh Vũ | ... | ... |
+| 3 | Hoàng Văn Tưởng | ... | ... |
+| 4 | Mai Thế Phong | ... | ... |
 
-### 1️⃣ Module `shared` (Khối Dữ liệu dùng chung)
-** /dot: Dữ liệu truyền đi giữa User và Service:
-** /network: Request, Response truyền đi 
-### 2️⃣ Module `Bidding_Server` (Máy chủ Backend)
-Đóng vai trò là trung tâm xử lý, giao tiếp trực tiếp với cơ sở dữ liệu MySQL và quản lý các kết nối Socket[cite: 130]. Tuân thủ kiến trúc Server MVC (Controller → Model → DAO).
-* **`ServerApp.java`**: Điểm khởi chạy (Entry point) của Server, chịu trách nhiệm bật ServerSocket để lắng nghe Client.
-* **`config/`**: Tầng cấu hình hệ thống.
-    * *`DBConnection.java`*: Quản lý kết nối tới cơ sở dữ liệu MySQL, áp dụng **Singleton Pattern** để đảm bảo chỉ có duy nhất một kết nối được tạo ra và sử dụng chung[.
-    * *Các file cấu hình khác*: `SecurityConfig`, `WebSocketConfig`, `OpenApiConfig`.
-        - **Thiết lập Môi trường Database:** Cấu hình thành công cơ sở dữ liệu MySQL cục bộ và hoàn thiện lớp kết nối `DBConnection` (áp dụng Singleton Pattern ), nối với tầng DAO.
-* **`controller/`**: Tầng giao tiếp mạng, và giao nhiệm vũ
-    * *`AuthController`, `AuctionController`*: Chịu trách nhiệm tiếp nhận các luồng dữ liệu (Request) gửi lên từ Socket của Client, phân rã gói tin và điều hướng xuống tầng Service.
-* **`service/`**: Tầng xử lý nghiệp vụ (Business Logic)
-    * [cite_start]*`AuthService`, `AuctionService`, `UserService`, `SellerService`*: Nơi chứa các thuật toán phức tạp như xử lý đấu giá đồng thời (Concurrent Bidding) , gia hạn phiên (Anti-sniping) [cite: 89, 90][cite_start], và đấu giá tự động (Auto-Bidding).
-    * `ItemService`: Tầng xử lý thông tin từ DAO đưa cho SeverApp (Biên dịch dữ liệu lấy từ DAO thành JSON để đưa cho ServerApp)
-* **`repository/`**: Tầng truy xuất dữ liệu (DAO), trò chuyện với DB
-    * *`UserRepository`, `BidRepository`*: Nơi duy nhất chứa các câu lệnh SQL (SELECT, INSERT, UPDATE) để tương tác với MySQL. Tầng Service sẽ gọi Repository để lấy/lưu dữ liệu.
-    * *`ItemRepository`*: Chứa câu lệnh SQL để lưu và lấy dữ liêụ của items
-      * Database: Dùng chiến thuật Single Table cho bảng items (Gom thuộc tính của Electronics, Art, Vehicle vào chung 1 bảng 15 cột). Dùng cột item_type để phân loại.
-      * Connection: Chỉ tạo 1 đường ống kết nối duy nhất (Singleton DBConnection) để không sập Server.
-* **`websocket/`**: Tầng cập nhật thời gian thực (Real-time).
-    * *`Broadcaster.java`*: Áp dụng **Observer Pattern** để quản lý danh sách các Client đang xem phiên đấu giá. Khi có người đặt giá mới, class này sẽ tự động "bắn" thông báo (notify) cho toàn bộ Client cùng lúc, sử lí trong phiên đấu giá khi hoạt động.
-* **`route/`**: (Tương lai) các liên kết api, luồng
-### 3️⃣ Module `Bidding_Client` (Máy khách Frontend)Chịu trách nhiệm hiển thị giao diện đồ họa cho người dùng, tuân thủ mô hình MVC (JavaFX + FXML).
-* **`controller/`**: Tầng điều khiển giao diện. Nhận các sự kiện click chuột, nhập phím từ người dùng.
-    * *`auth/`*: Quản lý chức năng Đăng nhập (`LoginController`) và Đăng ký (`RegisterController`).
-    * *`dashboard/`*: Quản lý màn hình chính (`DashboardController`) hiển thị danh sách sản phẩm và diễn biến đấu giá.
-   
-      - **Phát triển Giao diện Danh sách phiên đấu giá:** Thiết kế `ViewDashboard.fxml`, tự động co giãn rớt dòng, kèm thiết kế Thẻ Sản Phẩm (Item Card) trực quan.
-* **`network/`**: Tầng giao tiếp với Server .
-    * `SocketClient.java`, `RequestSender.java`*: Chịu trách nhiệm đóng gói dữ liệu từ UI thành các luồng byte/JSON và gửi qua TCP Socket tới Server.
-* **`session/`**: Tầng quản lý trạng thái.(tránh phải login đi login lại)
-    * *`UserSession.java`*: Lưu trữ thông tin (phiên đăng nhập) của người dùng hiện tại một cách an toàn ở bộ nhớ cục bộ để các màn hình khác nhau có thể sử dụng chung.
-* **`util/`**: Tầng tiện ích hỗ trợ các chuyển động.
-    * *`SceneController`*: Xử lý logic chuyển cảnh (kéo rèm) giữa các màn hình FXML.
-    * *`SpriteAnimation`, `SmallAnimation`*: Xử lý các hiệu ứng đồ họa động (Animation).
-* **`resources/`**: Thư mục chứa toàn bộ tài nguyên tĩnh của ứng dụng.
-    * *`fxml/`*: Các file thiết kế giao diện bằng SceneBuilder.
-    * *`images/`*, *`css/`*: Các file hình ảnh và định dạng phong cách cho UI.
-                
-## III - Tiến độ hiện tại (Progress)
-* [x] Thiết lập kiến trúc Multi-module Maven.
-* [x] Xây dựng xong các class Model cơ sở (`shared` module).
-* [x] Hoàn thiện UI/UX màn hình Đăng nhập (Login) & Đăng ký (Register).
-* [X] Thiết kế giao diện Sảnh chính / Dashboard (Auction Menu).
-* [ ] Thiết lập kết nối JDBC tới MySQL (Đã kết nối xong với Register/Login còn Item, Auction).
-* [ ] Xây dựng kết nối Socket giữa Client và Server (Đang phát triển).
+---
 
+## Công nghệ sử dụng (Tech Stack)
 
-DETAILS - ĐA LÀM
+* **Ngôn ngữ lõi:** Java 25
+* **Giao diện Frontend:** JavaFX, FXML, CSS, SceneBuilder
+* **Cơ sở dữ liệu:** MySQL 8.x, JDBC Driver (v9.6.0)
+* **Giao tiếp mạng (Networking):** TCP/IP Sockets, WebSocket, REST API (HTTP)
+* **Quản lý dự án & Build tool:** Maven
+* **Định dạng dữ liệu:** JSON (Đóng/mở gói DTO qua thư viện Gson)
+* **IDE Khuyên dùng:** IntelliJ IDEA
 
+---
+
+## ⚙️ Hướng dẫn Cài đặt & Khởi chạy (Getting Started)
+
+Dự án sử dụng mô hình Client-Server, do đó bạn cần khởi chạy Database, Server, sau đó mới bật Client.
+
+### 1. Yêu cầu hệ thống 
+* Java Development Kit (JDK) phiên bản 25 trở lên.
+* Maven đã được cài đặt và cấu hình biến môi trường.
+* MySQL Server (Chạy ở cổng mặc định `3306`).
+
+### 2. Khởi tạo Cơ sở dữ liệu (Database Setup)
+1. Mở MySQL Workbench hoặc CLI.
+2. Tạo một schema mới cho dự án.
+3. Chạy file script SQL được đính kèm trong source code: `script_db.sql` để tự động tạo cấu trúc các bảng (`Users`, `Bidder`, `Seller`, `Admin`, `Items`,...).
+4. Mở file `Bidding_Server/src/main/java/com/server/config/DBConnection.java` và điều chỉnh lại `URL`, `USERNAME`, `PASSWORD` sao cho khớp với MySQL cục bộ của bạn.
+
+### 3. Build Dự án với Maven
+Mở terminal tại thư mục gốc của dự án (nơi chứa file `pom.xml` tổng) và chạy lệnh:
+```bash
+mvn clean install
+```
+## Kiến trúc hệ thống
+
+Dự án được chia thành 3 module độc lập để đảm bảo Tách biệt mối quan hệ**:
+
+### 1️⃣ Module `shared` 
+Đóng vai trò là thư viện dùng chung giữa Client và Server.
+* **DTOs & Models:** Định nghĩa các lớp Entity cơ sở. Hệ thống quản lý tài khoản được xây dựng trên một lớp base là `User` (xử lý toàn bộ logic Đăng ký / Đăng nhập), từ đó phân cấp (downcasting) linh hoạt thành các role `Bidder`, `Seller`, và `Admin`.
+* **Network Components:** Chứa các định dạng `Request` và `Response` chuẩn hóa để đóng gói dữ liệu truyền qua Socket/HTTP.
+
+### 2️⃣ Module `Bidding_Server` (Backend & Database)
+Trung tâm xử lý nghiệp vụ, giao tiếp với MySQL và quản lý kết nối đồng thời. Tuân thủ mô hình **MVC Server-side**.
+* **Controller (Network Layer):** Nhận luồng byte/JSON từ Socket, phân giải thành Command/DTO và điều hướng.
+* **Service (Business Logic):** Chứa các thuật toán cốt lõi độc lập với DB:
+  * Xử lý đấu giá đồng thời (Concurrent Bidding).
+  * Chống cướp giờ chót (Anti-sniping) và Đấu giá tự động (Auto-Bidding).
+* **Repository/DAO :** Điểm duy nhất chứa SQL. Áp dụng cơ chế kết nối Singleton (`DBConnection`) để tối ưu hóa Connection Pool, chống quá tải hệ thống.
+* **WebSocket/Broadcaster:** Quản lý danh sách Client trong phòng đấu giá, phát sóng (broadcast) trạng thái giá mới nhất theo thời gian thực (Real-time).
+
+###  Module `Bidding_Client` (Frontend JavaFX)
+Chịu trách nhiệm hiển thị giao diện và tương tác người dùng theo mô hình **MVC**.
+* **Controller:** Bắt sự kiện UI (`LoginController`, `DashboardController`), xử lý luồng chuyển cảnh (`SceneController`) và hiệu ứng (`SpriteAnimation`).
+* **Session Management:** `UserSession` lưu trữ ID phiên làm việc an toàn tại máy khách, tránh việc phải đăng nhập lại liên tục.
+* **Network/Sender:** Trình đóng gói UI thành JSON, nén thành byte và gửi qua kênh Socket TCP đến Server. Đồng thời lắng nghe WebSocket để tự động cập nhật UI khi có người đặt giá.
+
+---
+
+## Design Patterns Áp Dụng
+
+Hệ thống linh hoạt áp dụng các Mẫu thiết kế phần mềm để giải quyết các bài toán kỹ thuật phức tạp:
+* **Singleton:** Quản lý duy nhất một luồng `DBConnection` và `Broadcaster`.
+* **Observer:** Phát sóng thời gian thực cập nhật mức giá đến toàn bộ người dùng đang xem phiên đấu giá mà không cần tải lại trang.
+* **Strategy:** Cho phép cấu hình động các thuật toán như luật chống snipe (`AntiSnipingStrategy`), xác thực giá thầu (`BidValidationStrategy`), và render UI theo Role.
+* **Factory / Builder:** Khởi tạo các gói cấu hình phức tạp (Item, Auction) và DTO mạng.
+* **Command:** Đóng gói các yêu cầu từ Client thành các đối tượng lệnh (e.g., `UpdateProfileCommand`) để xử lý tuần tự hoặc đa luồng trên Server.
+* **State:** Quản lý vòng đời khép kín của một phiên đấu giá (PENDING, ACTIVE, ENDED).
+
+---
+
+## 🚀 Tiến độ dự án (Roadmap)
+
+### Giai đoạn 1: Khởi tạo & Kiến trúc (Hoàn thành)
+- [x] Thiết lập kiến trúc Multi-module Maven (`shared`, `client`, `server`).
+- [x] Thiết kế hệ thống Entity & Data Models cốt lõi.
+- [x] Xây dựng cơ sở dữ liệu MySQL và cấu hình Singleton JDBC.
+
+### Giai đoạn 2: Xác thực & UI Cơ bản (Hoàn thành)
+- [x] Xây dựng UI/UX màn hình Đăng nhập & Đăng ký (JavaFX).
+- [x] Thiết kế giao diện Sảnh chính (Dashboard / Auction Menu).
+- [x] Hoàn thiện luồng kết nối DB cho tính năng Register/Login qua Base `User`.
+
+### Giai đoạn 3: Nghiệp vụ & Thời gian thực (Đang phát triển)
+- [ ] Hoàn thiện kết nối Socket 2 chiều Client - Server cho việc truyền tải DTO.
+- [ ] Tích hợp Observer Pattern để broadcast giá đấu thời gian thực.
+- [ ] Phát triển tính năng tạo phiên đấu giá (Create Item) và hiển thị danh sách live.
+
+### Giai đoạn 4: Tối ưu & Mở rộng (Sắp tới)
+- [ ] Hoàn thiện thuật toán Anti-sniping và Auto-bidding.
+- [ ] Kiểm thử đồng thời (Concurrency testing).

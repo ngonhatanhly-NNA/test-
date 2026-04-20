@@ -2,6 +2,7 @@ package com.server.DAO;
 
 import com.server.config.DBConnection;
 import com.server.model.Auction;
+import com.server.model.BidTransaction;
 
 import java.math.BigDecimal;
 import java.sql.*;
@@ -111,6 +112,70 @@ public class AuctionRepository implements IAuctionRepository {
         } catch (SQLException e) {
             System.err.println("Lỗi update phiên đấu giá: " + e.getMessage());
         }
+    }
+
+    /**
+     * Tạo phiên đấu giá mới
+     */
+    public long create(Auction auction) {
+        String sql = """
+            INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            """;
+
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
+            pstmt.setLong(1, auction.getItemId());
+            pstmt.setLong(2, auction.getSellerId());
+            pstmt.setTimestamp(3, Timestamp.valueOf(auction.getStartTime()));
+            pstmt.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
+            pstmt.setBigDecimal(5, auction.getStepPrice() != null ? auction.getStepPrice() : BigDecimal.ZERO);
+            pstmt.setBigDecimal(6, auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO);
+            pstmt.setNull(7, Types.BIGINT);
+            pstmt.setString(8, auction.getStatus().name());
+
+            pstmt.executeUpdate();
+
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tạo phiên đấu giá: " + e.getMessage());
+        }
+        return -1;
+    }
+
+    /**
+     * Lấy lịch sử bid của một phiên đấu giá
+     */
+    public List<BidTransaction> findBidHistoryByAuction(long auctionId) {
+        List<BidTransaction> bidHistory = new ArrayList<>();
+        String sql = "SELECT * FROM bid_transactions WHERE auction_id = ? ORDER BY timestamp DESC";
+
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, auctionId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    BidTransaction bid = new BidTransaction(
+                        rs.getLong("auction_id"),
+                        rs.getLong("bidder_id"),
+                        new BigDecimal(rs.getString("bid_amount"))
+                    );
+                    bid.setId(rs.getLong("id"));
+                    bid.setAutoBid(rs.getBoolean("is_auto_bid"));
+                    bidHistory.add(bid);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi lấy lịch sử bid: " + e.getMessage());
+        }
+        return bidHistory;
     }
 
     // Đổi từ dữ liệu thô MySQL sang Object Java

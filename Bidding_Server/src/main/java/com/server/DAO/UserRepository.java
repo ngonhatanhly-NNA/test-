@@ -42,9 +42,9 @@ public class UserRepository implements IUserRepository {
 
 	private static final Map<Role, RoleDataUpdater> roleUpdaters = new HashMap<>();
 	static {
-		// Đã sửa lỗi thiếu/dư ngoặc nhọn ở đây
 		roleUpdaters.put(Role.ADMIN, (conn, id, dto) -> {
-			// AdminProfileUpdateDTO adminDto = (AdminProfileUpdateDTO) dto;
+			AdminProfileUpdateDTO adminDto = (AdminProfileUpdateDTO) dto;
+			// No-op for admin profile update
 		});
 
 		roleUpdaters.put(Role.BIDDER, (conn, id, dto) -> {
@@ -58,6 +58,82 @@ public class UserRepository implements IUserRepository {
 			updateBidderData(conn, id, sellerDto);
 			updateSellerData(conn, id, sellerDto);
 		});
+	}
+
+	public boolean updateUser(User user) {
+		String sql = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
+
+		try (Connection conn = DBConnection.getInstance().getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, user.getEmail());
+			pstmt.setString(2, user.getFullName());
+			pstmt.setString(3, user.getPhoneNumber());
+			pstmt.setString(4, user.getAddress());
+			pstmt.setLong(5, user.getId());
+
+			return pstmt.executeUpdate() > 0;
+
+		} catch (Exception e) {
+			System.err.println("LỖI CẬP NHẬT USER DATABASE: ");
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean updateFullProfile(BaseProfileUpdateDTO dto, Role role, long userId) {
+		Connection conn = null;
+		try {
+			conn = DBConnection.getInstance().getConnection();
+			conn.setAutoCommit(false);
+
+			// Update thông tin chung (
+			String sqlUser = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
+			try (PreparedStatement psUser = conn.prepareStatement(sqlUser)) {
+				psUser.setString(1, dto.getEmail());
+				psUser.setString(2, dto.getFullName());
+				psUser.setString(3, dto.getPhoneNumber());
+				psUser.setString(4, dto.getAddress());
+				psUser.setLong(5, userId);
+				psUser.executeUpdate();
+			}
+
+			//Strategy để cập nhật các bảng con tuỳ theo role
+			RoleDataUpdater updater = roleUpdaters.get(role);
+			if (updater != null) updater.update(conn, userId, dto);
+
+			conn.commit();
+			return true;
+
+		} catch (Exception e) {
+			System.err.println("LỖI CẬP NHẬT DB VÀO USER");
+			if (conn != null) {
+				try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+			}
+			return false;
+		} finally {
+			if (conn != null) {
+				try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) { e.printStackTrace(); }
+			}
+		}
+	}
+
+	public boolean updatePassword(String username, String newPassword) {
+		String sql = "UPDATE users SET passwordHash = ? WHERE username = ?";
+
+		try (Connection conn = DBConnection.getInstance().getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, newPassword);
+			pstmt.setString(2, username);
+
+			return pstmt.executeUpdate() > 0;
+
+		} catch (Exception e) {
+			System.err.println("LỖI ĐỔI MẬT KHẨU TRONG DATABASE: ");
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	// ==========================================
@@ -202,58 +278,28 @@ public class UserRepository implements IUserRepository {
 		return null;
 	}
 
-	public boolean updateFullProfile(BaseProfileUpdateDTO dto, Role role, long userId) {
-		Connection conn = null;
-		try {
-			conn = DBConnection.getInstance().getConnection();
-			conn.setAutoCommit(false);
-
-			// Update thông tin chung (
-			String sqlUser = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
-			try (PreparedStatement psUser = conn.prepareStatement(sqlUser)) {
-				psUser.setString(1, dto.getEmail());
-				psUser.setString(2, dto.getFullName());
-				psUser.setString(3, dto.getPhoneNumber());
-				psUser.setString(4, dto.getAddress());
-				psUser.setLong(5, userId);
-				psUser.executeUpdate();
-			}
-
-			//Strategy để cập nhật các bảng con tuỳ theo role
-			RoleDataUpdater updater = roleUpdaters.get(role);
-			if (updater != null) updater.update(conn, userId, dto);
-
-			conn.commit();
-			return true;
-
-		} catch (Exception e) {
-			System.err.println("LỖI CẬP NHẬT DB VÀO USER");
-			if (conn != null) {
-				try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
-			}
-			return false;
-		} finally {
-			if (conn != null) {
-				try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) { e.printStackTrace(); }
-			}
-		}
-	}
-
-	public boolean updatePassword(String username, String newPassword) {
-		String sql = "UPDATE users SET passwordHash = ? WHERE username = ?";
+	/**
+	 * Lấy User theo ID
+	 */
+	public User getUserById(long userId) {
+		String sql = UserQueryFactory.getFullUserQueryById();
 
 		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-			pstmt.setString(1, newPassword);
-			pstmt.setString(2, username);
+			pstmt.setLong(1, userId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					String roleStr = rs.getString("role");
+					Role roleEnum = (roleStr != null) ? Role.valueOf(roleStr.toUpperCase()) : Role.BIDDER;
 
-			return pstmt.executeUpdate() > 0;
-
+					UserRowMapper mapper = UserRowMapperFactory.getMapperByRole(roleEnum);
+					return mapper.mapRow(rs);
+				}
+			}
 		} catch (Exception e) {
-			System.err.println("LỖI ĐỔI MẬT KHẨU TRONG DATABASE: ");
 			e.printStackTrace();
-			return false;
 		}
+		return null;
 	}
 }

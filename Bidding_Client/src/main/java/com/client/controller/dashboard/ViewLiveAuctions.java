@@ -1,7 +1,7 @@
 package com.client.controller.dashboard;
 
 import com.client.network.AuctionNetwork;
-import com.client.util.ClientSession;
+import com.client.session.ClientSession;
 import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.AuctionUpdateDTO;
 import com.shared.network.Response;

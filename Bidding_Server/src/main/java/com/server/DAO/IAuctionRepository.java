@@ -1,6 +1,7 @@
 package com.server.DAO;
 
 import com.server.model.Auction;
+import com.server.model.BidTransaction;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,5 +15,9 @@ public interface IAuctionRepository {
     Optional<Auction> findById(long auctionId);
 
     void save(Auction auction);
+
+    long create(Auction auction);
+
+    List<BidTransaction> findBidHistoryByAuction(long auctionId);
 }
 

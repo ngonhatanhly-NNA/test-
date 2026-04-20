@@ -21,13 +21,13 @@ public class AdminRepository implements IAdminRepository {
                             rs.getString("username"),
                             rs.getString("password_hash"),
                             rs.getString("email"),
-                            rs.getString("full_name"),
-                            rs.getString("phone_number"),
+                            rs.getString("full_name"), 
+                            rs.getString("phone_number"), 
                             rs.getString("address"),
                             Status.valueOf(rs.getString("status")),
-                            rs.getString("role_level")
+                            rs.getString("role_level") 
                     );
-                    admin.updateLoginIp(rs.getString("last_login_ip"));
+                    admin.updateLoginIp(rs.getString("lastLoginIp")); // Fix column
                     return admin;
                 }
             }

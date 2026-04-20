@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/11" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.client.controller.dashboard.AdminDashboardController">
+
+    <!-- Top: Menu Bar -->
+    <top>
+        <MenuBar style="-fx-font-size: 12px;">
+            <Menu text="Dashboard">
+                <MenuItem text="Làm mới" onAction="#refreshData" />
+                <SeparatorMenuItem/>
+                <MenuItem text="Đăng xuất" onAction="#logout" />
+            </Menu>
+            <Menu text="Quản Lý Người Dùng">
+                <MenuItem text="Danh sách người dùng" onAction="#showAllUsers" />
+                <MenuItem text="Tìm kiếm người dùng" onAction="#showSearchUser" />
+                <MenuItem text="Lịch hoạt động" onAction="#showActivityLog" />
+            </Menu>
+            <Menu text="Quản Lý Seller">
+                <MenuItem text="Phê duyệt seller" onAction="#showApproveSellerDialog" />
+            </Menu>
+            <Menu text="Phân Tích">
+                <MenuItem text="Phân tích sản phẩm" onAction="#showProductAnalytics" />
+                <MenuItem text="Ước tính doanh thu" onAction="#showRevenueEstimate" />
+            </Menu>
+        </MenuBar>
+    </top>
+
+    <!-- Center: Main Content -->
+    <center>
+        <TabPane>
+            <!-- Tab 1: Dashboard Statistics -->
+            <Tab text="Thống Kê" closable="false">
+                <VBox spacing="15" style="-fx-padding: 15px;">
+
+                    <!-- Statistics Cards -->
+                    <HBox spacing="15" style="-fx-padding: 10px;">
+                        <VBox style="-fx-border-color: #ddd; -fx-padding: 15px; -fx-border-radius: 5;" HBox.hgrow="ALWAYS">
+                            <Label text="Tổng Người Dùng" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                            <Label fx:id="lblTotalUsers" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #3498db;" />
+                        </VBox>
+
+                        <VBox style="-fx-border-color: #ddd; -fx-padding: 15px; -fx-border-radius: 5;" HBox.hgrow="ALWAYS">
+                            <Label text="Tổng Sản Phẩm" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                            <Label fx:id="lblTotalProducts" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #27ae60;" />
+                        </VBox>
+
+                        <VBox style="-fx-border-color: #ddd; -fx-padding: 15px; -fx-border-radius: 5;" HBox.hgrow="ALWAYS">
+                            <Label text="Phiên Đấu Giá" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                            <Label fx:id="lblTotalAuctions" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #e74c3c;" />
+                        </VBox>
+
+                        <VBox style="-fx-border-color: #ddd; -fx-padding: 15px; -fx-border-radius: 5;" HBox.hgrow="ALWAYS">
+                            <Label text="Doanh Thu (Est.)" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                            <Label fx:id="lblRevenue" text="0 VND" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #f39c12;" />
+                        </VBox>
+                    </HBox>
+
+                    <!-- Recent Activities -->
+                    <VBox spacing="10" style="-fx-padding: 10px; -fx-border-color: #ddd; -fx-border-radius: 5;">
+                        <Label text="Hoạt Động Gần Đây" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                        <ListView fx:id="listViewActivities" prefHeight="250" />
+                    </VBox>
+                </VBox>
+            </Tab>
+
+            <!-- Tab 2: User Management -->
+            <Tab text="Quản Lý Người Dùng" closable="false">
+                <VBox spacing="10" style="-fx-padding: 15px;">
+
+                    <!-- Search Bar -->
+                    <HBox spacing="10">
+                        <TextField fx:id="txtSearchUsername" promptText="Tìm kiếm username..." HBox.hgrow="ALWAYS" />
+                        <Button text="Tìm" onAction="#handleSearchUser" />
+                    </HBox>
+
+                    <!-- Users Table -->
+                    <TableView fx:id="tableUsers" prefHeight="400">
+                        <columns>
+                            <TableColumn text="ID" prefWidth="50" />
+                            <TableColumn text="Username" prefWidth="120" />
+                            <TableColumn text="Email" prefWidth="150" />
+                            <TableColumn text="Vai Trò" prefWidth="100" />
+                            <TableColumn text="Trạng Thái" prefWidth="100" />
+                            <TableColumn text="Hành Động" prefWidth="150" />
+                        </columns>
+                    </TableView>
+                </VBox>
+            </Tab>
+
+            <!-- Tab 3: Product Analytics -->
+            <Tab text="Phân Tích Sản Phẩm" closable="false">
+                <VBox spacing="10" style="-fx-padding: 15px;">
+                    <Label text="Phân Tích & Thống Kê Sản Phẩm" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                    <TextArea fx:id="textAreaAnalytics" prefHeight="400" wrapText="true" editable="false" />
+                    <Button text="Tải Dữ Liệu Analytics" onAction="#loadProductAnalytics" />
+                </VBox>
+            </Tab>
+
+            <!-- Tab 4: Revenue -->
+            <Tab text="Tài Chính" closable="false">
+                <VBox spacing="10" style="-fx-padding: 15px;">
+                    <Label text="Ước Tính Doanh Thu" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                    <TextArea fx:id="textAreaRevenue" prefHeight="400" wrapText="true" editable="false" />
+                    <Button text="Tải Dữ Liệu Doanh Thu" onAction="#loadRevenueData" />
+                </VBox>
+            </Tab>
+        </TabPane>
+    </center>
+</BorderPane>
+

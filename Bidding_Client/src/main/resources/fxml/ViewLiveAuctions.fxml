@@ -64,7 +64,7 @@
             </Label>
             <Label text="Seller: (xem chi tiết trên server)" textFill="#888888" />
             <Separator />
-            <Label text="Mô tả: Thông tin chi tiết có thể mở rộng từ API items sau." textFill="#555555" wrapText="true" />
+            <Label text="Mô tả: Thông tin chi tiết có thể mở rộng từ sau." textFill="#555555" wrapText="true" />
         </VBox>
 
 

@@ -1,6 +1,6 @@
 package com.client.controller.dashboard;
 
-import com.client.util.ClientSession;
+import com.client.session.ClientSession;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -43,7 +43,6 @@ public class MyInventoryController {
             stage.setScene(new Scene(root));
             stage.showAndWait(); // Đợi popup đóng lại
 
-            // TODO: (Sau khi đóng popup) Nên có hàm refresh lại danh sách sản phẩm ở đây
 
         } catch (IOException e) {
             e.printStackTrace();

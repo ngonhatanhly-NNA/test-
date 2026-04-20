@@ -8,12 +8,10 @@ import com.server.exception.InvalidCredentialException;
 import com.server.exception.UserNotFoundException;
 import com.server.model.User;
 import com.server.model.Bidder;
-import com.server.util.ResponseUtils;
 import com.shared.dto.*;
-import com.shared.network.Response;
+
 
 public class AuthService {
-    // GIỮ NGUYÊN: Tự khởi tạo UserRepository bên trong
     private final UserRepository userRepository;
 
     public AuthService() {
@@ -24,7 +22,7 @@ public class AuthService {
         this.userRepository = userRepository;
     }
 
-    public Response register (RegisterRequestDTO dto){
+    public void register (RegisterRequestDTO dto){
         if (dto == null) {
             throw new AuthValidationException("Dữ liệu đăng ký không hợp lệ!");
         }
@@ -42,11 +40,8 @@ public class AuthService {
         }
 
         if (userRepository.getUserByUsername(dto.getUsername()) != null){
-            throw new DuplicateUserException(dto.getUsername());
+            throw new DuplicateUserException(DuplicateUserException.ErrorCode.USERNAME_EXISTED, dto.getUsername());
         }
-
-        // FIX OOP: Dùng Constructor 4 tham số của Bidder mà chúng ta đã làm
-        // Nó sẽ tự động set Role.BIDDER và Status.ACTIVE bên trong class rồi, không cần truyền chuỗi "BIDDER" nữa.
         Bidder newBidder = new Bidder(dto.getUsername(), dto.getPassword(), dto.getEmail(), dto.getFullName());
 
         // Đoạn này nếu bạn có logic hash mật khẩu riêng thì cứ để
@@ -55,14 +50,12 @@ public class AuthService {
         boolean isSaved = userRepository.saveUser(newBidder);
 
         // Đưa về controller để controller đóng gói lại và trả cho Client
-        if (isSaved) {
-            return ResponseUtils.success("Đăng ký thành công!", null);
-        } else {
+        if (!isSaved) {
             throw new AppException("REGISTER_FAILED", "Đăng ký thất bại do hệ thống!", 500);
         }
     }
 
-    public Response login (LoginRequestDTO loginData){
+    public UserProfileResponseDTO login (LoginRequestDTO loginData){
         if (loginData == null) {
             throw new AuthValidationException("Dữ liệu đăng nhập không hợp lệ!");
         }
@@ -87,15 +80,13 @@ public class AuthService {
             double wallet = 0.0;
 
             // 2. Kĩ thuật KIỂM TRA KIỂU (instanceof)
-            // Nhờ OOP: Seller là con của Bidder, nên hàm này sẽ "bắt" được cả Bidder và Seller
             if (userInDb instanceof Bidder) {
                 // Ép kiểu và chuyển BigDecimal sang double
                 wallet = ((Bidder) userInDb).getWalletBalance().doubleValue();
             }
 
-            // 3. Đóng gói Profile an toàn để gửi về Client
-            // FIX OOP: userInDb.getRole() giờ đang trả về Object Enum, bạn thêm .name() để biến nó thành String nhé!
-            UserProfileResponseDTO profileDTO = new UserProfileResponseDTO(
+            // Đóng gói Profile an toàn để gửi về Client
+            return new UserProfileResponseDTO(
                     (int) userInDb.getId(), // Ép kiểu long về int nếu DTO của bạn xài int
                     userInDb.getUsername(),
                     userInDb.getEmail(),
@@ -105,9 +96,71 @@ public class AuthService {
                     userInDb.getRole().name(), // Thêm .name() ở đây là hết đỏ!
                     wallet
             );
-            return ResponseUtils.success("Đăng nhập thành công!", null);
         } else {
             throw new InvalidCredentialException();
+        }
+    }
+
+    /**
+     * Lấy thông tin profile của user bằng username
+     */
+    public UserProfileResponseDTO getUserProfile(String username) {
+        if (isBlank(username)) {
+            throw new AuthValidationException("Username không được để trống!");
+        }
+
+        User user = userRepository.getUserByUsername(username);
+        if (user == null) {
+            throw new UserNotFoundException(username);
+        }
+
+        double wallet = 0.0;
+        if (user instanceof Bidder) {
+            wallet = ((Bidder) user).getWalletBalance().doubleValue();
+        }
+
+        return new UserProfileResponseDTO(
+                (int) user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getRole().name(),
+                wallet
+        );
+    }
+
+    /**
+     * Cập nhật thông tin profile của user
+     */
+    public void updateProfile(BaseProfileUpdateDTO updateData) {
+        if (updateData == null || updateData.getId() <= 0) {
+            throw new AuthValidationException("Dữ liệu cập nhật không hợp lệ!");
+        }
+
+        User user = userRepository.getUserById(updateData.getId());
+        if (user == null) {
+            throw new UserNotFoundException("User ID: " + updateData.getId());
+        }
+
+        // Cập nhật các trường nếu có dữ liệu
+        if (updateData.getFullName() != null && !updateData.getFullName().trim().isEmpty()) {
+            user.setFullName(updateData.getFullName());
+        }
+        if (updateData.getEmail() != null && !updateData.getEmail().trim().isEmpty()) {
+            user.setEmail(updateData.getEmail());
+        }
+        if (updateData.getPhoneNumber() != null && !updateData.getPhoneNumber().trim().isEmpty()) {
+            user.setPhoneNumber(updateData.getPhoneNumber());
+        }
+        if (updateData.getAddress() != null && !updateData.getAddress().trim().isEmpty()) {
+            user.setAddress(updateData.getAddress());
+        }
+
+        boolean isUpdated = userRepository.updateUser(user);
+        if (!isUpdated) {
+            throw new AppException("UPDATE_FAILED", "Cập nhật thông tin thất bại!", 500);
         }
     }
 

@@ -7,6 +7,7 @@ import java.util.Queue;
 
 /**
  * Strategy Pattern: Xử lý bid sau khi validation thành công
+ * CHi xu li request client gui len server
  */
 public interface BidProcessor {
     /**

@@ -66,11 +66,34 @@ public class AuthNetwork {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:7070/api/users/update"))
                 .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonBody)) // Dùng PUT hoặc POST tuỳ backend
                 .build();
 
-        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
-                response -> gson.fromJson(response.body(), Response.class)
-        );
+        return NetworkClient.getInstance()
+                .sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .handle((httpRes, ex) -> {
+                    if (ex != null) {
+                        return new Response("ERROR", "Không thể kết nối tới Server: " + ex.getMessage(), null);
+                    }
+
+                    String body = httpRes.body();
+                    int code = httpRes.statusCode();
+
+                    try {
+                        Response parsed = gson.fromJson(body, Response.class);
+                        if (parsed != null) {
+                            return parsed;
+                        }
+                    } catch (Exception ignored) {
+                        // body có thể là HTML khi server 500, hoặc text thường
+                    }
+
+                    String briefBody = (body == null) ? "" : body.trim();
+                    if (briefBody.length() > 250) {
+                        briefBody = briefBody.substring(0, 250) + "...";
+                    }
+                    return new Response("ERROR", "HTTP " + code + " - Response không phải JSON: " + briefBody, null);
+                });
     }
 }

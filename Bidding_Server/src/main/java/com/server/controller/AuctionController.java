@@ -1,7 +1,5 @@
 package com.server.controller;
 
-import com.server.DAO.AuctionRepository;
-import com.server.DAO.BidTransactionRepository;
 import com.server.service.AuctionService;
 import com.server.exception.AuctionException;
 import com.shared.dto.*;
@@ -13,23 +11,41 @@ import java.util.List;
 
 /**
  * AuctionController: Xử lý HTTP requests liên quan đến đấu giá
- *
- * Responsibilities:
- * - Convert JSON requests to DTOs
- * - Delegate business logic to AuctionService
- * - Handle exceptions và trả về Response hợp lệ
  */
 public class AuctionController {
     public final AuctionService auctionService;
     private final Gson gson = new Gson();
 
-    public AuctionController(AuctionRepository auctionRepo, BidTransactionRepository bidRepo) {
-        this.auctionService = new AuctionService(auctionRepo, bidRepo);
+    // Constructor TIÊM PHỤ THUỘC (Dependency Injection)
+    public AuctionController(AuctionService auctionService) {
+        this.auctionService = auctionService;
+    }
+
+    /**
+     * POST /api/auctions
+     * Tạo phiên đấu giá mới
+     */
+    public void createAuction(Context ctx) {
+        try {
+            CreateAuctionDTO request = gson.fromJson(ctx.body(), CreateAuctionDTO.class);
+            if (request == null) {
+                ctx.status(400).json(new Response("ERROR", "Request không hợp lệ", null));
+                return;
+            }
+
+            long auctionId = auctionService.createAuction(request);
+            AuctionDetailDTO detail = auctionService.getAuctionDetail(auctionId);
+            ctx.json(new Response("SUCCESS", "Phiên đấu giá đã tạo thành công", detail));
+
+        } catch (AuctionException e) {
+            handleAuctionException(ctx, e);
+        } catch (Exception e) {
+            ctx.status(400).json(new Response("ERROR", "Lỗi tạo phiên đấu giá: " + e.getMessage(), null));
+        }
     }
 
     /**
      * GET /api/auctions/active
-     * Lấy danh sách các phiên đấu giá đang hoạt động
      */
     public void getActiveAuctions(Context ctx) {
         try {
@@ -42,7 +58,6 @@ public class AuctionController {
 
     /**
      * POST /api/auctions/bid
-     * Đặt giá cho phiên đấu giá
      */
     public void placeBid(Context ctx) {
         try {
@@ -64,7 +79,6 @@ public class AuctionController {
 
     /**
      * GET /api/auctions/{auctionId}
-     * Lấy chi tiết một phiên đấu giá
      */
     public void getAuctionDetail(Context ctx) {
         try {
@@ -81,8 +95,23 @@ public class AuctionController {
     }
 
     /**
+     * GET /api/auctions/{auctionId}/bids
+     * Lấy lịch sử đặt giá của một phiên đấu giá
+     */
+    public void getBidHistory(Context ctx) {
+        try {
+            long auctionId = Long.parseLong(ctx.pathParam("auctionId"));
+            List<BidHistoryDTO> bidHistory = auctionService.getBidHistory(auctionId);
+            ctx.json(new Response("SUCCESS", "Loaded bid history", bidHistory));
+        } catch (NumberFormatException e) {
+            ctx.status(400).json(new Response("ERROR", "ID phiên đấu giá không hợp lệ", null));
+        } catch (Exception e) {
+            ctx.status(500).json(new Response("ERROR", "Lỗi lấy lịch sử: " + e.getMessage(), null));
+        }
+    }
+
+    /**
      * POST /api/auctions/{auctionId}/auto-bid/cancel
-     * Hủy auto-bid
      */
     public void cancelAutoBid(Context ctx) {
         try {
@@ -108,7 +137,6 @@ public class AuctionController {
 
     /**
      * PUT /api/auctions/{auctionId}/auto-bid/update
-     * Cập nhật giá tối đa auto-bid
      */
     public void updateAutoBidAmount(Context ctx) {
         try {

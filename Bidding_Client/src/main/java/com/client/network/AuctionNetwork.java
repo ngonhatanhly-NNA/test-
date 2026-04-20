@@ -84,12 +84,12 @@ public class AuctionNetwork {
     }
 
     public static String cancelAutoBid(long auctionId, long bidderId) throws Exception {
-        AutoBidCancelDTO cancelDto = new AutoBidCancelDTO(bidderId);
+        AutoBidCancelDTO cancelDto = new AutoBidCancelDTO(auctionId, bidderId);
         return postJson(BASE_URL + "/" + auctionId + "/auto-bid/cancel", gson.toJson(cancelDto));
     }
 
     public static String updateAutoBid(long auctionId, long bidderId, BigDecimal maxBidAmount) throws Exception {
-        AutoBidUpdateDTO updateDto = new AutoBidUpdateDTO(bidderId, maxBidAmount);
+        AutoBidUpdateDTO updateDto = new AutoBidUpdateDTO(auctionId, bidderId, maxBidAmount);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(BASE_URL + "/" + auctionId + "/auto-bid/update"))
                 .header("Content-Type", "application/json")
