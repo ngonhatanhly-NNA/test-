@@ -9,6 +9,7 @@ import com.server.exception.UserNotFoundException;
 import com.server.model.User;
 import com.server.model.Bidder;
 import com.shared.dto.*;
+import org.mindrot.jbcrypt.BCrypt;
 
 
 public class AuthService {
@@ -40,9 +41,10 @@ public class AuthService {
         }
 
         if (userRepository.getUserByUsername(dto.getUsername()) != null){
-            throw new DuplicateUserException(DuplicateUserException.ErrorCode.USERNAME_EXISTED, dto.getUsername());
+            throw new DuplicateUserException(DuplicateUserException.ErrorCode.USERNAME_EXISTED,dto.getUsername());
         }
-        Bidder newBidder = new Bidder(dto.getUsername(), dto.getPassword(), dto.getEmail(), dto.getFullName());
+        String hashedPassword = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
+        Bidder newBidder = new Bidder(dto.getUsername(), hashedPassword, dto.getEmail(), dto.getFullName());
 
         // Đoạn này nếu bạn có logic hash mật khẩu riêng thì cứ để
         // newBidder.updatePassword(dto.getPassword());
@@ -73,32 +75,11 @@ public class AuthService {
             throw new UserNotFoundException(loginData.getUsername());
         }
 
-        // So khớp mật khẩu (Logic quan trọng nhất)
-        if (userInDb.getPasswordHash().equals(loginData.getPassword())) {
-
-            // 1. Khai báo 1 cái ví rỗng mặc định
-            double wallet = 0.0;
-
-            // 2. Kĩ thuật KIỂM TRA KIỂU (instanceof)
-            if (userInDb instanceof Bidder) {
-                // Ép kiểu và chuyển BigDecimal sang double
-                wallet = ((Bidder) userInDb).getWalletBalance().doubleValue();
-            }
-
-            // Đóng gói Profile an toàn để gửi về Client
-            return new UserProfileResponseDTO(
-                    (int) userInDb.getId(), // Ép kiểu long về int nếu DTO của bạn xài int
-                    userInDb.getUsername(),
-                    userInDb.getEmail(),
-                    userInDb.getFullName(),
-                    userInDb.getPhoneNumber(),
-                    userInDb.getAddress(),
-                    userInDb.getRole().name(), // Thêm .name() ở đây là hết đỏ!
-                    wallet
-            );
-        } else {
+        if (!isPasswordValid(loginData.getPassword(), userInDb.getPasswordHash())) {
             throw new InvalidCredentialException();
         }
+
+        return createUserProfile(userInDb);
     }
 
     /**
@@ -114,21 +95,7 @@ public class AuthService {
             throw new UserNotFoundException(username);
         }
 
-        double wallet = 0.0;
-        if (user instanceof Bidder) {
-            wallet = ((Bidder) user).getWalletBalance().doubleValue();
-        }
-
-        return new UserProfileResponseDTO(
-                (int) user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFullName(),
-                user.getPhoneNumber(),
-                user.getAddress(),
-                user.getRole().name(),
-                wallet
-        );
+        return createUserProfile(user);
     }
 
     /**
@@ -166,5 +133,35 @@ public class AuthService {
 
     private static boolean isBlank(String s) {
         return s == null || s.trim().isEmpty();
+    }
+
+    private static boolean isPasswordValid(String rawPassword, String storedHash) {
+        if (isBlank(storedHash)) {
+            return false;
+        }
+
+        try {
+            return BCrypt.checkpw(rawPassword, storedHash);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private static UserProfileResponseDTO createUserProfile(User user) {
+        double wallet = 0.0;
+        if (user instanceof Bidder) {
+            wallet = ((Bidder) user).getWalletBalance().doubleValue();
+        }
+
+        return new UserProfileResponseDTO(
+                (int) user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.getRole().name(),
+                wallet
+        );
     }
 }

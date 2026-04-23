@@ -4,6 +4,7 @@ import com.server.DAO.*;
 import com.server.config.DBConnection;
 import com.server.controller.*;
 import com.server.route.ApiRouter;
+import com.server.security.JwtUtil;
 import com.server.service.*;
 import com.server.service.auction.antisnipe.DefaultAntiSnipingStrategy;
 import com.server.service.auction.processor.AutoBidProcessor;
@@ -159,8 +160,9 @@ public class ServerApp extends WebSocketServer {
         AuthService authService = new AuthService(userRepo);
         ItemService itemService = new ItemService(itemRepo);
         AdminService adminService = new AdminService();
+        JwtUtil jwtUtil = JwtUtil.fromEnvironment();
 
-        AuthController authController = new AuthController(authService);
+        AuthController authController = new AuthController(authService, jwtUtil);
         AuctionController auctionController = new AuctionController(auctionService);
         AdminController adminController = new AdminController(adminService);
         // ===========================================//
@@ -169,7 +171,7 @@ public class ServerApp extends WebSocketServer {
         }).start(7070);
         System.out.println("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 
-        ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController, itemService, auctionService);
+        ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController, itemService, auctionService, jwtUtil);
         apiRouter.setupRoutes(app);
     }
 }

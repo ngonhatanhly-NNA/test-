@@ -24,8 +24,7 @@ public class ItemNetwork {
     public CompletableFuture<List<ItemResponseDTO>> getAllItems() {
 
         // 1. Viết thư yêu cầu (Request)
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(SERVER_URL))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(SERVER_URL))
                 .GET() // Xin dữ liệu thì dùng GET, gửi dữ liệu lên thì dùng POST
                 .header("Accept", "application/json")
                 .build();
@@ -66,8 +65,7 @@ public class ItemNetwork {
     public CompletableFuture<Response> createItem(CreateItemRequestDTO itemDTO) {
         String jsonBody = gson.toJson(itemDTO);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(SERVER_URL))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(SERVER_URL))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();

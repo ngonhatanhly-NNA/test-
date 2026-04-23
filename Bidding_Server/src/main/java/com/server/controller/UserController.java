@@ -12,11 +12,25 @@ public class UserController {
     private final UserService userService;
     private final Gson gson;
 
+    /**
+     * Constructor mặc định, tự khởi tạo service.
+     * Được giữ lại để tương thích với code hiện tại.
+     */
     public UserController() {
         this.userService = new UserService();
-        // Controller là nơi khởi tạo và chịu trách nhiệm Serialize/Deserialize
         this.gson = new Gson();
     }
+
+    /**
+     * Constructor dùng cho việc test.
+     * Cho phép "tiêm" một phiên bản giả (mock) của UserService từ bên ngoài.
+     * @param userService Service sẽ được sử dụng bởi controller.
+     */
+    public UserController(UserService userService) {
+        this.userService = userService;
+        this.gson = new Gson();
+    }
+
 
     // 1. GET PROFILE (Trả về String JSON cho Router/Socket gửi về Client)
     public String handleGetUserProfile(String username) {

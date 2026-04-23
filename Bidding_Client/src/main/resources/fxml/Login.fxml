@@ -49,8 +49,20 @@
                         </Label>
 
                         <TextField fx:id="txtUsername" prefHeight="45.0" promptText="Tên đăng nhập" style="-fx-background-radius: 6; -fx-border-color: #BDC3C7; -fx-border-radius: 6; -fx-font-size: 14px;" />
-                        <PasswordField fx:id="txtPassword" prefHeight="45.0" promptText="Mật khẩu" style="-fx-background-radius: 6; -fx-border-color: #BDC3C7; -fx-border-radius: 6; -fx-font-size: 14px;" />
 
+                        <StackPane alignment="CENTER_RIGHT">
+                            <children>
+                                <TextField fx:id="txtPasswordVisible" prefHeight="45.0" promptText="Mật khẩu" style="-fx-background-radius: 6; -fx-border-color: #BDC3C7; -fx-border-radius: 6; -fx-font-size: 14px; -fx-padding: 5 40 5 10;" visible="false" managed="false"/>
+
+                                <PasswordField fx:id="txtPassword" prefHeight="45.0" promptText="Mật khẩu" style="-fx-background-radius: 6; -fx-border-color: #BDC3C7; -fx-border-radius: 6; -fx-font-size: 14px; -fx-padding: 5 40 5 10;" />
+
+                                <ImageView fx:id="iconEye" fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true" onMouseClicked="#togglePasswordVisibility" style="-fx-cursor: hand;">
+                                    <StackPane.margin>
+                                        <Insets right="10.0" />
+                                    </StackPane.margin>
+                                </ImageView>
+                            </children>
+                        </StackPane>
                         <Button fx:id="btnLogin" maxWidth="1.7976931348623157E308" onAction="#handleLogin" prefHeight="45.0" style="-fx-background-color: #3498DB; -fx-background-radius: 6; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="ĐĂNG NHẬP">
                             <font><Font size="16.0" /></font>
                             <VBox.margin><Insets top="10.0" /></VBox.margin>

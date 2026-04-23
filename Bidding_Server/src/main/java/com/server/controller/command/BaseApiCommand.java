@@ -33,7 +33,7 @@ public abstract class BaseApiCommand implements Handler {
             ctx.status(400).result(errorJson).contentType("application/json");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Unhandled server error", e);
-            // Sửa dòng ctx.json thành ctx.result
+          
             String fatalJson = gson.toJson(ResponseUtils.internalError("Lỗi máy chủ."));
             ctx.status(500).result(fatalJson).contentType("application/json");
         }

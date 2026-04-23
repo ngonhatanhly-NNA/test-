@@ -10,6 +10,7 @@ public final class ClientSession {
     private static long userId;
     private static String username = "";
     private static String role = "";
+    private static String token = "";
 
     private ClientSession() {
     }
@@ -24,10 +25,16 @@ public final class ClientSession {
         role = profile.getRole() != null ? profile.getRole() : "";
     }
 
+    public static void setSession(UserProfileResponseDTO profile, String authToken) {
+        setUser(profile);
+        token = authToken != null ? authToken : "";
+    }
+
     public static void clear() {
         userId = 0L;
         username = "";
         role = "";
+        token = "";
     }
 
     public static long getUserId() {
@@ -40,6 +47,10 @@ public final class ClientSession {
 
     public static String getRole() {
         return role;
+    }
+
+    public static String getToken() {
+        return token;
     }
 
     public static boolean isLoggedIn() {

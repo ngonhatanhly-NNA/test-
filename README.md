@@ -45,6 +45,27 @@ Mở terminal tại thư mục gốc của dự án (nơi chứa file `pom.xml` 
 ```bash
 mvn clean install
 ```
+
+### 4. Chạy nhanh bằng Docker (Windows)
+1. Cài Docker Desktop và bật WSL2.
+2. Tại thư mục gốc project, chạy:
+```powershell
+docker compose up -d --build
+```
+3. Server sẽ chạy ở:
+- REST: http://localhost:7070
+- WebSocket: ws://localhost:8080
+
+> Docker dùng các biến môi trường cho DB:
+> - DB_URL (mặc định: jdbc:mysql://db:3306/auction_db)
+> - DB_USER (mặc định: root)
+> - DB_PASSWORD (mặc định: auction)
+
+### 5. CI/CD (GitHub Actions)
+- Workflow `maven-test.yml` chạy build + test trên JDK 25.
+- Workflow `docker-build.yml` build Docker image cho server.
+- Workflow `code-quality.yml` chỉ chạy khi có `SONAR_TOKEN`.
+
 ## Kiến trúc hệ thống
 
 Dự án được chia thành 3 module độc lập để đảm bảo Tách biệt mối quan hệ**:

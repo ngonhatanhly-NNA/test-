@@ -1,66 +1,77 @@
--- ============================================================
--- TEST DATA cho hệ thống đấu giá
--- ============================================================
-
 USE auction_db;
 
--- 1. Thêm test users
-INSERT INTO users (username, passwordHash, email, fullName, role, phoneNumber, address, status) VALUES
-('seller1', 'password123', 'seller1@test.com', 'Bán Hàng Một', 'SELLER', '0909111111', 'TP HCM', 'ACTIVE'),
-('bidder1', 'password456', 'bidder1@test.com', 'Người Mua Một', 'BIDDER', '0909222222', 'HN', 'ACTIVE'),
-('bidder2', 'password789', 'bidder2@test.com', 'Người Mua Hai', 'BIDDER', '0909333333', 'HCM', 'ACTIVE'),
-('bidder3', 'password999', 'bidder3@test.com', 'Người Mua Ba', 'BIDDER', '0909444444', 'DN', 'ACTIVE'),
-('admin1', 'admin123', 'admin@test.com', 'Quản Trị Viên', 'ADMIN', '0909000000', 'HCM', 'ACTIVE');
+SET FOREIGN_KEY_CHECKS = 0;
+DELETE FROM auto_bids;
+DELETE FROM bid_transactions;
+DELETE FROM auctions;
+DELETE FROM items;
+DELETE FROM sellers;
+DELETE FROM bidders;
+DELETE FROM admins;
+DELETE FROM users;
 
--- 2. Thêm seller vào bảng sellers (seller_id = 1)
-INSERT INTO bidders (user_id, walletBalance) VALUES (1, 1000000);
-INSERT INTO sellers (bidder_id, shopName, rating, totalReviews, isVerified)
-VALUES (1, 'Pokemon Shop 1', 4.8, 120, TRUE);
+ALTER TABLE users AUTO_INCREMENT = 1;
+ALTER TABLE admins AUTO_INCREMENT = 1;
+ALTER TABLE bidders AUTO_INCREMENT = 1;
+ALTER TABLE sellers AUTO_INCREMENT = 1;
+ALTER TABLE items AUTO_INCREMENT = 1;
+ALTER TABLE auctions AUTO_INCREMENT = 1;
+ALTER TABLE bid_transactions AUTO_INCREMENT = 1;
+ALTER TABLE auto_bids AUTO_INCREMENT = 1;
+SET FOREIGN_KEY_CHECKS = 1;
 
--- 3. Thêm bidders
-INSERT INTO bidders (user_id, walletBalance) VALUES
-(2, 5000000),
-(3, 3000000),
-(4, 2000000);
+-- 1. Thêm test users (mật khẩu đã bcrypt)
+-- admin1/admin123, seller1/seller123, bidder1/bidder123, bidder2/bidder123, bidder3/bidder123
+INSERT INTO users (id, username, passwordHash, email, fullName, role, phoneNumber, address, status) VALUES
+(1, 'admin1',  '$2a$10$OwLmfCBgCEH38VA2bbZpDOmWkmc8XdDtDB.WnTzmjBST1tQntJqt2', 'admin@test.com',  'Quản Trị Viên', 'ADMIN',  '0909000000', 'HCM',  'ACTIVE'),
+(2, 'seller1', '$2a$10$Z/fbEk9IH3QMSfyuBw8puuE6JYsnaARxMQ0WTN5se4f.LetF1D36W', 'seller1@test.com', 'Bán Hàng Một', 'SELLER', '0909111111', 'TP HCM', 'ACTIVE'),
+(3, 'bidder1', '$2a$10$ObpJ/v12fpMEcoGTJQ1K/eT2rua0h4RpZ6Ha.XHg0il.eXT.d4QtS', 'bidder1@test.com', 'Người Mua Một', 'BIDDER', '0909222222', 'HN',  'ACTIVE'),
+(4, 'bidder2', '$2a$10$ObpJ/v12fpMEcoGTJQ1K/eT2rua0h4RpZ6Ha.XHg0il.eXT.d4QtS', 'bidder2@test.com', 'Người Mua Hai', 'BIDDER', '0909333333', 'HCM', 'ACTIVE'),
+(5, 'bidder3', '$2a$10$ObpJ/v12fpMEcoGTJQ1K/eT2rua0h4RpZ6Ha.XHg0il.eXT.d4QtS', 'bidder3@test.com', 'Người Mua Ba', 'BIDDER', '0909444444', 'DN',  'ACTIVE');
 
--- 4. Thêm items để đấu giá
+-- 2. Thêm admin profile
+INSERT INTO admins (user_id, roleLevel, lastLoginIp) VALUES
+(1, 'SUPER', '127.0.0.1');
+
+-- 3. Thêm bidders (seller cũng là bidder)
+INSERT INTO bidders (user_id, walletBalance, creditCardInfo) VALUES
+(2, 1000000, 'VISA-SELLER-0001'),
+(3, 5000000, 'VISA-BIDDER-0001'),
+(4, 3000000, 'VISA-BIDDER-0002'),
+(5, 2000000, 'VISA-BIDDER-0003');
+
+-- 4. Thêm seller (bidder_id = 2)
+INSERT INTO sellers (bidder_id, shopName, rating, totalReviews, bankAccountNumber, isVerified) VALUES
+(2, 'Pokemon Shop 1', 4.8, 120, 'VCB-000111222', TRUE);
+
+-- 5. Thêm items để đấu giá
 INSERT INTO items (item_type, name, description, startingPrice, item_condition, imageUrls, brand, model, warrantyMonths) VALUES
 ('ELECTRONICS', 'iPhone 15 Pro Max', 'Điện thoại Apple mới nhất', 800000, 'NEW', 'iphone15.jpg', 'Apple', 'iPhone 15 Pro Max', 12),
 ('ELECTRONICS', 'MacBook Pro 16', 'Laptop cao cấp từ Apple', 3500000, 'NEW', 'macbook.jpg', 'Apple', 'MacBook Pro 16', 24),
-('ELECTRONICS', 'Samsung Galaxy S24', 'Điện thoại flagship Samsung', 600000, 'NEW', 'galaxy.jpg', 'Samsung', 'Galaxy S24', 12);
-
--- 5. Thêm phiên đấu giá (seller_id = 1, là người bán)
--- LƯỚI ƯU: Sử dụng TIME_ADD để tính toán thời gian
--- Phiên 1: Bắt đầu ngay bây giờ, kết thúc sau 2 giờ
-INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, created_at, updated_at) VALUES
-(1, 1, NOW(), DATE_ADD(NOW(), INTERVAL 2 HOUR), 50000, 0, NULL, 'OPEN', NOW(), NOW()),
-(2, 1, NOW(), DATE_ADD(NOW(), INTERVAL 3 HOUR), 100000, 0, NULL, 'OPEN', NOW(), NOW()),
-(3, 1, DATE_ADD(NOW(), INTERVAL 1 HOUR), DATE_ADD(NOW(), INTERVAL 4 HOUR), 30000, 0, NULL, 'OPEN', NOW(), NOW());
-
--- 5b. Thêm thêm items & phiên đấu giá để test (tạo nhiều phòng live hơn)
-INSERT INTO items (item_type, name, description, startingPrice, item_condition, imageUrls, brand, model, warrantyMonths) VALUES
+('ELECTRONICS', 'Samsung Galaxy S24', 'Điện thoại flagship Samsung', 600000, 'NEW', 'galaxy.jpg', 'Samsung', 'Galaxy S24', 12),
 ('ELECTRONICS', 'Nintendo Switch OLED', 'Máy chơi game cầm tay', 500000, 'LIKE_NEW', 'switch.jpg', 'Nintendo', 'Switch OLED', 6),
 ('ELECTRONICS', 'Sony WH-1000XM5', 'Tai nghe chống ồn', 250000, 'NEW', 'sony-xm5.jpg', 'Sony', 'WH-1000XM5', 12),
 ('ELECTRONICS', 'Dell XPS 13', 'Laptop mỏng nhẹ', 1200000, 'USED', 'xps13.jpg', 'Dell', 'XPS 13', 3);
 
--- Các item mới sẽ có id tiếp theo (4,5,6 nếu DB trống và chạy đúng thứ tự file)
+-- 6. Thêm phiên đấu giá (seller_id = 2)
 INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, created_at, updated_at) VALUES
-(4, 1, NOW(), DATE_ADD(NOW(), INTERVAL 90 MINUTE), 20000, 0, NULL, 'OPEN', NOW(), NOW()),
-(5, 1, NOW(), DATE_ADD(NOW(), INTERVAL 150 MINUTE), 10000, 0, NULL, 'OPEN', NOW(), NOW()),
-(6, 1, DATE_ADD(NOW(), INTERVAL 30 MINUTE), DATE_ADD(NOW(), INTERVAL 210 MINUTE), 50000, 0, NULL, 'OPEN', NOW(), NOW());
+(1, 2, NOW(), DATE_ADD(NOW(), INTERVAL 2 HOUR), 50000, 0, NULL, 'OPEN', NOW(), NOW()),
+(2, 2, NOW(), DATE_ADD(NOW(), INTERVAL 3 HOUR), 100000, 0, NULL, 'OPEN', NOW(), NOW()),
+(3, 2, DATE_ADD(NOW(), INTERVAL 1 HOUR), DATE_ADD(NOW(), INTERVAL 4 HOUR), 30000, 0, NULL, 'OPEN', NOW(), NOW()),
+(4, 2, NOW(), DATE_ADD(NOW(), INTERVAL 90 MINUTE), 20000, 0, NULL, 'OPEN', NOW(), NOW()),
+(5, 2, NOW(), DATE_ADD(NOW(), INTERVAL 150 MINUTE), 10000, 0, NULL, 'OPEN', NOW(), NOW()),
+(6, 2, DATE_ADD(NOW(), INTERVAL 30 MINUTE), DATE_ADD(NOW(), INTERVAL 210 MINUTE), 50000, 0, NULL, 'OPEN', NOW(), NOW());
 
--- 6. Thêm bid transactions (lịch sử đặt giá) cho phiên 1
--- Giả sử bidder1 (user_id=2) đặt giá 850000 vào 11:30
--- Và bidder2 (user_id=3) đặt giá 900000 vào 11:45
+-- 7. Thêm bid transactions (lịch sử đặt giá) cho phiên 1
 INSERT INTO bid_transactions (auction_id, bidder_id, bid_amount, timestamp, is_auto_bid, created_at) VALUES
-(1, 2, 850000, DATE_SUB(NOW(), INTERVAL 15 MINUTE), FALSE, DATE_SUB(NOW(), INTERVAL 15 MINUTE)),
-(1, 3, 900000, DATE_SUB(NOW(), INTERVAL 10 MINUTE), FALSE, DATE_SUB(NOW(), INTERVAL 10 MINUTE)),
-(1, 2, 950000, DATE_SUB(NOW(), INTERVAL 5 MINUTE), TRUE, DATE_SUB(NOW(), INTERVAL 5 MINUTE));
+(1, 3, 850000, DATE_SUB(NOW(), INTERVAL 15 MINUTE), FALSE, DATE_SUB(NOW(), INTERVAL 15 MINUTE)),
+(1, 4, 900000, DATE_SUB(NOW(), INTERVAL 10 MINUTE), FALSE, DATE_SUB(NOW(), INTERVAL 10 MINUTE)),
+(1, 3, 950000, DATE_SUB(NOW(), INTERVAL 5 MINUTE), TRUE, DATE_SUB(NOW(), INTERVAL 5 MINUTE));
 
--- 7. Thêm auto-bid
+-- 8. Thêm auto-bid
 INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount, is_active, created_at, updated_at) VALUES
-(1, 2, 2000000, TRUE, NOW(), NOW()),
-(1, 3, 1500000, TRUE, NOW(), NOW());
+(1, 3, 2000000, TRUE, NOW(), NOW()),
+(1, 4, 1500000, TRUE, NOW(), NOW());
 
 -- ============================================================
 -- Các query kiểm tra dữ liệu

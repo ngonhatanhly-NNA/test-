@@ -27,8 +27,7 @@ public class AdminNetwork {
      * Lấy dữ liệu thống kê cho trang Dashboard của Admin.
      */
     public static CompletableFuture<Response> getDashboardData() {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/dashboard"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/dashboard"))
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();
@@ -49,8 +48,7 @@ public class AdminNetwork {
      * Lấy danh sách tất cả người dùng
      */
     public static CompletableFuture<Response> getAllUsers() {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/users"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/users"))
                 .GET()
                 .header("Accept", "application/json")
                 .build();
@@ -64,8 +62,7 @@ public class AdminNetwork {
      * Tìm kiếm thông tin một người dùng theo username.
      */
     public static CompletableFuture<Response> searchUser(String username) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/users/search/" + username))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/users/search/" + username))
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();
@@ -84,8 +81,7 @@ public class AdminNetwork {
                 "reason", reason != null ? reason : "Vi phạm điều khoản"
         ));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/users/ban"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/users/ban"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -101,8 +97,7 @@ public class AdminNetwork {
     public static CompletableFuture<Response> unbanUser(String username) {
         String requestBody = gson.toJson(Map.of("username", username));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/users/unban"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/users/unban"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -126,8 +121,7 @@ public class AdminNetwork {
                 "bankAccountNumber", bankAccount
         ));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/sellers/approve"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/sellers/approve"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -145,8 +139,7 @@ public class AdminNetwork {
      * Lấy dữ liệu phân tích về các sản phẩm.
      */
     public static CompletableFuture<Response> getProductAnalytics() {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/items/analytics"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/items/analytics"))
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();
@@ -160,8 +153,7 @@ public class AdminNetwork {
      * Lấy dữ liệu ước tính doanh thu.
      */
     public static CompletableFuture<Response> getRevenueEstimate() {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/finance/revenue-estimate"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/finance/revenue-estimate"))
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();
@@ -180,8 +172,7 @@ public class AdminNetwork {
                 "reason", reason != null ? reason : "Admin cancelled"
         ));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/auctions/cancel"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/auctions/cancel"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
@@ -195,8 +186,7 @@ public class AdminNetwork {
      * Lấy lịch hoạt động của user
      */
     public static CompletableFuture<Response> getUserActivityLog(String username) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/users/" + username + "/activity"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/users/" + username + "/activity"))
                 .GET()
                 .header("Accept", "application/json")
                 .build();

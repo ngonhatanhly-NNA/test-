@@ -1,8 +1,11 @@
 package com.client.network;
 
+import com.client.session.ClientSession;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 
 /**
  * Class này là "Tổng đài Shipper" dùng chung cho toàn bộ ứng dụng JavaFX.
@@ -21,6 +24,15 @@ public class NetworkClient {
     // Các class khác (AuthNetwork, ItemNetwork) muốn gửi thư thì gọi hàm này để lấy thằng Shipper xịn
     public static HttpClient getInstance() {
         return SHARED_CLIENT;
+    }
+
+    public static HttpRequest.Builder newRequestBuilder(URI uri) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder().uri(uri);
+        String token = ClientSession.getToken();
+        if (token != null && !token.trim().isEmpty()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return builder;
     }
 
     // Hàm này dùng để vứt cái thẻ đi khi người dùng bấm Đăng Xuất

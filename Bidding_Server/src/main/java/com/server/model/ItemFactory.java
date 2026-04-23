@@ -1,6 +1,7 @@
 package com.server.model;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,10 @@ public class ItemFactory {
     public static Item createItem(String type, int id, String name, String description,
                                   BigDecimal startPrice, String condition,
                                   List<String> imageUrls, Map<String, Object> extraProps) {
+
+        //Kiểm tra đầu vào đề bảo vệ code (Không bao giờ tin input từ Frontend)
+        if (imageUrls == null || imageUrls.isEmpty()) {imageUrls = new ArrayList<>();}  //Fix tạm thời để xử lý ảnh đầu vào sau
+        if (extraProps == null || extraProps.isEmpty()) {extraProps = new HashMap<>();}
 
         if (type == null || type.isEmpty()) {
             throw new IllegalArgumentException("Loại sản phẩm không được để trống!");

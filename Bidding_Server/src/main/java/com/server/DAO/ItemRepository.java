@@ -40,7 +40,11 @@ public class ItemRepository {
             pstmt.setString(3, item.getDescription());
             pstmt.setBigDecimal(4, item.getStartingPrice());
             pstmt.setString(5, item.getCondition());
-            pstmt.setString(6, String.join(",", item.getImageUrls())); // Ghép list thành chuỗi "anh1.jpg,anh2.jpg"
+            // Thay vì dùng String.join trực tiếp, ta phải kiểm tra xem nó có bị NULL hay không
+            List<String> imgs = item.getImageUrls();
+            String imageString = (imgs != null && !imgs.isEmpty()) ? String.join(",", imgs) : "";
+            pstmt.setString(6, imageString);
+            //pstmt.setString(6, String.join(",", item.getImageUrls())); // Ghép list thành chuỗi "anh1.jpg,anh2.jpg"
 
             // XỬ LÝ ĐA HÌNH: KIỂM TRA NÓ LÀ CON NÀO ĐỂ ÉP KIỂU VÀ LẤY THUỘC TÍNH RIÊNG (Items -> Art, Elec, Vehicle)
             // TODO Future Work: Sửa đống code downcasting bằng 1 lớp tổng quát chống lặp code nhé

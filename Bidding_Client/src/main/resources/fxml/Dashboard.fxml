@@ -50,6 +50,7 @@
             <Button fx:id="btnDashboard" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnDashboard" style="-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-background-radius: 8; -fx-alignment: CENTER_LEFT; -fx-padding: 12;" text="🏠  Dashboard" />
             <Button fx:id="btnLiveAuctions" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnLiveAuctions" style="-fx-background-color: transparent; -fx-text-fill: #333; -fx-alignment: CENTER_LEFT; -fx-padding: 12;" text="🔨  Live Auctions" />
             <Button fx:id="btnMyInventory" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnMyInventory" style="-fx-background-color: transparent; -fx-text-fill: #333; -fx-alignment: CENTER_LEFT; -fx-padding: 12;" text="📦  My Inventory" />
+            <Button fx:id="btnManagement" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnManagement" style="-fx-background-color: transparent; -fx-text-fill: #333; -fx-alignment: CENTER_LEFT; -fx-padding: 12;" text="📦  Management" />
             <Separator prefWidth="200.0" />
             <Label style="-fx-font-size: 11; -fx-font-weight: bold;" text="CATEGORIES" textFill="#999999">
                <VBox.margin><Insets left="10.0" /></VBox.margin>

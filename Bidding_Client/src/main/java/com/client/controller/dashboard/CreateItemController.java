@@ -52,13 +52,14 @@ public class CreateItemController {
             // Tạm thời chưa có giao diện nhập thuộc tính riêng, ta tạo Map rỗng
             HashMap<String, Object> extraProperties = new HashMap<>();
 
-            // 2. TẠO HỘP PIZZA VỚI BUILDER PATTERN! (Rất ngầu)
+            // 2. TẠO HỘP PIZZA VỚI BUILDER PATTERN!
             CreateItemRequestDTO requestDTO = new CreateItemRequestDTO.Builder()
                     .name(name)
                     .type(type)
                     .startingPrice(price)
                     .description(desc)
                     .condition("NEW") // Tạm fix cứng vì UI chưa có trường nhập Condition
+                    .imageUrls(new java.util.ArrayList<>()) // Tạm fix cứng vì UI chưa có trường nhập ảnh
                     .extraProps(extraProperties)
                     .build();
 

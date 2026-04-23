@@ -4,6 +4,7 @@ import com.server.DAO.UserRepository;
 import com.server.model.*;
 import com.shared.dto.*;
 import com.shared.network.Response;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -122,8 +123,9 @@ public class UserService {
         try {
             User user = userRepository.getUserByUsername(username);
 
-            if (user != null && user.getPasswordHash().equals(oldPass)) {
-                boolean isSuccess = userRepository.updatePassword(username, newPass);
+            if (user != null && isPasswordMatch(oldPass, user.getPasswordHash())) {
+                String newPasswordHash = BCrypt.hashpw(newPass, BCrypt.gensalt());
+                boolean isSuccess = userRepository.updatePassword(username, newPasswordHash);
                 if (isSuccess) {
                     return new Response("SUCCESS", "Đổi mật khẩu thành công!", null);
                 } else {
@@ -133,6 +135,19 @@ public class UserService {
             return new Response("FAIL", "Mật khẩu cũ không chính xác!", null);
         } catch (Exception e) {
             return new Response("ERROR", "Lỗi: " + e.getMessage(), null);
+        }
+    }
+
+    private boolean isPasswordMatch(String rawPassword, String storedHash) {
+        if (storedHash == null || storedHash.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            return BCrypt.checkpw(rawPassword, storedHash);
+        } catch (IllegalArgumentException ex) {
+            // Legacy fallback: stored password may be plaintext
+            return storedHash.equals(rawPassword);
         }
     }
 }

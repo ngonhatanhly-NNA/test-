@@ -14,10 +14,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 
 import java.math.BigDecimal;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -45,7 +51,11 @@ public class ViewLiveAuctions {
     private Label remainingLabel;
     @FXML
     private Button refreshButton;
-    @FXML private FlowPane auctionContainer;
+    @FXML
+    private VBox auctionsContainer;
+
+    @FXML
+    private ImageView itemImageView;
 
     private long currentAuctionId;
     private final ExecutorService ioPool = Executors.newSingleThreadExecutor(r -> {
@@ -101,8 +111,8 @@ public class ViewLiveAuctions {
                         showError(res != null ? res.getMessage() : "Không tải được danh sách đấu giá.");
                         return;
                     }
-                    if (auctionContainer != null ){
-                        auctionContainer.getChildren().clear();// Xóa thẻ mỗi lần refresh
+                    if (auctionsContainer != null) {
+                        auctionsContainer.getChildren().clear();// Xóa thẻ mỗi lần refresh
                     }
                     if (list.isEmpty()) {
                         showError("Chưa có phiên đấu giá đang mở trên server (hoặc DB/cache trống).");
@@ -110,8 +120,8 @@ public class ViewLiveAuctions {
                     }
 
                     for (AuctionDetailDTO a : list) {
-                        if (auctionContainer != null) {
-                            auctionContainer.getChildren().add(createAuctionCard(a));
+                        if (auctionsContainer != null) {
+                            auctionsContainer.getChildren().add(createAuctionCard(a));
                         }
                     }
                     // Auto load sản phẩm đầu tiên
@@ -138,6 +148,7 @@ public class ViewLiveAuctions {
         if (itemNameLabel != null) {
             itemNameLabel.setText(a.getItemName() != null ? a.getItemName() : ("Item #" + a.getItemId()));
         }
+        updateItemImage(a);
         if (currentPriceLabel != null && a.getCurrentPrice() != null) {
             currentPriceLabel.setText(formatMoney(a.getCurrentPrice()) + " VNĐ");
         }
@@ -310,11 +321,11 @@ public class ViewLiveAuctions {
         });
     }
 
-    private javafx.scene.layout.VBox createAuctionCard(AuctionDetailDTO a) {
+    private VBox createAuctionCard(AuctionDetailDTO a) {
         // Tạo một khối VBox làm thẻ (Card)
-        javafx.scene.layout.VBox card = new javafx.scene.layout.VBox(8);
+        VBox card = new VBox(8);
         card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
-        card.setPrefWidth(220); // Chiều rộng mỗi thẻ
+        card.setMaxWidth(Double.MAX_VALUE);
 
         // Tên sản phẩm
         Label nameLbl = new Label(a.getItemName() != null ? a.getItemName() : "Item #" + a.getItemId());
@@ -335,7 +346,7 @@ public class ViewLiveAuctions {
         btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
         btnSelect.setMaxWidth(Double.MAX_VALUE);
 
-        // LUỒNG QUAN TRỌNG: Khi bấm nút, bơm dữ liệu của thẻ này vào Form Detail hiện tại của bạn
+        // LUỒNG QUAN TRỌNG: Khi bấm nút, bơm dữ liệu của thẻ này vào Form Detail hiện tại
         btnSelect.setOnAction(e -> {
             applyAuctionDetail(a);
             showInfo("Đã chọn: " + a.getItemName() + ". Bạn có thể đặt giá ngay bên cạnh!");
@@ -344,6 +355,56 @@ public class ViewLiveAuctions {
         // Gắn tất cả vào Thẻ
         card.getChildren().addAll(nameLbl, priceLbl, leaderLbl, timeLbl, btnSelect);
         return card;
+    }
+
+    private void updateItemImage(AuctionDetailDTO a) {
+        if (itemImageView == null || a == null) {
+            return;
+        }
+
+        String itemName = a.getItemName();
+        List<String> candidates = new ArrayList<>();
+        if (itemName != null && !itemName.isBlank()) {
+            String trimmed = itemName.trim();
+            candidates.add(trimmed + ".png");
+            candidates.add(trimmed.replaceAll("\\s+", "") + ".png");
+            candidates.add(trimmed.toUpperCase(Locale.ROOT) + ".png");
+            candidates.add(capitalizeFirst(trimmed) + ".png");
+        }
+        if (a.getItemId() > 0) {
+            candidates.add("item-" + a.getItemId() + ".png");
+        }
+        candidates.add("Gardevoir.png");
+
+        URL chosen = null;
+        for (String file : candidates) {
+            if (file == null || file.isBlank()) {
+                continue;
+            }
+            URL url = getClass().getResource("/images/" + file);
+            if (url != null) {
+                chosen = url;
+                break;
+            }
+        }
+
+        if (chosen != null) {
+            itemImageView.setImage(new Image(Objects.requireNonNull(chosen).toExternalForm(), true));
+        }
+    }
+
+    private static String capitalizeFirst(String s) {
+        if (s == null) {
+            return "";
+        }
+        String t = s.trim();
+        if (t.isEmpty()) {
+            return "";
+        }
+        if (t.length() == 1) {
+            return t.toUpperCase(Locale.ROOT);
+        }
+        return t.substring(0, 1).toUpperCase(Locale.ROOT) + t.substring(1);
     }
 
 

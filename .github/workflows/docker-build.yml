@@ -1,13 +1,17 @@
 name: Docker Build & Push
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["Maven Build & Test"]
+    types:
+      - completed
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-    # NOTE: Workflow này đang để chạy thủ công vì repo hiện chưa có Dockerfile.server/Dockerfile.client
-    # và JAR hiện tại chưa chắc là fat-jar (đủ dependency) để chạy trong container.
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
       contents: read
@@ -28,20 +32,11 @@ jobs:
         tags: team13/bidding-server:latest
         outputs: type=docker,dest=/tmp/server-image.tar
 
-    - name: Build Client Docker Image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        file: ./Dockerfile.client
-        push: false
-        tags: team13/bidding-client:latest
-        outputs: type=docker,dest=/tmp/client-image.tar
-
     - name: Upload Docker Images
       uses: actions/upload-artifact@v3
       with:
         name: docker-images
-        path: /tmp/*.tar
+        path: /tmp/server-image.tar
         retention-days: 7
 
     # Optional: Push to Docker Hub (requires secrets)

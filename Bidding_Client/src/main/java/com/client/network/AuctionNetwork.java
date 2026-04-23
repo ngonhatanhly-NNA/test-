@@ -20,7 +20,6 @@ import java.util.List;
 public class AuctionNetwork {
 
     private static final String BASE_URL = "http://localhost:7070/api/auctions";
-    private static final HttpClient client = HttpClient.newHttpClient();
     private static final Gson gson = new Gson();
 
     private static final Type AUCTION_DETAIL_LIST = new TypeToken<List<AuctionDetailDTO>>() {
@@ -44,20 +43,18 @@ public class AuctionNetwork {
     }
 
     public static String getActiveAuctions() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/active"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
                 .GET()
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 
     public static String getAuctionDetail(long auctionId) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + auctionId))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId))
                 .GET()
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 
@@ -90,22 +87,20 @@ public class AuctionNetwork {
 
     public static String updateAutoBid(long auctionId, long bidderId, BigDecimal maxBidAmount) throws Exception {
         AutoBidUpdateDTO updateDto = new AutoBidUpdateDTO(auctionId, bidderId, maxBidAmount);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + auctionId + "/auto-bid/update"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId + "/auto-bid/update"))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(gson.toJson(updateDto)))
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 
     private static String postJson(String uri, String jsonBody) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(uri))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
 }

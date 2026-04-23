@@ -9,7 +9,14 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+
+import java.util.Map;
 
 /**
  * AdminDashboardController - Giao diện quản trị cho Admin
@@ -23,16 +30,47 @@ public class AdminDashboardController {
 
     @FXML private ListView<String> listViewActivities;
 
-    @FXML private TableView<?> tableUsers;
+    @FXML private TableView<Map<String, String>> tableUsers;
     @FXML private TextField txtSearchUsername;
 
     @FXML private TextArea textAreaAnalytics;
     @FXML private TextArea textAreaRevenue;
 
+    private Gson gson = new Gson();
+
     @FXML
     public void initialize() {
+        // Setup table columns
+        setupUserTableColumns();
         // Tải dữ liệu dashboard khi khởi tạo
         loadDashboardData();
+    }
+
+    /**
+     * Setup TableView columns for users
+     */
+    private void setupUserTableColumns() {
+        if (tableUsers.getColumns().size() > 0) {
+            // Clear existing columns
+            tableUsers.getColumns().clear();
+        }
+
+        TableColumn<Map<String, String>, String> colId = new TableColumn<>("ID");
+        colId.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().get("id")));
+
+        TableColumn<Map<String, String>, String> colUsername = new TableColumn<>("Username");
+        colUsername.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().get("username")));
+
+        TableColumn<Map<String, String>, String> colEmail = new TableColumn<>("Email");
+        colEmail.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().get("email")));
+
+        TableColumn<Map<String, String>, String> colRole = new TableColumn<>("Vai Trò");
+        colRole.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().get("role")));
+
+        TableColumn<Map<String, String>, String> colStatus = new TableColumn<>("Trạng Thái");
+        colStatus.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().get("status")));
+
+        tableUsers.getColumns().addAll(colId, colUsername, colEmail, colRole, colStatus);
     }
 
     /**
@@ -43,9 +81,45 @@ public class AdminDashboardController {
         AdminNetwork.getDashboardData()
                 .thenAccept(response -> Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
-                        // Xử lý dữ liệu từ response
-                        System.out.println("Dashboard data loaded: " + response.getData());
-                        // TODO: Parse data và cập nhật các label
+                        try {
+                            JsonObject data = gson.toJsonTree(response.getData()).getAsJsonObject();
+
+                            // Update statistics labels
+                            if (data.has("tongSanPham")) {
+                                lblTotalProducts.setText(String.valueOf(data.get("tongSanPham").getAsInt()));
+                            }
+
+                            // Get total users from API
+                            AdminNetwork.getAllUsers()
+                                    .thenAccept(userResponse -> Platform.runLater(() -> {
+                                        if ("SUCCESS".equals(userResponse.getStatus())) {
+                                            try {
+                                                JsonArray usersArray = gson.toJsonTree(userResponse.getData()).getAsJsonArray();
+                                                lblTotalUsers.setText(String.valueOf(usersArray.size()));
+
+                                                // Also populate the table
+                                                ObservableList<Map<String, String>> usersList = FXCollections.observableArrayList();
+                                                for (int i = 0; i < usersArray.size(); i++) {
+                                                    JsonObject user = usersArray.get(i).getAsJsonObject();
+                                                    Map<String, String> userData = new java.util.HashMap<>();
+                                                    userData.put("id", user.has("id") ? user.get("id").getAsString() : "");
+                                                    userData.put("username", user.has("username") ? user.get("username").getAsString() : "");
+                                                    userData.put("email", user.has("email") ? user.get("email").getAsString() : "");
+                                                    userData.put("role", user.has("role") ? user.get("role").getAsString() : "");
+                                                    userData.put("status", user.has("status") ? user.get("status").getAsString() : "");
+                                                    usersList.add(userData);
+                                                }
+                                                tableUsers.setItems(usersList);
+                                            } catch (Exception e) {
+                                                showAlert("Lỗi", "Không thể phân tích danh sách người dùng");
+                                            }
+                                        }
+                                    }));
+
+                            System.out.println("Dashboard data loaded: " + data);
+                        } catch (Exception e) {
+                            showAlert("Lỗi", "Không thể phân tích dữ liệu");
+                        }
                     } else {
                         showAlert("Lỗi", response.getMessage());
                     }
@@ -81,8 +155,27 @@ public class AdminDashboardController {
         AdminNetwork.getAllUsers()
                 .thenAccept(response -> Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
-                        System.out.println("Users loaded: " + response.getData());
-                        // TODO: Populate tableUsers với dữ liệu
+                        try {
+                            JsonArray usersArray = gson.toJsonTree(response.getData()).getAsJsonArray();
+                            ObservableList<Map<String, String>> usersList = FXCollections.observableArrayList();
+
+                            for (int i = 0; i < usersArray.size(); i++) {
+                                JsonObject user = usersArray.get(i).getAsJsonObject();
+                                Map<String, String> userData = new java.util.HashMap<>();
+                                userData.put("id", user.has("id") ? user.get("id").getAsString() : "");
+                                userData.put("username", user.has("username") ? user.get("username").getAsString() : "");
+                                userData.put("email", user.has("email") ? user.get("email").getAsString() : "");
+                                userData.put("role", user.has("role") ? user.get("role").getAsString() : "");
+                                userData.put("status", user.has("status") ? user.get("status").getAsString() : "");
+                                usersList.add(userData);
+                            }
+                            tableUsers.setItems(usersList);
+                            showAlert("Thành Công", "Tải " + usersList.size() + " người dùng thành công!");
+                        } catch (Exception e) {
+                            showAlert("Lỗi", "Không thể phân tích danh sách người dùng");
+                        }
+                    } else {
+                        showAlert("Lỗi", response.getMessage());
                     }
                 }));
     }
@@ -106,8 +199,17 @@ public class AdminDashboardController {
         AdminNetwork.searchUser(username)
                 .thenAccept(response -> Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
-                        System.out.println("User found: " + response.getData());
-                        // TODO: Hiển thị thông tin user
+                        try {
+                            JsonObject userData = gson.toJsonTree(response.getData()).getAsJsonObject();
+                            String userInfo = "ID: " + userData.get("id").getAsString() + "\n" +
+                                    "Username: " + userData.get("taiKhoan").getAsString() + "\n" +
+                                    "Email: " + userData.get("email").getAsString() + "\n" +
+                                    "Vai Trò: " + userData.get("vaiTro").getAsString() + "\n" +
+                                    "Họ Tên: " + userData.get("hoTen").getAsString();
+                            showAlert("Thông Tin Người Dùng", userInfo);
+                        } catch (Exception e) {
+                            showAlert("Thông Tin", "Dữ liệu: " + response.getData());
+                        }
                     } else {
                         showAlert("Không Tìm Thấy", response.getMessage());
                     }

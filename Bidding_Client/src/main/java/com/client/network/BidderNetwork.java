@@ -12,7 +12,6 @@ import com.shared.network.Response;
 import com.shared.dto.BidderProfileUpdateDTO;
 
 public class BidderNetwork {
-    private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
     private static final String BASE_URL = "http://localhost:7070/api/bidders";
 
@@ -26,13 +25,12 @@ public class BidderNetwork {
         // Tạo request body
         String jsonBody = gson.toJson(new UpdateBalanceRequest(newBalance));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + bidderId + "/balance"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + bidderId + "/balance"))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -43,12 +41,11 @@ public class BidderNetwork {
      * @return Response chứa thông tin Bidder
      */
     public CompletableFuture<Response> getBidderByUsername(String username) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/username?username=" + username))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/username?username=" + username))
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -59,12 +56,11 @@ public class BidderNetwork {
      * @return Response chứa thông tin Bidder
      */
     public CompletableFuture<Response> getBidderById(long bidderId) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + bidderId))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + bidderId))
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -78,13 +74,12 @@ public class BidderNetwork {
     public CompletableFuture<Response> updateBidderProfile(long bidderId, BidderProfileUpdateDTO updateData) {
         String jsonBody = gson.toJson(updateData);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + bidderId + "/profile"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + bidderId + "/profile"))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }

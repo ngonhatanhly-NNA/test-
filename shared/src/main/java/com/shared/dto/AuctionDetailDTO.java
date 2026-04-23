@@ -79,4 +79,5 @@ public class AuctionDetailDTO implements Serializable {
                 ", stepPrice=" + stepPrice +
                 '}';
     }
+
 }

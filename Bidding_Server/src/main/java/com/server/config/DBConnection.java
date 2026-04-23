@@ -18,10 +18,23 @@ public class DBConnection {
         config.setUsername("root");
         config.setPassword("");
 
+        String jdbcUrl = getEnvOrDefault("DB_URL", "jdbc:mysql://localhost:3306/auction_db");
+        String dbUser = getEnvOrDefault("DB_USER", "root");
+        String dbPassword = getEnvOrDefault("DB_PASSWORD", "");
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(dbUser);
+        config.setPassword(dbPassword);
+
+
         config.setMaximumPoolSize(20);
         config.setMinimumIdle(5);
 
         this.dataSource = new HikariDataSource(config);
+    }
+
+    private String getEnvOrDefault(String key, String fallback) {
+        String value = System.getenv(key);
+        return (value == null || value.trim().isEmpty()) ? fallback : value;
     }
 
     // Cổng lấy Singleton Thread-safe

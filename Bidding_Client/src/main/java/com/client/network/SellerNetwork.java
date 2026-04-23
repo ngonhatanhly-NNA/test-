@@ -3,7 +3,6 @@ package com.client.network;
 import com.google.gson.Gson;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
@@ -12,7 +11,6 @@ import com.shared.network.Response;
 import com.shared.dto.SellerProfileUpdateDTO;
 
 public class SellerNetwork {
-    private final HttpClient client = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
     private static final String BASE_URL = "http://localhost:7070/api/sellers";
 
@@ -26,13 +24,12 @@ public class SellerNetwork {
         // Tạo request body
         String jsonBody = gson.toJson(new UpdateBalanceRequest(newBalance));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + sellerId + "/balance"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + sellerId + "/balance"))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -43,12 +40,11 @@ public class SellerNetwork {
      * @return Response chứa thông tin Seller
      */
     public CompletableFuture<Response> getSellerByUsername(String username) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/username?username=" + username))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/username?username=" + username))
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -59,12 +55,11 @@ public class SellerNetwork {
      * @return Response chứa thông tin Seller
      */
     public CompletableFuture<Response> getSellerById(long sellerId) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + sellerId))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + sellerId))
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -78,13 +73,12 @@ public class SellerNetwork {
     public CompletableFuture<Response> updateSellerProfile(long sellerId, SellerProfileUpdateDTO updateData) {
         String jsonBody = gson.toJson(updateData);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + sellerId + "/profile"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + sellerId + "/profile"))
                 .header("Content-Type", "application/json")
                 .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -95,12 +89,11 @@ public class SellerNetwork {
      * @return Response chứa danh sách items
      */
     public CompletableFuture<Response> getSellerItems(long sellerId) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + sellerId + "/items"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + sellerId + "/items"))
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -111,12 +104,11 @@ public class SellerNetwork {
      * @return Response chứa thông tin thống kê
      */
     public CompletableFuture<Response> getSellerStatistics(long sellerId) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + sellerId + "/statistics"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + sellerId + "/statistics"))
                 .GET()
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
@@ -130,13 +122,12 @@ public class SellerNetwork {
     public CompletableFuture<Response> withdrawMoney(long sellerId, BigDecimal amount) {
         String jsonBody = gson.toJson(new WithdrawRequest(amount));
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/" + sellerId + "/withdraw"))
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + sellerId + "/withdraw"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
-        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
