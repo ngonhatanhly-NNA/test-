@@ -154,4 +154,41 @@ public class UserService {
             return storedHash.equals(rawPassword);
         }
     }
+
+    /**
+     * Xử lý yêu cầu nâng cấp một BIDDER thành SELLER.
+     * @param username Tên đăng nhập của người dùng gửi yêu cầu.
+     * @return Một đối tượng Response cho biết kết quả.
+     */
+    public Response requestSellerUpgrade(String username) {
+        try {
+            // 1. Tìm người dùng trong CSDL
+            User user = userRepository.getUserByUsername(username);
+            if (user == null) {
+                return new Response("FAIL", "Người dùng không tồn tại.", null);
+            }
+
+            // 2. Kiểm tra xem có đúng là BIDDER không
+            if (user.getRole() != Role.BIDDER) {
+                return new Response("FAIL", "Chỉ có Người mua (Bidder) mới có thể yêu cầu trở thành Người bán.", null);
+            }
+
+            // 3. Thực hiện nâng cấp vai trò
+            boolean success = userRepository.updateUserRole(username, Role.SELLER);
+
+            if (success) {
+                // Lấy lại thông tin profile mới đã được cập nhật để gửi về client
+                Response profileResponse = getUserProfile(username);
+                logger.info("Nâng cấp vai trò thành công cho user '{}'", username);
+                return new Response("SUCCESS", "Yêu cầu của bạn đã được chấp thuận. Bạn đã trở thành Người bán!", profileResponse.getData());
+            } else {
+                logger.warn("Nâng cấp vai trò thất bại cho user '{}' tại tầng repository", username);
+                return new Response("ERROR", "Không thể cập nhật vai trò. Vui lòng thử lại.", null);
+            }
+
+        } catch (Exception e) {
+            logger.error("Lỗi hệ thống khi nâng cấp vai trò cho user '{}': {}", username, e.getMessage(), e);
+            return new Response("ERROR", "Đã xảy ra lỗi hệ thống: " + e.getMessage(), null);
+        }
+    }
 }

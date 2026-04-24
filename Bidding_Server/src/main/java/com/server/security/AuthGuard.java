@@ -99,4 +99,17 @@ public class AuthGuard {
         String json = gson.toJson(new Response("FAIL", message, null));
         throw new UnauthorizedResponse(json);
     }
+
+    /**
+     * Xác thực token và trả về username.
+     * Tận dụng lại logic của requireLogin.
+     * @param ctx Context của Javalin.
+     * @return Username của người dùng đã được xác thực.
+     */
+    public String getUsernameFromToken(Context ctx) {
+        // requireLogin sẽ thực hiện toàn bộ việc xác thực và ném exception nếu thất bại.
+        // Nếu thành công, nó sẽ lưu username vào attribute.
+        requireLogin(ctx);
+        return ctx.attribute("auth.username");
+    }
 }

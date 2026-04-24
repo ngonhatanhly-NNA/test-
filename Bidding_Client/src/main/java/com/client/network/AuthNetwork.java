@@ -92,4 +92,21 @@ public class AuthNetwork {
                     return new Response("ERROR", "HTTP " + code + " - Response không phải JSON: " + briefBody, null);
                 });
     }
+
+    /**
+     * Gửi yêu cầu nâng cấp vai trò thành SELLER.
+     * @param username Tên người dùng cần nâng cấp.
+     * @return Một CompletableFuture chứa đối tượng Response từ server.
+     */
+    public CompletableFuture<Response> requestUpgradeToSeller(String username) {
+        // Endpoint này phải khớp với endpoint bạn định nghĩa ở Server
+        // Giả sử server sẽ lấy username từ session/token, nên body có thể rỗng
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create("http://localhost:7070/api/users/upgrade-to-seller"))
+                .POST(HttpRequest.BodyPublishers.noBody()) // Gửi yêu cầu POST không có body
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
 }

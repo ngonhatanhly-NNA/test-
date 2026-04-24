@@ -12,6 +12,7 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
+<!-- Đảm bảo fx:controller trỏ đúng đến file Java -->
 <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F4F4F4;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.UserProfileController">
     <content>
         <VBox alignment="TOP_CENTER" spacing="30.0" style="-fx-background-color: #F4F4F4; -fx-padding: 40;">
@@ -22,7 +23,7 @@
                         <Font name="System Bold" size="28.0" />
                     </font>
                 </Label>
-                <Label text="Hanlde user's profile and password" textFill="#666666" />
+                <Label text="Handle user's profile and password" textFill="#666666" />
             </VBox>
 
             <VBox maxWidth="650.0" spacing="25.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
@@ -92,6 +93,16 @@
                             <Label text="Thẻ tín dụng (Credit Card):" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
                             <TextField fx:id="txtCreditCard" prefHeight="40.0" promptText="VD: 4422 1133..." style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
                         </VBox>
+                    </HBox>
+
+                    <HBox fx:id="upgradeToSellerBox" alignment="CENTER_LEFT" spacing="10.0" style="-fx-padding: 10 0 0 0;">
+                        <Label text="Bạn muốn bán hàng?" textFill="#555555">
+                            <font><Font name="System Italic" size="12.0" /></font>
+                        </Label>
+                        <!-- Bỏ onAction, thêm fx:id cho Button -->
+                        <Button fx:id="upgradeButton" style="-fx-background-color: transparent; -fx-text-fill: #E3B04B; -fx-border-color: #E3B04B; -fx-border-radius: 4; -fx-cursor: hand;" text="Yêu cầu làm Seller">
+                            <font><Font name="System Bold" size="12.0" /></font>
+                        </Button>
                     </HBox>
                 </VBox>
 

@@ -81,5 +81,16 @@ public class UserController {
             return gson.toJson(new Response("ERROR", "Lỗi định dạng JSON: " + e.getMessage(), null));
         }
     }
-}
 
+    /**
+     * Xử lý yêu cầu nâng cấp thành Seller.
+     * API Endpoint (ví dụ): POST /api/users/upgrade-to-seller
+     * @param username Tên người dùng (có thể lấy từ token xác thực).
+     * @return Chuỗi JSON chứa kết quả.
+     */
+    public String handleUpgradeToSeller(String username) {
+        logger.info("Nhận được yêu cầu nâng cấp vai trò cho user '{}'", username);
+        Response response = userService.requestSellerUpgrade(username);
+        return gson.toJson(response);
+    }
+}

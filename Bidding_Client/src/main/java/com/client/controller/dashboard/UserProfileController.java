@@ -11,11 +11,16 @@ import com.shared.dto.BaseProfileUpdateDTO;
 import com.shared.dto.AdminProfileUpdateDTO;
 import com.shared.dto.BidderProfileUpdateDTO;
 import com.shared.dto.SellerProfileUpdateDTO;
+import com.shared.network.Response;
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class UserProfileController {
@@ -45,6 +50,10 @@ public class UserProfileController {
 
     @FXML private Label lblStatus;
 
+    // --- Box và Nút nâng cấp ---
+    @FXML private HBox upgradeToSellerBox;
+    @FXML private Button upgradeButton; // <-- Thêm khai báo cho nút
+
     private final AuthNetwork authNetwork = new AuthNetwork();
     private final Gson gson = new Gson();
 
@@ -57,6 +66,13 @@ public class UserProfileController {
     @FXML
     public void initialize() {
         hideAllRoleSections();
+
+        // --- GÁN SỰ KIỆN BẰNG CODE JAVA ---
+        // Cách này đảm bảo sự kiện được liên kết chính xác
+        if (upgradeButton != null) {
+            upgradeButton.setOnAction(this::handleRequestSeller);
+        }
+        // ---------------------------------
 
         // Lấy user thật từ session (được set sau khi Login thành công)
         loggedInUsername = ClientSession.getUsername();
@@ -196,6 +212,14 @@ public class UserProfileController {
         // Hiển thị dữ liệu theo strategy
         strategy.displayProfile(this, profile);
 
+        // --- LOGIC HIỂN THỊ NÚT NÂNG CẤP ---
+        // Để kiểm tra giao diện, tạm thời luôn hiện nút này.
+        if (upgradeToSellerBox != null) {
+             upgradeToSellerBox.setVisible(true);
+             upgradeToSellerBox.setManaged(true);
+        }
+        // --- KẾT THÚC THAY ĐỔI ---
+
         // Setup VBox visibility và styling
         if ("ADMIN".equals(role)) {
             vboxAdmin.setVisible(true); vboxAdmin.setManaged(true);
@@ -247,6 +271,54 @@ public class UserProfileController {
             });
             return null;
         });
+    }
+
+    @FXML
+    public void handleRequestSeller(ActionEvent actionEvent) {
+        // Vô hiệu hóa nút để tránh người dùng nhấn nhiều lần
+        if (upgradeButton != null) {
+            upgradeButton.setDisable(true);
+        }
+        lblStatus.setText("Đang gửi yêu cầu...");
+        lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+
+        // Gọi đến AuthNetwork để gửi yêu cầu
+        authNetwork.requestUpgradeToSeller(loggedInUsername).thenAccept(response -> {
+            // Callback này sẽ được thực thi sau khi nhận được phản hồi từ Server
+            // Quan trọng: Phải chạy trên luồng của JavaFX để cập nhật UI
+            Platform.runLater(() -> {
+                if ("SUCCESS".equals(response.getStatus())) {
+                    lblStatus.setText("Nâng cấp thành công! Đang tải lại thông tin...");
+                    lblStatus.setStyle("-fx-text-fill: #28a745;");
+                    // Tải lại toàn bộ dữ liệu profile để giao diện được cập nhật (hiện thêm các trường của Seller)
+                    loadUserDataFromAPI();
+                } else {
+                    lblStatus.setText("Yêu cầu thất bại: " + response.getMessage());
+                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                }
+                // Bật lại nút sau khi xử lý xong (nếu cần)
+                if (upgradeButton != null) {
+                    upgradeButton.setDisable(false);
+                }
+            });
+        }).exceptionally(ex -> {
+            Platform.runLater(() -> {
+                lblStatus.setText("Lỗi kết nối Server khi gửi yêu cầu!");
+                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                if (upgradeButton != null) {
+                    upgradeButton.setDisable(false);
+                }
+            });
+            return null;
+        });
+    }
+
+    private void showAlert(Alert.AlertType alertType, String title, String message) {
+        Alert alert = new Alert(alertType);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     // Getters cho các TextField - dùng bởi Strategy classes

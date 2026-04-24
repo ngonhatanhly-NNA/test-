@@ -168,18 +168,21 @@ public class ServerApp extends WebSocketServer {
         AuthService authService = new AuthService(userRepo);
         ItemService itemService = new ItemService(itemRepo);
         AdminService adminService = new AdminService();
+        UserService userService = new UserService(); // <-- KHỞI TẠO USER SERVICE
         JwtUtil jwtUtil = JwtUtil.fromEnvironment();
 
         AuthController authController = new AuthController(authService, jwtUtil);
         AuctionController auctionController = new AuctionController(auctionService);
         AdminController adminController = new AdminController(adminService);
+        UserController userController = new UserController(userService); // <-- KHỞI TẠO USER CONTROLLER
+
         // ===========================================//
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
         }).start(7070);
         logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 
-        ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController, itemService, auctionService, jwtUtil);
+        ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController, itemService, auctionService, jwtUtil, userController); // <-- TRUYỀN USER CONTROLLER VÀO
         apiRouter.setupRoutes(app);
     }
 }

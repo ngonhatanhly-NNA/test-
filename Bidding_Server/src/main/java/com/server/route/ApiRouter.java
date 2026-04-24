@@ -3,6 +3,7 @@ package com.server.route;
 import com.server.controller.AuctionController;
 import com.server.controller.AuthController;
 import com.server.controller.AdminController;
+import com.server.controller.UserController; // <-- THÊM IMPORT
 import com.server.controller.command.CancelAutoBidCommand;
 import com.server.controller.command.CreateAuctionCommand;
 import com.server.controller.command.CreateItemCommand;
@@ -34,14 +35,16 @@ public class ApiRouter {
     private final ItemService itemService;
     private final AuctionService auctionService;
     private final JwtUtil jwtUtil;
+    private final UserController userController; // <-- THÊM BIẾN
 
-    public ApiRouter(AuthController authController, AuctionController auctionController, AdminController adminController, ItemService itemService, AuctionService auctionService, JwtUtil jwtUtil) {
+    public ApiRouter(AuthController authController, AuctionController auctionController, AdminController adminController, ItemService itemService, AuctionService auctionService, JwtUtil jwtUtil, UserController userController) { // <-- THÊM VÀO CONSTRUCTOR
         this.authController = authController;
         this.auctionController = auctionController;
         this.adminController = adminController;
         this.itemService = itemService;
         this.auctionService = auctionService;
         this.jwtUtil = jwtUtil;
+        this.userController = userController; // <-- GÁN GIÁ TRỊ
     }
 
     public void setupRoutes(Javalin app) {
@@ -50,6 +53,7 @@ public class ApiRouter {
 
         app.before("/api/admin/*", ctx -> authGuard.requireRole(ctx, Role.ADMIN));
         app.before("/api/users/profile", ctx -> authGuard.requireLogin(ctx));
+        app.before("/api/users/upgrade-to-seller", ctx -> authGuard.requireRole(ctx, Role.BIDDER)); // <-- BẢO VỆ ROUTE MỚI
         app.before("/api/items", ctx -> {
             if (ctx.method() == HandlerType.POST) {
                 authGuard.requireRole(ctx, Role.SELLER);
@@ -68,6 +72,13 @@ public class ApiRouter {
         app.post("/api/register", ctx -> authController.processRegisterRest(ctx));
         app.get("/api/users/profile", ctx -> authController.getUserProfile(ctx));
         app.put("/api/users/update", new UpdateProfileCommand(userService));
+
+        // --- ĐĂNG KÝ API MỚI ---
+        app.post("/api/users/upgrade-to-seller", ctx -> {
+            String username = authGuard.getUsernameFromToken(ctx); // Lấy username từ token
+            String resultJson = userController.handleUpgradeToSeller(username);
+            ctx.json(resultJson);
+        });
 
         // --- Nhóm API Sản phẩm (Items) ---
         app.get("/api/items", new GetAllItemsCommand(itemService));
@@ -97,7 +108,5 @@ public class ApiRouter {
         app.post("/api/admin/auctions/cancel", ctx -> adminController.cancelAuction(ctx));
 
         logger.info("API routes đã được thiết lập thành công");
-    }
-}
     }
 }

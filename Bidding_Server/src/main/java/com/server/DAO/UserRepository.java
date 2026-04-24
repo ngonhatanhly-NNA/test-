@@ -304,4 +304,27 @@ public class UserRepository implements IUserRepository {
 		}
 		return null;
 	}
+
+    /**
+     * Cập nhật vai trò của một người dùng trong CSDL.
+     * @param username Tên đăng nhập của người dùng.
+     * @param newRole Vai trò mới.
+     * @return true nếu cập nhật thành công, false nếu thất bại.
+     */
+    public boolean updateUserRole(String username, Role newRole) {
+        String sql = "UPDATE users SET role = ? WHERE username = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newRole.name()); // Chuyển Enum thành String (ví dụ: "SELLER")
+            pstmt.setString(2, username);
+
+            int affectedRows = pstmt.executeUpdate();
+            logger.info("Cập nhật vai trò cho '{}' thành '{}', số dòng ảnh hưởng: {}", username, newRole.name(), affectedRows);
+            return affectedRows > 0;
+        } catch (Exception e) {
+            logger.error("LỖI CẬP NHẬT VAI TRÒ CHO USER '{}': {}", username, e.getMessage(), e);
+            return false;
+        }
+    }
 }

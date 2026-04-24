@@ -21,7 +21,7 @@ public class DBConnection {
 
         String jdbcUrl = getEnvOrDefault("DB_URL", "jdbc:mysql://localhost:3306/auction_db");
         String dbUser = getEnvOrDefault("DB_USER", "root");
-        String dbPassword = getEnvOrDefault("DB_PASSWORD", "");
+        String dbPassword = getEnvOrDefault("DB_PASSWORD", "phong2007");
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(dbUser);
         config.setPassword(dbPassword);
