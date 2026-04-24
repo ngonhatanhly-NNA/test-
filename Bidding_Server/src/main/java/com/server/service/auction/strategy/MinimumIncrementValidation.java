@@ -12,15 +12,14 @@ public class MinimumIncrementValidation implements BidValidationStrategy {
 
     @Override
     public void validate(BidRequestDTO request, Auction auction) throws AuctionException {
-        BigDecimal currentBid = auction.getCurrentHighestBid() != null ?
-            auction.getCurrentHighestBid() : BigDecimal.ZERO;
+        BigDecimal addedAmount = request.getBidAmount();
+        BigDecimal stepPrice = auction.getStepPrice();
 
-        BigDecimal minimumBid = currentBid.add(auction.getStepPrice());
 
-        if (request.getBidAmount().compareTo(minimumBid) < 0) {
+        if (addedAmount.compareTo(stepPrice) < 0) {
             throw new AuctionException(
                 AuctionException.ErrorCode.BID_AMOUNT_TOO_LOW,
-                "Giá tối thiểu là " + minimumBid + ", bạn đặt " + request.getBidAmount()
+                "Giá tối thiểu là " + stepPrice + ", bạn đặt " + request.getBidAmount()
             );
         }
     }

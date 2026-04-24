@@ -13,6 +13,9 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
 
 <VBox prefHeight="720.0" prefWidth="1150.0" spacing="20.0" style="-fx-background-color: #F4F4F4; -fx-padding: 30;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.ViewLiveAuctions">
 
@@ -84,6 +87,16 @@
                     </font>
                 </Label>
                 <Label fx:id="leaderLabel" text="Người dẫn đầu: —" textFill="#333333" />
+
+                <LineChart fx:id="priceChart" prefHeight="200.0" createSymbols="true" legendVisible="false" animated="false">
+                    <xAxis>
+                        <CategoryAxis label="Thời gian" />
+                    </xAxis>
+                    <yAxis>
+                        <NumberAxis label="Giá (VNĐ)" />
+                    </yAxis>
+                </LineChart>
+                <Separator />
             </VBox>
 
             <Separator />

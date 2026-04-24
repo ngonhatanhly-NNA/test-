@@ -1,0 +1,41 @@
+name: Java CI/CD Multi-Environment Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'oracle' # Sử dụng Oracle JDK do Java 25 hiện tại đang là phiên bản rất mới (EA)
+        cache: maven
+
+    - name: Validate Code Convention (Checkstyle)
+      run: mvn checkstyle:check
+
+    - name: Build and Test Project
+      # Chạy clean verify sẽ kích hoạt test, tạo báo cáo jacoco và đóng gói các module
+      run: mvn -B clean verify
+      
+    - name: Upload Jacoco Coverage Report (Ubuntu Only)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: "**/target/site/jacoco/"

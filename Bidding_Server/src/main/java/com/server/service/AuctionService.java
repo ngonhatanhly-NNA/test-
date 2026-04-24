@@ -19,6 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 /**
  * AuctionService: Quản lý toàn bộ logic đấu giá
  *
@@ -30,6 +31,8 @@ import org.slf4j.LoggerFactory;
  * - Facade Pattern: Centralized logging
  * - Singleton Pattern: Repositories
  */
+
+/** Có kiểm tra tính hợp lệ bằng các validation, đấu giá, cập nhật người dẫn đầu */
 public class AuctionService {
 
     private static final Logger logger = LoggerFactory.getLogger(AuctionService.class);

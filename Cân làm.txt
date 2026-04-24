@@ -1,0 +1,2 @@
+@SerializeName : khai báo ánh xạ vì lưu trữ ở db, GSON khác Java,
+ánh xạ giúp kêt nối 2 cái, kia khia báo thôi

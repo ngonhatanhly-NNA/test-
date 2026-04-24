@@ -16,7 +16,7 @@ public class Auction extends Entity {
     private AuctionStatus status;
     private List<BidTransaction> bidHistory = new ArrayList<>();
 
-    public enum AuctionStatus { OPEN, RUNNING, FINISHED, CANCELED }
+    public enum AuctionStatus { OPEN, RUNNING, FINISHED, CANCELED, PAID }
 
     public Auction() {
         super(); // Gọi Entity constructor

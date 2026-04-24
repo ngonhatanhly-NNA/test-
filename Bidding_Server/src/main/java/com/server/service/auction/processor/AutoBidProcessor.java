@@ -11,6 +11,12 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Queue;
 
+/**
+ * Xử lý tự động bid khi có bid mới hoặc khi phiên đấu giá mở cửa
+ * - Lấy danh sách auto bid active cho phiên đấu giá
+ * - Kiểm tra điều kiện và cập nhật phiên đấu giá nếu có auto bid hợp lệ
+ * - Đẩy giao dịch auto bid vào queue để xử lý bất đồng bộ sau này
+ */
 public class AutoBidProcessor{
     private final AutoBidRepository autoBidRepository;
 

@@ -13,7 +13,6 @@ public class BidValidationChain {
     private final List<BidValidationStrategy> strategies = new ArrayList<>();
 
     public BidValidationChain() {
-        // Thêm các validation theo thứ tự logic
         strategies.add(new BasicBidValidation());
         strategies.add(new MinimumIncrementValidation());
     }

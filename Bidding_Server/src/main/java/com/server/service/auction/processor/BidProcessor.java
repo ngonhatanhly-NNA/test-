@@ -8,6 +8,8 @@ import java.util.Queue;
 /**
  * Strategy Pattern: Xử lý bid sau khi validation thành công
  * CHi xu li request client gui len server
+ * @param request: Thông tin bid từ client
+ * @param auction: Phiên đấu giá hiện tại
  */
 public interface BidProcessor {
     /**

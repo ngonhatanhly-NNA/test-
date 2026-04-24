@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 
 /**
  * Implementation: Kiểm tra giá cơ bản
+ * @param request: Thông tin bid từ client
+ * @param auction: Phiên đấu giá hiện tại
  */
 public class BasicBidValidation implements BidValidationStrategy {
 

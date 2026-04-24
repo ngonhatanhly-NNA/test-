@@ -23,6 +23,9 @@ public class BidRequestDTO implements Serializable {
     @SerializedName("maxAutoBidAmount")
     private BigDecimal maxAutoBidAmount;
 
+    @SerializedName("expectedCurrentBid")
+    private BigDecimal expectedCurrentBid;
+
     // Constructors, getters, setters
     public BidRequestDTO() {}
     public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount) {
@@ -48,6 +51,7 @@ public class BidRequestDTO implements Serializable {
     public BigDecimal getMaxAutoBidAmount() { return maxAutoBidAmount; }
     // Getter cho boolean thường dùng tiền tố "is"
     public boolean isEnableAutoBid() { return enableAutoBid; }
+    public BigDecimal getExpectedCurrentBid() { return expectedCurrentBid; }
 
     // Setters (Nếu cần thiết cho việc deserialize JSON)
     public void setAuctionId(long auctionId) { this.auctionId = auctionId; }
@@ -55,6 +59,7 @@ public class BidRequestDTO implements Serializable {
     public void setBidAmount(BigDecimal bidAmount) { this.bidAmount = bidAmount; }
     public void setEnableAutoBid(boolean enableAutoBid) { this.enableAutoBid = enableAutoBid; }
     public void setMaxAutoBidAmount(BigDecimal maxAutoBidAmount) { this.maxAutoBidAmount = maxAutoBidAmount; }
+    public void setExpectedCurrentBid(BigDecimal expectedCurrentBid) { this.expectedCurrentBid = expectedCurrentBid; }
 
     @Override
     public boolean equals(Object o) {

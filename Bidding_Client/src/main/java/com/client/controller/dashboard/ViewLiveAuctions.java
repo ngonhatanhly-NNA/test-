@@ -17,6 +17,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 import java.math.BigDecimal;
 import java.net.URL;
@@ -56,8 +60,13 @@ public class ViewLiveAuctions {
 
     @FXML
     private ImageView itemImageView;
-
+    @FXML
+    private LineChart<String, Number> priceChart;
+    @FXML
+    private XYChart.Series<String, Number> priceSeries;
+    @FXML
     private long currentAuctionId;
+
     private final ExecutorService ioPool = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "auction-http");
         t.setDaemon(true);
@@ -71,6 +80,9 @@ public class ViewLiveAuctions {
     }
 
     public static ViewLiveAuctions getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("ViewLiveAuctions instance is not initialized yet.");
+        }
         return instance;
     }
 
@@ -89,6 +101,14 @@ public class ViewLiveAuctions {
                 }
             });
         }
+
+        priceSeries = new XYChart.Series<>();
+        priceSeries.setName("Prices over time");
+        if (priceChart != null) {
+            priceChart.getData().add(priceSeries);
+            priceChart.setAnimated(false);
+        }
+
         handleRefreshAuctions();
     }
 
@@ -134,6 +154,7 @@ public class ViewLiveAuctions {
             if (refreshButton != null) {
                 refreshButton.setDisable(false);
             }
+
             Throwable ex = task.getException();
             showError("Lỗi mạng: " + (ex != null ? ex.getMessage() : "unknown"));
             if (ex != null) {
@@ -141,6 +162,19 @@ public class ViewLiveAuctions {
             }
         }));
         ioPool.execute(task);
+    }
+
+    public void updateConnectionStatus(boolean isConnected, String message) {
+        Platform.runLater(() -> {
+            if (statusLabel != null) {
+                statusLabel.setText(message);
+                if (isConnected) {
+                    statusLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
+                } else {
+                    statusLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-weight: bold;");
+                }
+            }
+        });
     }
 
     private void applyAuctionDetail(AuctionDetailDTO a) {
@@ -164,6 +198,15 @@ public class ViewLiveAuctions {
         if (remainingLabel != null) {
             remainingLabel.setText("Còn lại: " + formatRemaining(a.getRemainingTime()));
         }
+        if (priceSeries != null) {
+            priceSeries.getData().clear();
+            if (priceSeries != null) {
+                priceSeries.getData().clear();
+                String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+               
+                priceSeries.getData().add(new XYChart.Data<>(timeNow, a.getCurrentPrice() != null ? a.getCurrentPrice() : BigDecimal.ZERO));
+            }
+        }
     }
 
     private static String formatMoney(BigDecimal v) {
@@ -172,7 +215,7 @@ public class ViewLiveAuctions {
 
     private static String formatRemaining(long millis) {
         if (millis <= 0) {
-            return "hết giờ (kiểm tra server)";
+            return "Hết giờ đấu giá";
         }
         long sec = millis / 1000;
         long h = sec / 3600;
@@ -190,11 +233,11 @@ public class ViewLiveAuctions {
     @FXML
     public void handlePlaceBid() {
         if (currentAuctionId <= 0) {
-            showError("Chưa có phiên đấu giá. Bấm \"Làm mới\" sau khi server đã chạy.");
+            showError("Chưa có phiên đấu giá. Bấm \"Refresh\" sau khi server đã chạy.");
             return;
         }
         if (!ClientSession.isLoggedIn()) {
-            showError("Vui lòng đăng nhập (Bidder) trước khi đặt giá.");
+            showError("Vui lòng đăng nhập trước khi đặt giá.");
             return;
         }
         ioPool.execute(() -> {
@@ -305,24 +348,59 @@ public class ViewLiveAuctions {
     }
 
     public void updatePriceRealtime(AuctionUpdateDTO updateData) {
-        if (updateData == null || updateData.getAuctionId() != currentAuctionId) {
+        if (updateData == null ) {
             return;
         }
         Platform.runLater(() -> {
-            if (currentPriceLabel != null && updateData.getCurrentPrice() != null) {
-                currentPriceLabel.setText(formatMoney(updateData.getCurrentPrice()) + " VNĐ");
+            if (updateData.getAuctionId() == currentAuctionId) {
+                if (currentPriceLabel != null && updateData.getCurrentPrice() != null) {
+                    currentPriceLabel.setText(formatMoney(updateData.getCurrentPrice()) + " VNĐ");
+                }
+
+                if (leaderLabel != null && updateData.getHighestBidderName() != null) {
+                    leaderLabel.setText("Người dẫn đầu: " + updateData.getHighestBidderName());
+                }
+
+                if (remainingLabel != null) {
+                    remainingLabel.setText("Còn lại: " + formatRemaining(updateData.getRemainingTime()));
+                }
+
+                if (priceSeries != null && updateData.getCurrentPrice() != null) {
+                String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                priceSeries.getData().add(new XYChart.Data<>(timeNow, updateData.getCurrentPrice()));
+                
+                // Chỉ giữ lại 15 mức giá gần nhất để biểu đồ không bị dồn cục lại
+                if (priceSeries.getData().size() > 15) {
+                    priceSeries.getData().remove(0);
+                }
             }
-            if (leaderLabel != null && updateData.getHighestBidderName() != null) {
-                leaderLabel.setText("Người dẫn đầu: " + updateData.getHighestBidderName());
             }
-            if (remainingLabel != null) {
-                remainingLabel.setText("Còn lại: " + formatRemaining(updateData.getRemainingTime()));
+            if (auctionsContainer != null) {
+                for (var node : auctionsContainer.getChildren()) {
+                    if (node.getUserData() instanceof Long id && id == updateData.getAuctionId()) {
+                        // Cập nhật thẻ đấu giá tương ứng trong danh sách
+                        if (node instanceof VBox card) {
+                            // Cập nhật giá và người dẫn đầu trên thẻ
+                            for (var child : card.getChildren()) {
+                                if (child instanceof Label lbl) {
+                                    String text = lbl.getText();
+                                    if (text.startsWith("Giá:")) {
+                                        lbl.setText("Giá: " + formatMoney(updateData.getCurrentPrice()) + " đ");
+                                    } else if (text.startsWith("Dẫn đầu:")) {
+                                        lbl.setText("Dẫn đầu: " + (updateData.getHighestBidderName() != null ? updateData.getHighestBidderName() : "—"));
+                                    } else if (text.startsWith("Còn lại:")) {
+                                        lbl.setText("Còn lại: " + formatRemaining(updateData.getRemainingTime()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         });
     }
 
     private VBox createAuctionCard(AuctionDetailDTO a) {
-        // Tạo một khối VBox làm thẻ (Card)
         VBox card = new VBox(8);
         card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
         card.setMaxWidth(Double.MAX_VALUE);
@@ -354,6 +432,7 @@ public class ViewLiveAuctions {
 
         // Gắn tất cả vào Thẻ
         card.getChildren().addAll(nameLbl, priceLbl, leaderLbl, timeLbl, btnSelect);
+        card.setUserData(a.getAuctionId()); // Lưu ID đấu giá vào userData để dễ truy xuất sau này nếu cần
         return card;
     }
 
