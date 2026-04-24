@@ -11,7 +11,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SellerRepository implements ISellerRepository {
+    private static final Logger logger = LoggerFactory.getLogger(SellerRepository.class);
 
     @Override
     public boolean promoteToSeller(long userId, String shopName, String bankAccountNumber) {
@@ -34,18 +38,20 @@ public class SellerRepository implements ISellerRepository {
 
                 if (rowsUpdated > 0 && rowsInserted > 0) {
                     conn.commit();
+                    logger.info("User {} đã được promote thành seller với shop '{}'", userId, shopName);
                     return true;
                 } else {
                     conn.rollback();
+                    logger.warn("Promote user {} thất bại, đã rollback", userId);
                     return false;
                 }
             } catch (SQLException e) {
                 conn.rollback();
-                e.printStackTrace();
+                logger.error("Lỗi promote user {} thành seller: {}", userId, e.getMessage(), e);
                 return false;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Lỗi kết nối DB khi promote user {}: {}", userId, e.getMessage(), e);
             return false;
         }
     }
@@ -60,7 +66,7 @@ public class SellerRepository implements ISellerRepository {
             pstmt.setLong(3, sellerId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Lỗi cập nhật shop details cho seller {}: {}", sellerId, e.getMessage(), e);
             return false;
         }
     }
@@ -75,7 +81,7 @@ public class SellerRepository implements ISellerRepository {
             pstmt.setLong(3, sellerId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Lỗi cập nhật rating cho seller {}: {}", sellerId, e.getMessage(), e);
             return false;
         }
     }
@@ -97,7 +103,7 @@ public class SellerRepository implements ISellerRepository {
                 }
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Lỗi tìm seller theo userId {}: {}", userId, e.getMessage(), e);
         }
         return null;
     }
@@ -131,3 +137,4 @@ public class SellerRepository implements ISellerRepository {
                           shopName, bankAccountNumber, rating, totalReviews, isVerified);
     }
 }
+

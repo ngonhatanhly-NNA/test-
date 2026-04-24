@@ -8,7 +8,11 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AuctionRepository implements IAuctionRepository {
+    private static final Logger logger = LoggerFactory.getLogger(AuctionRepository.class);
 
     // ĐÃ XÓA Constructor truyền DBConnection vì chúng ta dùng Singleton
     public AuctionRepository() {
@@ -29,7 +33,7 @@ public class AuctionRepository implements IAuctionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi tìm phiên đấu giá theo id: " + e.getMessage());
+            logger.error("Lỗi tìm phiên đấu giá theo id {}: {}", auctionId, e.getMessage(), e);
         }
         return Optional.empty();
     }
@@ -66,7 +70,7 @@ public class AuctionRepository implements IAuctionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi load phiên đấu giá: " + e.getMessage());
+            logger.error("Lỗi load phiên đấu giá: {}", e.getMessage(), e);
         }
         return auctions;
     }
@@ -110,7 +114,7 @@ public class AuctionRepository implements IAuctionRepository {
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Lỗi update phiên đấu giá: " + e.getMessage());
+            logger.error("Lỗi update phiên đấu giá {}: {}", auction.getId(), e.getMessage(), e);
         }
     }
 
@@ -143,7 +147,7 @@ public class AuctionRepository implements IAuctionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi tạo phiên đấu giá: " + e.getMessage());
+            logger.error("Lỗi tạo phiên đấu giá: {}", e.getMessage(), e);
         }
         return -1;
     }
@@ -173,7 +177,7 @@ public class AuctionRepository implements IAuctionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy lịch sử bid: " + e.getMessage());
+            logger.error("Lỗi lấy lịch sử bid cho auction {}: {}", auctionId, e.getMessage(), e);
         }
         return bidHistory;
     }
@@ -206,3 +210,4 @@ public class AuctionRepository implements IAuctionRepository {
         return auction;
     }
 }
+

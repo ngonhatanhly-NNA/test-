@@ -6,7 +6,11 @@ import com.server.model.Seller;
 import com.server.model.Status;
 import java.sql.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AdminRepository implements IAdminRepository {
+    private static final Logger logger = LoggerFactory.getLogger(AdminRepository.class);
 
     @Override
     public Admin getAdminByUsername(String username) {
@@ -31,7 +35,9 @@ public class AdminRepository implements IAdminRepository {
                     return admin;
                 }
             }
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.error("Lỗi lấy admin theo username '{}': {}", username, e.getMessage(), e);
+        }
         return null;
     }
 
@@ -43,7 +49,9 @@ public class AdminRepository implements IAdminRepository {
             pstmt.setString(1, ip);
             pstmt.setLong(2, adminId);
             pstmt.executeUpdate();
-        } catch (SQLException e) { e.printStackTrace(); }
+        } catch (SQLException e) {
+            logger.error("Lỗi cập nhật last login IP cho admin {}: {}", adminId, e.getMessage(), e);
+        }
     }
 
     @Override
@@ -56,7 +64,7 @@ public class AdminRepository implements IAdminRepository {
             pstmt.setLong(2, userId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("Lỗi cập nhật trạng thái user {} sang {}: {}", userId, newStatus, e.getMessage(), e);
             return false;
         }
     }
@@ -80,13 +88,15 @@ public class AdminRepository implements IAdminRepository {
                 ps2.executeUpdate();
             }
             conn.commit();
+            logger.info("Đã phê duyệt user {} thành seller với shop '{}'", seller.getId(), seller.getShopName());
             return true;
         } catch (SQLException e) {
-            if (conn != null) try { conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
-            e.printStackTrace();
+            if (conn != null) try { conn.rollback(); } catch (SQLException ex) { logger.error("Rollback failed: {}", ex.getMessage(), ex); }
+            logger.error("Lỗi phê duyệt seller cho user {}: {}", seller.getId(), e.getMessage(), e);
             return false;
         } finally {
-            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            if (conn != null) try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { logger.error("Connection close failed: {}", e.getMessage(), e); }
         }
     }
 }
+

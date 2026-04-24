@@ -6,11 +6,15 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Repository quản lý dữ liệu auto-bid trong database
- * Lưu trữ và truy vấn các yêu cầu tự động đặt giá của người dùng
+ * Lưu trữ và truy vấn các yêu cầu tự động đặt giá của ngườii dùng
  */
 public class AutoBidRepository {
+    private static final Logger logger = LoggerFactory.getLogger(AutoBidRepository.class);
 
     public AutoBidRepository() {}
 
@@ -55,11 +59,11 @@ public class AutoBidRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lưu auto-bid: " + e.getMessage());
+            logger.error("Lỗi lưu auto-bid cho auction {} bidder {}: {}", autoBid.getAuctionId(), autoBid.getBidderId(), e.getMessage(), e);
         }
     }
 
-    // Lấy auto-bid của một người dùng cho một phiên đấu giá
+    // Lấy auto-bid của một ngườii dùng cho một phiên đấu giá
     public AutoBidTracker findByAuctionAndBidder(long auctionId, long bidderId) {
         String sql = "SELECT * FROM auto_bids WHERE auction_id = ? AND bidder_id = ? AND is_active = true";
 
@@ -75,7 +79,7 @@ public class AutoBidRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy auto-bid: " + e.getMessage());
+            logger.error("Lỗi lấy auto-bid cho auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
         }
         return null;
     }
@@ -96,7 +100,7 @@ public class AutoBidRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy danh sách auto-bid: " + e.getMessage());
+            logger.error("Lỗi lấy danh sách auto-bid cho auction {}: {}", auctionId, e.getMessage(), e);
         }
         return autoBids;
     }
@@ -112,7 +116,7 @@ public class AutoBidRepository {
             pstmt.setLong(2, bidderId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Lỗi vô hiệu hóa auto-bid: " + e.getMessage());
+            logger.error("Lỗi vô hiệu hóa auto-bid cho auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
         }
     }
 
@@ -127,7 +131,7 @@ public class AutoBidRepository {
             pstmt.setLong(2, bidderId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Lỗi xóa auto-bid: " + e.getMessage());
+            logger.error("Lỗi xóa auto-bid cho auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
         }
     }
 

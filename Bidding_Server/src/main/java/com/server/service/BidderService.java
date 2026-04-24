@@ -7,9 +7,13 @@ import com.server.model.Bidder;
 import com.shared.network.Response;
 import java.math.BigDecimal;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BidderService {
     private final Gson gson = new Gson();
     private final IBidderRepository bidderRepo = new BidderRepository();
+    private static final Logger logger = LoggerFactory.getLogger(BidderService.class);
 
     /**
      * NẠP TIỀN VÀ LƯU DATABASE
@@ -33,9 +37,11 @@ public class BidderService {
             } else {
                 // Rollback Object nếu DB lỗi
                 bidder.setWalletBalance(bidder.getWalletBalance().subtract(depositAmount));
+                logger.error("Lỗi: Không thể cập nhật Database!");
                 return gson.toJson(new Response("ERROR", "Lỗi: Không thể cập nhật Database!", null));
             }
         } catch (Exception e) {
+            logger.error("Lỗi: " + e.getMessage());
             return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
         }
     }
@@ -60,9 +66,9 @@ public class BidderService {
         if (winner.deductFunds(amountToDeduct)) {
             boolean success = bidderRepo.updateBalance(winner.getId(), winner.getWalletBalance());
             if (success) {
-                System.out.println("Đã thanh toán thành công cho: " + winner.getUsername());
+                logger.info("Đã thanh toán thành công cho: " + winner.getUsername());
             } else {
-                System.out.println("Lỗi DB: Chưa trừ được tiền người thắng!");
+                logger.error("Lỗi DB: Chưa trừ được tiền người thắng!");
             }
         }
     }

@@ -1,8 +1,11 @@
 package com.server.model;
 
 import java.math.BigDecimal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Bidder extends User {
+    private static final Logger logger = LoggerFactory.getLogger(Bidder.class);
     private BigDecimal walletBalance;
     private String creditCardInfo;
 
@@ -45,7 +48,7 @@ public class Bidder extends User {
         if (amount != null && amount.compareTo(BigDecimal.ZERO) > 0) {
             this.walletBalance = this.walletBalance.add(amount);
         } else {
-            System.out.println("Lỗi: Số tiền nạp phải lớn hơn 0.");
+            logger.error("Lỗi: Số tiền nạp phải lớn hơn 0.");
         }
     }
 
@@ -54,7 +57,7 @@ public class Bidder extends User {
             this.walletBalance = this.walletBalance.subtract(amount);
             return true;
         }
-        System.out.println("Lỗi: Số dư không đủ hoặc số tiền không hợp lệ.");
+        logger.error("Lỗi: Số dư không đủ hoặc số tiền không hợp lệ.");
         return false;
     }
 }

@@ -19,9 +19,7 @@ public class AdminNetwork {
     private static final String BASE_URL = "http://localhost:7070/api/admin";
     private static final Gson gson = new Gson();
 
-    // ========================================================
-    // 1. DASHBOARD
-    // ========================================================
+
 
     /**
      * Lấy dữ liệu thống kê cho trang Dashboard của Admin.

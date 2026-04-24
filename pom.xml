@@ -23,6 +23,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <jacoco.version>0.8.10</jacoco.version>
         <junit.jupiter.version>5.10.0</junit.jupiter.version>
+        <logback.version>1.4.11</logback.version>
+        <hibernate.version>6.2.0.Final</hibernate.version>
     </properties>
 
     <dependencies>
@@ -40,6 +42,17 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

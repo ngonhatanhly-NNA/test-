@@ -6,7 +6,11 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class BidTransactionRepository {
+    private static final Logger logger = LoggerFactory.getLogger(BidTransactionRepository.class);
 
     public BidTransactionRepository() {
     }
@@ -33,7 +37,7 @@ public class BidTransactionRepository {
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Error saving bid: " + e.getMessage());
+            logger.error("Error saving bid for auction {}: {}", bid.getAuctionId(), e.getMessage(), e);
         }
     }
 
@@ -62,7 +66,7 @@ public class BidTransactionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy bid history: " + e.getMessage());
+            logger.error("Lỗi lấy bid history cho auction {}: {}", auctionId, e.getMessage(), e);
         }
         return bids;
     }
@@ -93,7 +97,7 @@ public class BidTransactionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy bid history: " + e.getMessage());
+            logger.error("Lỗi lấy bid history (limit {}) cho auction {}: {}", limit, auctionId, e.getMessage(), e);
         }
         return bids;
     }
@@ -122,8 +126,9 @@ public class BidTransactionRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy bid gần nhất: " + e.getMessage());
+            logger.error("Lỗi lấy bid gần nhất cho auction {}: {}", auctionId, e.getMessage(), e);
         }
         return null;
     }
 }
+

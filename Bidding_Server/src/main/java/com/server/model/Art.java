@@ -2,8 +2,11 @@ package com.server.model;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Art extends Item {
+    private static final Logger logger = LoggerFactory.getLogger(Art.class);
     private String artistName; // Tên tác giả không thể đổi
     private String material;
     private boolean hasCertificateOfAuthenticity; // Có thể cập nhật nếu sau này tìm thấy giấy chứng nhận
@@ -28,6 +31,6 @@ public class Art extends Item {
 
     @Override
     public void printInfo() {
-        System.out.println("Art: " + getName() + " | Artist: " + artistName + " | Material: " + material + " | Authentic: " + hasCertificateOfAuthenticity);
+        logger.info("Art: {} | Artist: {} | Material: {} | Authentic: {}", getName(), artistName, material, hasCertificateOfAuthenticity);
     }
 }

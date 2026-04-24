@@ -12,7 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AdminService {
+    private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
     private final UserRepository userRepo = new UserRepository();
     private final ItemRepository itemRepo = new ItemRepository();
     private final AdminRepository adminRepo = new AdminRepository();
@@ -26,7 +30,7 @@ public class AdminService {
         try {
             allItems = itemRepo.getAllItems(); // Lay tu DB that
         } catch (Exception e) {
-            // Ignore
+            logger.error("Lỗi khi lấy danh sách sản phẩm", e);
         }
 
         Map<String, Object> dashboard = Map.of(
@@ -83,7 +87,7 @@ public class AdminService {
         Bidder bidder = (Bidder) user;
         adminRepo.updateUserStatus(bidder.getId(), Status.BANNED); // Cap nhat DB
 
-        System.out.println(" [ADMIN CAM] Nguoi dung: " + username + " (ID: " + bidder.getId() + ")");
+        logger.info("[ADMIN CAM] Nguoi dung: {} (ID: {})", username, bidder.getId());
         return gson.toJson(new Response("THANH_CONG", "Da cam tai khoan: " + username, Map.of("maNguoiDung", bidder.getId())));
     }
 
@@ -96,7 +100,7 @@ public class AdminService {
         Bidder bidder = (Bidder) user;
         adminRepo.updateUserStatus(bidder.getId(), Status.ACTIVE); // Cap nhat DB
 
-        System.out.println(" [ADMIN BO CAM] Nguoi dung: " + username + " (ID: " + bidder.getId() + ")");
+        logger.info("[ADMIN BO CAM] Nguoi dung: {} (ID: {})", username, bidder.getId());
         return gson.toJson(new Response("THANH_CONG", "Da bo cam tai khoan: " + username, Map.of("maNguoiDung", bidder.getId())));
     }
 

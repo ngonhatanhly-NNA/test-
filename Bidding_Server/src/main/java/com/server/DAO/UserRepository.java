@@ -14,7 +14,11 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class UserRepository implements IUserRepository {
+	private static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
 
 	// ==========================================
 	// 1. STRATEGY LƯU DỮ LIỆU TẠO MỚI (SAVE)
@@ -75,8 +79,7 @@ public class UserRepository implements IUserRepository {
 			return pstmt.executeUpdate() > 0;
 
 		} catch (Exception e) {
-			System.err.println("LỖI CẬP NHẬT USER DATABASE: ");
-			e.printStackTrace();
+			logger.error("LỖI CẬP NHẬT USER DATABASE: {}", e.getMessage(), e);
 			return false;
 		}
 	}
@@ -106,14 +109,14 @@ public class UserRepository implements IUserRepository {
 			return true;
 
 		} catch (Exception e) {
-			System.err.println("LỖI CẬP NHẬT DB VÀO USER");
+			logger.error("LỖI CẬP NHẬT DB VÀO USER: {}", e.getMessage(), e);
 			if (conn != null) {
-				try { conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
+				try { conn.rollback(); } catch (Exception ex) { logger.error("Rollback failed: {}", ex.getMessage(), ex); }
 			}
 			return false;
 		} finally {
 			if (conn != null) {
-				try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) { e.printStackTrace(); }
+				try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) { logger.error("Connection close failed: {}", e.getMessage(), e); }
 			}
 		}
 	}
@@ -130,8 +133,7 @@ public class UserRepository implements IUserRepository {
 			return pstmt.executeUpdate() > 0;
 
 		} catch (Exception e) {
-			System.err.println("LỖI ĐỔI MẬT KHẨU TRONG DATABASE: ");
-			e.printStackTrace();
+			logger.error("LỖI ĐỔI MẬT KHẨU TRONG DATABASE: {}", e.getMessage(), e);
 			return false;
 		}
 	}
@@ -181,16 +183,16 @@ public class UserRepository implements IUserRepository {
 
 		} catch (Exception e) {
 			if (conn != null) {
-				try { conn.rollback(); System.err.println("LỖI LƯU DATABASE - ĐÃ ROLLBACK DỮ LIỆU!"); }
-				catch (Exception rollbackEx) { rollbackEx.printStackTrace(); }
+				try { conn.rollback(); logger.error("LỖI LƯU DATABASE - ĐÃ ROLLBACK DỮ LIỆU!"); }
+				catch (Exception rollbackEx) { logger.error("Rollback failed: {}", rollbackEx.getMessage(), rollbackEx); }
 			}
-			e.printStackTrace();
+			logger.error("LỖI LƯU USER VÀO DATABASE: {}", e.getMessage(), e);
 			return false;
 
 		} finally {
 			if (conn != null) {
 				try { conn.setAutoCommit(true); conn.close(); }
-				catch (Exception ex) { ex.printStackTrace(); }
+				catch (Exception ex) { logger.error("Connection close failed: {}", ex.getMessage(), ex); }
 			}
 		}
 	}
@@ -273,7 +275,7 @@ public class UserRepository implements IUserRepository {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("LỖI LẤY USER THEO USERNAME '{}': {}", username, e.getMessage(), e);
 		}
 		return null;
 	}
@@ -298,7 +300,7 @@ public class UserRepository implements IUserRepository {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("LỖI LẤY USER THEO ID {}: {}", userId, e.getMessage(), e);
 		}
 		return null;
 	}

@@ -9,8 +9,12 @@ import org.mindrot.jbcrypt.BCrypt;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UserService {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class UserService {   
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     // ==========================================
     // MAPPER, OCP

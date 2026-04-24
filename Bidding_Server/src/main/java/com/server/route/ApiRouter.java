@@ -1,11 +1,8 @@
 package com.server.route;
 
-import com.server.DAO.ItemRepository;
 import com.server.controller.AuctionController;
 import com.server.controller.AuthController;
 import com.server.controller.AdminController;
-import com.server.DAO.AuctionRepository;
-import com.server.DAO.BidTransactionRepository;
 import com.server.controller.command.CancelAutoBidCommand;
 import com.server.controller.command.CreateAuctionCommand;
 import com.server.controller.command.CreateItemCommand;
@@ -25,9 +22,12 @@ import com.server.security.JwtUtil;
 import io.javalin.Javalin;
 import io.javalin.http.HandlerType;
 
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ApiRouter {
+    private static final Logger logger = LoggerFactory.getLogger(ApiRouter.class);
+
     private final AuthController authController;
     private final AuctionController auctionController;
     private final AdminController adminController;
@@ -35,7 +35,6 @@ public class ApiRouter {
     private final AuctionService auctionService;
     private final JwtUtil jwtUtil;
 
-    // Router nhận các Controller đã được lắp ráp đầy đủ phụ thuộc
     public ApiRouter(AuthController authController, AuctionController auctionController, AdminController adminController, ItemService itemService, AuctionService auctionService, JwtUtil jwtUtil) {
         this.authController = authController;
         this.auctionController = auctionController;
@@ -45,7 +44,7 @@ public class ApiRouter {
         this.jwtUtil = jwtUtil;
     }
 
-    public void setupRoutes(Javalin app) { // Fix: public instance
+    public void setupRoutes(Javalin app) {
         UserService userService = new UserService();
         AuthGuard authGuard = new AuthGuard(userService, jwtUtil);
 
@@ -65,17 +64,14 @@ public class ApiRouter {
         app.before("/api/auctions/*/auto-bid/*", ctx -> authGuard.requireRole(ctx, Role.BIDDER, Role.SELLER));
 
         // --- Nhóm API Xác thực (Auth) ---
-        // Khớp với AuthNetwork.java (dùng /api/login, /api/register)
         app.post("/api/login", ctx -> authController.processLoginRest(ctx));
         app.post("/api/register", ctx -> authController.processRegisterRest(ctx));
         app.get("/api/users/profile", ctx -> authController.getUserProfile(ctx));
-        // Update profile cần session username + update full profile theo role
         app.put("/api/users/update", new UpdateProfileCommand(userService));
 
         // --- Nhóm API Sản phẩm (Items) ---
         app.get("/api/items", new GetAllItemsCommand(itemService));
         app.post("/api/items", new CreateItemCommand(itemService));
-        //Lưu ý là dùng POST dùng để gửi dữ liệu lên, GET dùng để lấy dữ liệu về.
 
         // --- Nhóm API Đấu giá (Auctions) ---
         app.post("/api/auctions", new CreateAuctionCommand(auctionService));
@@ -99,5 +95,9 @@ public class ApiRouter {
         app.get("/api/admin/finance/revenue-estimate", ctx -> adminController.getRevenueEstimate(ctx));
         app.get("/api/admin/users/{username}/activity", ctx -> adminController.getUserActivityLog(ctx));
         app.post("/api/admin/auctions/cancel", ctx -> adminController.cancelAuction(ctx));
+
+        logger.info("API routes đã được thiết lập thành công");
+    }
+}
     }
 }

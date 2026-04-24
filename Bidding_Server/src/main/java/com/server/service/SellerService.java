@@ -6,6 +6,8 @@ import com.server.model.Status;
 import com.server.model.User;
 import com.shared.network.Response;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * Lớp Service xử lý các nghiệp vụ liên quan đến Seller,
  * giao tiếp với tầng Database thông qua Repository.
@@ -13,7 +15,7 @@ import com.shared.network.Response;
 public class SellerService {
 
     private final ISellerRepository sellerRepository;
-
+    private static final Logger logger = LoggerFactory.getLogger(SellerService.class);
     // Sử dụng Dependency Injection để truyền Repository vào
     public SellerService(ISellerRepository sellerRepository) {
         this.sellerRepository = sellerRepository;

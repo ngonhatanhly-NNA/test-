@@ -12,8 +12,12 @@ import com.shared.dto.*;
 import org.mindrot.jbcrypt.BCrypt;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AuthService {
     private final UserRepository userRepository;
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     public AuthService() {
         this(new UserRepository());
@@ -25,22 +29,28 @@ public class AuthService {
 
     public void register (RegisterRequestDTO dto){
         if (dto == null) {
+            logger.error("Dữ liệu đăng ký không hợp lệ!");
             throw new AuthValidationException("Dữ liệu đăng ký không hợp lệ!");
         }
         if (isBlank(dto.getUsername())) {
+            logger.error("Vui lòng nhập tài khoản!");
             throw new AuthValidationException("Vui lòng nhập tài khoản!");
         }
         if (isBlank(dto.getPassword())) {
+            logger.error("Vui lòng nhập mật khẩu!");
             throw new AuthValidationException("Vui lòng nhập mật khẩu!");
         }
         if (isBlank(dto.getEmail())) {
+            logger.error("Vui lòng nhập email!");
             throw new AuthValidationException("Vui lòng nhập email!");
         }
         if (isBlank(dto.getFullName())) {
+            logger.error("Vui lòng nhập họ và tên!");
             throw new AuthValidationException("Vui lòng nhập họ và tên!");
         }
 
         if (userRepository.getUserByUsername(dto.getUsername()) != null){
+            logger.error("Username đã tồn tại: " + dto.getUsername());
             throw new DuplicateUserException(DuplicateUserException.ErrorCode.USERNAME_EXISTED,dto.getUsername());
         }
         String hashedPassword = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
@@ -53,18 +63,22 @@ public class AuthService {
 
         // Đưa về controller để controller đóng gói lại và trả cho Client
         if (!isSaved) {
+            logger.error("Đăng ký thất bại do hệ thống!");
             throw new AppException("REGISTER_FAILED", "Đăng ký thất bại do hệ thống!", 500);
         }
     }
 
     public UserProfileResponseDTO login (LoginRequestDTO loginData){
         if (loginData == null) {
+            logger.error("Dữ liệu đăng nhập không hợp lệ!");
             throw new AuthValidationException("Dữ liệu đăng nhập không hợp lệ!");
         }
         if (isBlank(loginData.getUsername())) {
+            logger.error("Vui lòng nhập tài khoản!");
             throw new AuthValidationException("Vui lòng nhập tài khoản!");
         }
         if (isBlank(loginData.getPassword())) {
+            logger.error("Vui lòng nhập mật khẩu!");
             throw new AuthValidationException("Vui lòng nhập mật khẩu!");
         }
 
@@ -72,10 +86,12 @@ public class AuthService {
 
         // Kiểm tra tồn tại
         if (userInDb == null) {
+            logger.error("Người dùng không tồn tại: " + loginData.getUsername());
             throw new UserNotFoundException(loginData.getUsername());
         }
 
         if (!isPasswordValid(loginData.getPassword(), userInDb.getPasswordHash())) {
+            logger.error("Sai mật khẩu cho người dùng: " + loginData.getUsername());
             throw new InvalidCredentialException();
         }
 
@@ -87,11 +103,13 @@ public class AuthService {
      */
     public UserProfileResponseDTO getUserProfile(String username) {
         if (isBlank(username)) {
+            logger.error("Username không được để trống!");
             throw new AuthValidationException("Username không được để trống!");
         }
 
         User user = userRepository.getUserByUsername(username);
         if (user == null) {
+            logger.error("Người dùng không tồn tại: " + username);
             throw new UserNotFoundException(username);
         }
 
@@ -103,11 +121,13 @@ public class AuthService {
      */
     public void updateProfile(BaseProfileUpdateDTO updateData) {
         if (updateData == null || updateData.getId() <= 0) {
+            logger.error("Dữ liệu cập nhật không hợp lệ!");
             throw new AuthValidationException("Dữ liệu cập nhật không hợp lệ!");
         }
 
         User user = userRepository.getUserById(updateData.getId());
         if (user == null) {
+            logger.error("Người dùng không tồn tại: ID " + updateData.getId());
             throw new UserNotFoundException("User ID: " + updateData.getId());
         }
 
@@ -127,6 +147,7 @@ public class AuthService {
 
         boolean isUpdated = userRepository.updateUser(user);
         if (!isUpdated) {
+            logger.error("Cập nhật thông tin thất bại: " + user.getId());
             throw new AppException("UPDATE_FAILED", "Cập nhật thông tin thất bại!", 500);
         }
     }

@@ -6,10 +6,10 @@ Một hệ thống đấu giá trực tuyến được xây dựng dựa trên k
 
 | STT | Họ và Tên | Mã Sinh Viên | Vai trò (Role) |
 |:---:|:---|:---|:---|
-| 1 | Ngô Nhật Ánh | 25020030 | Developer / UI-UX / Core Backend |
-| 2 | Đinh Anh Vũ | ... | ... |
-| 3 | Hoàng Văn Tưởng | ... | ... |
-| 4 | Mai Thế Phong | ... | ... |
+| 1 | Ngô Nhật Ánh | 25020030 |Service  / UI-UX / Network / DAO - Set up|
+| 2 | Đinh Anh Vũ | 25020432 | Service  / UI-UX / Network / DAO |
+| 3 | Hoàng Văn Tưởng | 25020383 |  Service / Network |
+| 4 | Mai Thế Phong | 25020310 | Service - Network |
 
 ---
 
@@ -44,28 +44,53 @@ Dự án sử dụng mô hình Client-Server, do đó bạn cần khởi chạy 
 Mở terminal tại thư mục gốc của dự án (nơi chứa file `pom.xml` tổng) và chạy lệnh:
 ```bash
 mvn clean install
-```
 
-### 4. Chạy nhanh bằng Docker (Windows)
-1. Cài Docker Desktop và bật WSL2.
-2. Tại thư mục gốc project, chạy:
-```powershell
-docker compose up -d --build
+
+
 ```
-3. Server sẽ chạy ở:
+ Server sẽ chạy ở:
 - REST: http://localhost:7070
 - WebSocket: ws://localhost:8080
 
-> Docker dùng các biến môi trường cho DB:
-> - DB_URL (mặc định: jdbc:mysql://db:3306/auction_db)
-> - DB_USER (mặc định: root)
-> - DB_PASSWORD (mặc định: auction)
+## 📋 Bảng Theo Dõi Tiến Độ Công Việc (Team 13)
 
-### 5. CI/CD (GitHub Actions)
-- Workflow `maven-test.yml` chạy build + test trên JDK 25.
-- Workflow `docker-build.yml` build Docker image cho server.
-- Workflow `code-quality.yml` chỉ chạy khi có `SONAR_TOKEN`.
+| Nhóm chức năng | Tên công việc / Tính năng | Trạng thái | Người phụ trách |
+| :--- | :--- | :---: | :--- |
+| **1. Khởi tạo & Kiến trúc** | Thiết lập kiến trúc Multi-module Maven (shared, client, server) | ✅ Hoàn thành | Ngô Nhật Ánh |
+| | Thiết kế hệ thống Entity & Data Models cốt lõi | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ |
+| | Thiết lập CSDL MySQL & cấu hình kết nối Singleton JDBC | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ |
+| | App Config, các dữ liệu kiểu tài khoản, mật khẩu | ❌ Chưa làm | Ngô Nhật Ánh |
+| **2. Xác thực & Người dùng** | UI/UX màn hình Đăng ký & Đăng nhập (JavaFX) | ✅ Hoàn thành | Ngô Nhật Ánh |
+| | Xử lý logic kết nối DB cho Đăng ký/Đăng nhập qua class Base User | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ |
+| | Middleware phân quyền (AuthZ) bảo vệ API (VD: bắt buộc login, check role) | ❌ Chưa làm | Phong Tưởng |
+| | Logic Bidder, Admin, Service và Repository | ✅ Hoàn thành | Phong, Tưởng |
+| | Quản lý ví (Wallet), nạp/rút tiền, và thanh toán/settlement | ⚠️ Đang làm | Phong Tưởng |
+| | Tính năng phụ: Quên mật khẩu, xác thực email, Ban/Unban tài khoản | ❌ Chưa làm | Phong Tưởng |
+| **3. Quản lý Sản phẩm (Item)**| Thiết kế giao diện Sảnh chính (Dashboard / Auction Menu) | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ |
+| | Tính năng tạo phiên đấu giá (Create Item) & hiển thị danh sách Live | 🔄 Đang làm | Ngô Nhật Ánh, Đinh Anh Vũ |
+| | UI nhập thuộc tính riêng biệt theo từng loại Item (Electronics, Art, Vehicle) | ❌ Chưa làm | Đinh Anh Vũ |
+| | Quản lý upload và hiển thị ảnh thực tế (ImageController) | ❌ Chưa làm | Đinh Anh Vũ, Phong |
+| **4. Nghiệp vụ Đấu giá** | Thiết lập Socket 2 chiều Client-Server để truyền tải DTO | 🔄 Đang làm | Ngô Nhật Ánh, Đinh Anh Vũ |
+| | Tích hợp Observer Pattern để broadcast cập nhật giá Real-time | 🔄 Đang làm | Ngô Nhật Ánh |
+| | Xử lý thuật toán Đấu giá tự động (Auto-bidding) & Chống cướp giờ chót | ❌ Chưa làm | Ngô Nhật Ánh |
+| | Xử lý đấu giá đồng thời (Concurrent bidding) | ❌ Chưa làm | Ngô Nhật Ánh |
+| | Code luật giá sàn (ReservePriceValidation) | ❌ Chưa làm | Ngô Nhật Ánh |
+| | Cơ chế khôi phục trạng thái đấu giá (Cache vs DB) khi Server restart | ❌ Chưa làm | Ngô Nhật Ánh |
+| **5. Chức năng Admin** | Xây dựng API lấy danh sách User (getAllUsers) và lịch sử hoạt động | ❌ Chưa làm | Đinh Anh Vũ |
+| | Chức năng hủy phiên đấu giá (cancel auction) và duyệt người bán | ❌ Chưa làm | Phong Tưởng |
+| | Parse dữ liệu và hiển thị lên giao diện AdminDashboardController | ❌ Chưa làm | Đinh Anh Vũ, Nhật Ánh, Phong, Tưởng |
+| **6. Vận hành & CI/CD** | Cấu hình GitHub Actions (build-test, SonarCloud, Docker workflow) | 🔄 Đang làm | Ngô Nhật Ánh |
+| | Sửa lỗi test Mockito, cấu hình JaCoCo report, bật test mặc định | ❌ Chưa làm | Phong Tưởng |
+| | Bổ sung Logging đồng bộ (correlation id), check endpoint (/health) | ❌ Chưa làm | Ngô Nhật Ánh |
+| | Đóng gói ứng dụng và chạy, kiểm thử: Docker, CI/CD, Github Actions | ❌ Chưa làm | Ngô Nhật Ánh |
+| **7. JUnit + Refactor** | Thiết kế test cho chức năng đấu giá, Item | ⚠️ Nửa vời | Phong |
+| | Refactor project tuân thủ Builder Pattern và Prototype Pattern | ⚠️ Nửa vời | Đinh Anh Vũ |
 
+> **Chú thích trạng thái:**
+> * ✅ **Hoàn thành:** Đã code xong và chạy ổn định.
+> * 🔄 **Đang làm:** Đang trong quá trình phát triển.
+> * ⚠️ **Nửa vời / Cần update:** Đã làm một phần nhưng chưa hoàn thiện hoặc cần fix thêm.
+> * ❌ **Chưa làm:** Nằm trong kế hoạch nhưng chưa bắt đầu.
 ## Kiến trúc hệ thống
 
 Dự án được chia thành 3 module độc lập để đảm bảo Tách biệt mối quan hệ**:

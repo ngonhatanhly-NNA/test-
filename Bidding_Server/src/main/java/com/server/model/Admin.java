@@ -1,9 +1,12 @@
 package com.server.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Admin extends User {
     private String roleLevel;
     private String lastLoginIp;
-
+    private static final Logger logger = LoggerFactory.getLogger(Admin.class);
     public Admin() {}
 
     // Đã đổi kiểu Status

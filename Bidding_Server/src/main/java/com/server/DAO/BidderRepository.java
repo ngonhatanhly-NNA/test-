@@ -5,16 +5,20 @@ import com.server.model.*;
 import java.math.BigDecimal;
 import java.sql.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Lớp thực thi các lệnh liên quan đến Bidder trong Cơ sở dữ liệu (MySQL).
  * Đây là nơi biến các yêu cầu trong Java thành lệnh SQL thật sự.
  */
 public class BidderRepository implements IBidderRepository {
+    private static final Logger logger = LoggerFactory.getLogger(BidderRepository.class);
 
     // --- VIỆC 1: CẬP NHẬT SỐ DƯ (Nạp tiền hoặc Trừ tiền) ---
     @Override
     public boolean updateBalance(long bidderId, BigDecimal newBalance) {
-        // Viết lệnh SQL: Tìm đúng người có user_id này và đè số dư mới lên
+        // Viết lệnh SQL: Tìm đúng ngườii có user_id này và đè số dư mới lên
         String sql = "UPDATE bidders SET walletBalance = ? WHERE user_id = ?";
 
         // Mở "đường ống" kết nối tới Database (dùng Try-with-resources để tự đóng sau khi xong)
@@ -23,14 +27,13 @@ public class BidderRepository implements IBidderRepository {
 
             // Truyền dữ liệu vào các dấu hỏi chấm (?) để tránh lỗi bảo mật SQL Injection
             pstmt.setBigDecimal(1, newBalance); // Dấu hỏi số 1: Số dư mới
-            pstmt.setLong(2, bidderId);        // Dấu hỏi số 2: ID người cần cập nhật
+            pstmt.setLong(2, bidderId);        // Dấu hỏi số 2: ID ngườii cần cập nhật
 
             // Chốt lệnh: executeUpdate trả về số dòng bị thay đổi. Nếu > 0 tức là đã lưu thành công.
             return pstmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            System.err.println("Lỗi DB: Không thể cập nhật tiền cho ID " + bidderId);
-            e.printStackTrace();
+            logger.error("Lỗi DB: Không thể cập nhật tiền cho ID {}: {}", bidderId, e.getMessage(), e);
             return false;
         }
     }
@@ -68,8 +71,7 @@ public class BidderRepository implements IBidderRepository {
                 );
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi khi tìm Bidder theo username: " + username);
-            e.printStackTrace();
+            logger.error("Lỗi khi tìm Bidder theo username '{}': {}", username, e.getMessage(), e);
         }
         return null; // Không tìm thấy thì trả về rỗng
     }
@@ -99,9 +101,9 @@ public class BidderRepository implements IBidderRepository {
                 );
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi DB: Không tìm thấy Bidder ID " + id);
-            e.printStackTrace();
+            logger.error("Lỗi DB: Không tìm thấy Bidder ID {}: {}", id, e.getMessage(), e);
         }
         return null;
     }
 }
+

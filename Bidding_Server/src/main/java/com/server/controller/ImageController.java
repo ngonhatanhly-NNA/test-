@@ -13,20 +13,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
-public class ImageController {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    // Thư mục để lưu ảnh, nên được cấu hình từ bên ngoài trong ứng dụng thực tế
+public class ImageController {
+    private static final Logger logger = LoggerFactory.getLogger(ImageController.class);
+
     private final String UPLOAD_DIR = "uploads";
 
     public ImageController() {
-        // Tạo thư mục uploads nếu nó chưa tồn tại
         new File(UPLOAD_DIR).mkdirs();
     }
 
-    /**
-     * POST /api/images/upload
-     * Tải ảnh lên server.
-     */
     public void uploadImage(Context ctx) {
         UploadedFile uploadedFile = ctx.uploadedFile("image");
         if (uploadedFile == null) {
@@ -35,29 +33,24 @@ public class ImageController {
         }
 
         try (InputStream inputStream = uploadedFile.content()) {
-            // Tạo một tên file duy nhất để tránh trùng lặp
             String extension = getFileExtension(uploadedFile.filename());
             String uniqueFileName = UUID.randomUUID().toString() + "." + extension;
             Path destinationPath = Paths.get(UPLOAD_DIR, uniqueFileName);
 
-            // Lưu file
             try (FileOutputStream outputStream = new FileOutputStream(destinationPath.toFile())) {
                 inputStream.transferTo(outputStream);
             }
 
-            // Trả về đường dẫn tương đối của ảnh
             String fileUrl = "/api/images/" + uniqueFileName;
+            logger.info("Tải ảnh lên thành công: {} -> {}", uploadedFile.filename(), uniqueFileName);
             ctx.status(201).json(new Response("SUCCESS", "Tải ảnh lên thành công.", fileUrl));
 
         } catch (Exception e) {
+            logger.error("Lỗi khi lưu file ảnh: {}", e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Lỗi khi lưu file: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * GET /api/images/{filename}
-     * Phục vụ file ảnh cho client.
-     */
     public void serveImage(Context ctx) {
         String filename = ctx.pathParam("filename");
         Path imagePath = Paths.get(UPLOAD_DIR, filename);
@@ -73,6 +66,7 @@ public class ImageController {
             ctx.contentType(mimeType != null ? mimeType : "application/octet-stream");
             ctx.result(fileInputStream);
         } catch (Exception e) {
+            logger.error("Lỗi khi đọc file ảnh '{}': {}", filename, e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Lỗi khi đọc file: " + e.getMessage(), null));
         }
     }
@@ -80,8 +74,9 @@ public class ImageController {
     private String getFileExtension(String filename) {
         int lastIndexOf = filename.lastIndexOf(".");
         if (lastIndexOf == -1) {
-            return ""; // không có đuôi file
+            return "";
         }
         return filename.substring(lastIndexOf + 1);
     }
 }
+

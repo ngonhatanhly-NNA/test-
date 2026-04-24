@@ -20,12 +20,14 @@ import org.java_websocket.server.WebSocketServer;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.concurrent.ThreadPoolExecutor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerApp extends WebSocketServer {
 
     public ServerApp(InetSocketAddress address) { super(address); }
-
+    private static final Logger logger = LoggerFactory.getLogger(ServerApp.class);
     // PHẦN WEBSOCKET (CHỈ DÙNG CHO ĐẤU GIÁ SAU NÀY)
     private AuctionService auctionService;
     private com.google.gson.Gson gson = new com.google.gson.Gson();
@@ -35,23 +37,28 @@ public class ServerApp extends WebSocketServer {
     }
 
     @Override public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        System.out.println("Client kết nối mới: " + conn.getRemoteSocketAddress());
+        logger.info("Client connected: {}", conn.getRemoteSocketAddress());
         Broadcaster.addClient(conn);
     }
     @Override public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        System.out.println("Cleint ngắt kết nối: " + conn.getRemoteSocketAddress());
+        logger.info("Client disconnected: {}", conn.getRemoteSocketAddress());
         Broadcaster.removeClient(conn);
     }
     @Override public void onMessage(WebSocket conn, String message) {
-        System.out.println("nhận lệnh đấu giá: " + message);
+        logger.info("Received auction message from {}: {}", conn.getRemoteSocketAddress(), message);
         try {
             handleAuctionMessage(message);
         } catch (Exception e) {
-            System.err.println("Lỗi xử lý message: " + e.getMessage());
+            logger.error("Lỗi xử lý message từ client {}: {}", conn.getRemoteSocketAddress(), e.getMessage());
         }
     }
-    @Override public void onError(WebSocket conn, Exception ex) { ex.printStackTrace(); }
-    @Override public void onStart() { System.out.println("=== TRẠM ĐẤU GIÁ CHẠY CỔNG " + getPort() + " ==="); }
+    @Override public void onError(WebSocket conn, Exception ex) { 
+        logger.error("Lỗi xảy ra với client {}: {}", conn.getRemoteSocketAddress(), ex.getMessage());
+        ex.printStackTrace(); 
+    }
+    @Override public void onStart() { 
+        logger.info("WebSocket server started on port {}", getPort());
+    }   
 
     /**
      * Xử lý WebSocket message từ client
@@ -80,10 +87,10 @@ public class ServerApp extends WebSocketServer {
                     handleUpdateAutoBid(payload);
                     break;
                 default:
-                    System.out.println("Loại message không hợp lệ: " + type);
+                    logger.warn("Loại message không hợp lệ: {}", type);
             }
         } catch (Exception e) {
-            System.err.println("Lỗi xử lý " + type + ": " + e.getMessage());
+            logger.error("Lỗi xử lý message {}: {}", type, e.getMessage());
         }
     }
 
@@ -122,10 +129,10 @@ public class ServerApp extends WebSocketServer {
     public static void main(String[] args) {
         try (Connection conn = DBConnection.getInstance().getConnection()) {
             if (conn != null) {
-                System.out.println("Kết nối DB qua HikariCP thành công!");
+                logger.info("Kết nối DB qua HikariCP thành công!");
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi kết nối DB: " + e.getMessage());
+            logger.error("Lỗi kết nối DB: {}", e.getMessage());
             return; // Dừng server luôn nếu không kết nối được Database
         }
 
@@ -134,7 +141,8 @@ public class ServerApp extends WebSocketServer {
         wsServer.start();
 
         // 3. Khởi động REST API (CỔNG 7070)
-
+        logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
+        
         // Khoi tao cac DI, update fix cho nay sau :)
         UserRepository userRepo = new UserRepository();
         ItemRepository itemRepo = new ItemRepository();
@@ -169,7 +177,7 @@ public class ServerApp extends WebSocketServer {
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
         }).start(7070);
-        System.out.println("=== TRẠM REST API CHẠY CỔNG 7070 ===");
+        logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 
         ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController, itemService, auctionService, jwtUtil);
         apiRouter.setupRoutes(app);

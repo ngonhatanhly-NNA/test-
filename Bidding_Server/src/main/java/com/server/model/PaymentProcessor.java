@@ -1,5 +1,6 @@
 package com.server.model;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 public interface PaymentProcessor {
     boolean processDeposit(long userId, double amount);
 }
@@ -8,8 +9,9 @@ public interface PaymentProcessor {
 class VNPayAdapter implements PaymentProcessor {
     @Override
     public boolean processDeposit(long userId, double amount) {
-        System.out.println("Đang mã hóa dữ liệu...");
-        System.out.println("Thực hiện nạp " + amount + " VNĐ.");
+        Logger logger = LoggerFactory.getLogger(VNPayAdapter.class);
+        logger.info("Đang mã hóa dữ liệu...");
+        logger.info("Thực hiện nạp {} VNĐ.", amount);
         return true;
     }
 }
@@ -18,7 +20,9 @@ class VNPayAdapter implements PaymentProcessor {
 class MomoAdapter implements PaymentProcessor {
     @Override
     public boolean processDeposit(long userId, double amount) {
-        System.out.println("...");
+        Logger logger = LoggerFactory.getLogger(MomoAdapter.class);
+        logger.info("Đang xử lý thanh toán qua Momo...");
+        logger.info("Thực hiện nạp {} VNĐ.", amount);
         return true;
     }
 }

@@ -9,9 +9,13 @@ import com.shared.dto.ItemResponseDTO; // Nhớ import cái hộp DTO của em
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ItemService {
 
     private ItemRepository itemRepo;
+    private static final Logger logger = LoggerFactory.getLogger(ItemService.class);
     // ====================================================================
     // CODE MỚI (CHUẨN SOLID DÀNH CHO LUỒNG DTO)
     // ====================================================================
@@ -63,7 +67,7 @@ public class ItemService {
             return itemRepo.saveItem(newItem);
 
         } catch (Exception e) {
-            System.out.println("Lỗi khi đúc sản phẩm từ DTO: " + e.getMessage());
+            logger.error("Lỗi khi đúc sản phẩm từ DTO: " + e.getMessage());
             return false;
         }
     }

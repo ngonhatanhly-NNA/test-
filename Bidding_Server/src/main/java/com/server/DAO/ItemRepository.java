@@ -15,7 +15,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ItemRepository {
+    private static final Logger logger = LoggerFactory.getLogger(ItemRepository.class);
 
     // =====================================================================
     // HÀM 1: LƯU SẢN PHẨM MỚI VÀO DATABASE (Dùng khi Seller đăng bán)
@@ -106,8 +110,7 @@ public class ItemRepository {
             return rowsAffected > 0;
 
         } catch (Exception e) {
-            System.out.println("LỖI LƯU ITEM VÀO DATABASE: ");
-            e.printStackTrace();
+            logger.error("LỖI LƯU ITEM VÀO DATABASE: {}", e.getMessage(), e);
             return false;
         }
     }
@@ -175,8 +178,7 @@ public class ItemRepository {
                 }
             }
         } catch (Exception e) {
-            System.out.println("LỖI LẤY DANH SÁCH ITEM: ");
-            e.printStackTrace();
+            logger.error("LỖI LẤY DANH SÁCH ITEM: {}", e.getMessage(), e);
         }
 
         return itemList;
@@ -194,8 +196,9 @@ public class ItemRepository {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Lỗi lấy tên sản phẩm: " + e.getMessage());
+            logger.error("Lỗi lấy tên sản phẩm cho itemId {}: {}", itemId, e.getMessage(), e);
         }
         return null;
     }
 }
+

@@ -9,22 +9,22 @@ import com.google.gson.Gson;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * AuctionController: Xử lý HTTP requests liên quan đến đấu giá
  */
 public class AuctionController {
+    private static final Logger logger = LoggerFactory.getLogger(AuctionController.class);
+
     public final AuctionService auctionService;
     private final Gson gson = new Gson();
 
-    // Constructor TIÊM PHỤ THUỘC (Dependency Injection)
     public AuctionController(AuctionService auctionService) {
         this.auctionService = auctionService;
     }
 
-    /**
-     * POST /api/auctions
-     * Tạo phiên đấu giá mới
-     */
     public void createAuction(Context ctx) {
         try {
             CreateAuctionDTO request = gson.fromJson(ctx.body(), CreateAuctionDTO.class);
@@ -35,30 +35,28 @@ public class AuctionController {
 
             long auctionId = auctionService.createAuction(request);
             AuctionDetailDTO detail = auctionService.getAuctionDetail(auctionId);
+            logger.info("Tạo phiên đấu giá thành công: id={}, itemId={}, sellerId={}", auctionId, request.getItemId(), request.getSellerId());
             ctx.json(new Response("SUCCESS", "Phiên đấu giá đã tạo thành công", detail));
 
         } catch (AuctionException e) {
+            logger.warn("Lỗi tạo phiên đấu giá: {}", e.getMessage());
             handleAuctionException(ctx, e);
         } catch (Exception e) {
+            logger.error("Lỗi không xác định khi tạo phiên đấu giá: {}", e.getMessage(), e);
             ctx.status(400).json(new Response("ERROR", "Lỗi tạo phiên đấu giá: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * GET /api/auctions/active
-     */
     public void getActiveAuctions(Context ctx) {
         try {
             List<AuctionDetailDTO> auctions = auctionService.getActiveAuctions();
             ctx.json(new Response("SUCCESS", "Active auctions loaded", auctions));
         } catch (Exception e) {
+            logger.error("Lỗi load danh sách phiên đấu giá: {}", e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Failed to load auctions: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * POST /api/auctions/bid
-     */
     public void placeBid(Context ctx) {
         try {
             BidRequestDTO bidRequest = gson.fromJson(ctx.body(), BidRequestDTO.class);
@@ -68,18 +66,20 @@ public class AuctionController {
             }
 
             AuctionUpdateDTO result = auctionService.placeBid(bidRequest);
+            logger.info("Đặt giá thành công: auction={}, bidder={}, amount={}",
+                    bidRequest.getAuctionId(), bidRequest.getBidderId(), bidRequest.getBidAmount());
             ctx.json(new Response("SUCCESS", "Bid placed successfully", result));
 
         } catch (AuctionException e) {
+            logger.warn("Lỗi đặt giá auction {}: {}",
+                    ctx.body().contains("auctionId") ? "?" : "unknown", e.getMessage());
             handleAuctionException(ctx, e);
         } catch (Exception e) {
+            logger.error("Lỗi không xác định khi đặt giá: {}", e.getMessage(), e);
             ctx.status(400).json(new Response("ERROR", "Lỗi khi đặt giá: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * GET /api/auctions/{auctionId}
-     */
     public void getAuctionDetail(Context ctx) {
         try {
             long auctionId = Long.parseLong(ctx.pathParam("auctionId"));
@@ -90,14 +90,11 @@ public class AuctionController {
         } catch (NumberFormatException e) {
             ctx.status(400).json(new Response("ERROR", "ID phiên đấu giá không hợp lệ", null));
         } catch (Exception e) {
+            logger.error("Lỗi lấy chi tiết phiên đấu giá: {}", e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Lỗi server: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * GET /api/auctions/{auctionId}/bids
-     * Lấy lịch sử đặt giá của một phiên đấu giá
-     */
     public void getBidHistory(Context ctx) {
         try {
             long auctionId = Long.parseLong(ctx.pathParam("auctionId"));
@@ -106,13 +103,11 @@ public class AuctionController {
         } catch (NumberFormatException e) {
             ctx.status(400).json(new Response("ERROR", "ID phiên đấu giá không hợp lệ", null));
         } catch (Exception e) {
+            logger.error("Lỗi lấy lịch sử bid cho auction {}: {}", ctx.pathParam("auctionId"), e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Lỗi lấy lịch sử: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * POST /api/auctions/{auctionId}/auto-bid/cancel
-     */
     public void cancelAutoBid(Context ctx) {
         try {
             long auctionId = Long.parseLong(ctx.pathParam("auctionId"));
@@ -124,6 +119,7 @@ public class AuctionController {
             }
 
             auctionService.cancelAutoBid(auctionId, cancelRequest.getBidderId());
+            logger.info("Hủy auto-bid thành công: auction={}, bidder={}", auctionId, cancelRequest.getBidderId());
             ctx.json(new Response("SUCCESS", "Auto-bid cancelled successfully", null));
 
         } catch (AuctionException e) {
@@ -131,13 +127,11 @@ public class AuctionController {
         } catch (NumberFormatException e) {
             ctx.status(400).json(new Response("ERROR", "ID không hợp lệ", null));
         } catch (Exception e) {
+            logger.error("Lỗi hủy auto-bid: {}", e.getMessage(), e);
             ctx.status(400).json(new Response("ERROR", "Failed to cancel auto-bid: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * PUT /api/auctions/{auctionId}/auto-bid/update
-     */
     public void updateAutoBidAmount(Context ctx) {
         try {
             long auctionId = Long.parseLong(ctx.pathParam("auctionId"));
@@ -149,6 +143,8 @@ public class AuctionController {
             }
 
             auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
+            logger.info("Cập nhật auto-bid thành công: auction={}, bidder={}, maxAmount={}",
+                    auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
             ctx.json(new Response("SUCCESS", "Auto-bid updated successfully", null));
 
         } catch (AuctionException e) {
@@ -156,13 +152,11 @@ public class AuctionController {
         } catch (NumberFormatException e) {
             ctx.status(400).json(new Response("ERROR", "ID không hợp lệ", null));
         } catch (Exception e) {
+            logger.error("Lỗi cập nhật auto-bid: {}", e.getMessage(), e);
             ctx.status(400).json(new Response("ERROR", "Failed to update auto-bid: " + e.getMessage(), null));
         }
     }
 
-    /**
-     * Helper: Xử lý AuctionException
-     */
     private void handleAuctionException(Context ctx, AuctionException e) {
         AuctionException.ErrorCode code = e.getErrorCode();
         int statusCode = switch (code) {
@@ -175,3 +169,4 @@ public class AuctionController {
         ctx.status(statusCode).json(new Response("ERROR", e.getMessage(), null));
     }
 }
+

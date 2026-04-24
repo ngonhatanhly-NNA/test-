@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * AuctionService: Quản lý toàn bộ logic đấu giá
  *
@@ -30,6 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AuctionService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuctionService.class);
     // ========== Dependencies ==========
     private final AuctionRepository auctionRepository;
     private final BidTransactionRepository bidRepository;
@@ -89,6 +92,7 @@ public class AuctionService {
 
             AuctionLogger.logInfo("Đã khởi tạo " + activeAuctions.size() + " phiên đấu giá");
         } catch (Exception e) {
+            logger.error("Lỗi khi khởi tạo AuctionService", e);
             AuctionLogger.logError("INIT", 0, e.getMessage());
         }
     }
@@ -111,11 +115,13 @@ public class AuctionService {
      */
     public AuctionUpdateDTO placeBid(BidRequestDTO request) throws AuctionException {
         if (request == null) {
+            logger.error("Request không được null");
             throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Request không được null");
         }
 
         ReentrantLock lock = auctionLocks.get(request.getAuctionId());
         if (lock == null) {
+            logger.error("Phiên đấu giá không tồn tại: {}", request.getAuctionId());
             throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND);
         }
 
@@ -153,6 +159,7 @@ public class AuctionService {
 
         } catch (AuctionException e) {
             AuctionLogger.logError("PLACE_BID", request.getAuctionId(), e.getMessage());
+            logger.error("Lỗi khi đặt giá cho phiên đấu giá {}: {}", request.getAuctionId(), e.getMessage());
             throw e;
         } finally {
             lock.unlock();
@@ -450,6 +457,6 @@ public class AuctionService {
             scheduler.shutdownNow();
             Thread.currentThread().interrupt();
         }
-        AuctionLogger.logInfo("AuctionService đã shutdown");
+        logger.info("AuctionService đã shutdown");
     }
 }
