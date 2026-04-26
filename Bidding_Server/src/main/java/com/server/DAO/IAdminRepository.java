@@ -8,8 +8,8 @@ public interface IAdminRepository {
     Admin getAdminByUsername(String username);
     void updateLastLoginIp(long adminId, String ip);
 
-    // Ham thay doi trang thai (CAM/MO CAM) tai khoan
-    boolean updateUserStatus(long userId, Status newStatus);
+    // This method is now in IUserRepository
+    // boolean updateUserStatus(long userId, Status newStatus);
 
     // Ham nang cap len nguoi ban
     boolean promoteToSeller(Seller seller);

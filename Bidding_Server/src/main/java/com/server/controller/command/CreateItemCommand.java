@@ -15,22 +15,19 @@ public class CreateItemCommand extends BaseApiCommand {
 
     @Override
     protected void execute(Context ctx) throws Exception {
-        // 1. Lấy chuỗi JSON mà Client gửi lên từ Body của Request
+        // 1. Giữ nguyên cách lấy JSON và parse bằng Gson
         String jsonBody = ctx.body();
-
-        // 2. Dùng Gson ép JSON vào cái hộp DTO của em
         CreateItemRequestDTO requestDTO = gson.fromJson(jsonBody, CreateItemRequestDTO.class);
 
-        // 3. Nhờ Service đúc thành Object Model và lưu xuống DB
-        boolean isSuccess = itemService.createNewItem(requestDTO);
+        // 2. Nhờ Service đúc Model và lưu DB (Đổi hàm này bên Service thành kiểu void)
+        // Nếu có lỗi (VD: thiếu ảnh, sai DB), nó sẽ NÉM EXCEPTION bay ra ngoài BaseApiCommand.
+        // BaseApiCommand sẽ tự động bắt lấy exception và gửi JSON lỗi cho Client.
+        itemService.createNewItem(requestDTO);
 
-        // 4. Báo cáo kết quả về cho Client
-        if (isSuccess) {
-            String jsonSuccess = gson.toJson(ResponseUtils.success("Đăng bán sản phẩm thành công!", null));
-            ctx.status(200).result(jsonSuccess).contentType("application/json");
-        } else {
-            String jsonFail = gson.toJson(ResponseUtils.fail("ITEM_SAVE_FAILED", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu."));
-            ctx.status(500).result(jsonFail).contentType("application/json");
-        }
+        // 3. Nếu code chạy được xuống đến đây, chắc chắn 100% là LƯU THÀNH CÔNG (Happy Path)
+        // Ta dùng nguyên xi bộ công cụ ResponseUtils để trả về.
+        String jsonSuccess =
+                gson.toJson(ResponseUtils.success("Đăng bán sản phẩm thành công!", null));
+        ctx.status(200).result(jsonSuccess).contentType("application/json");
     }
 }

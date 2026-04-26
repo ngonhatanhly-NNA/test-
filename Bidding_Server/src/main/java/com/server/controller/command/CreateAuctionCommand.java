@@ -20,17 +20,18 @@ public class CreateAuctionCommand extends BaseApiCommand {
     protected void execute(Context ctx) throws Exception {
         try {
             CreateAuctionDTO request = gson.fromJson(ctx.body(), CreateAuctionDTO.class);
-            
+
             if (request == null || request.getItemId() <= 0 || request.getSellerId() <= 0) {
                 throw new AuthValidationException("ItemId và SellerId phải lớn hơn 0");
             }
 
             long auctionId = auctionService.createAuction(request);
             AuctionDetailDTO detail = auctionService.getAuctionDetail(auctionId);
-            
-            String json = gson.toJson(ResponseUtils.success("Phiên đấu giá đã tạo thành công", detail));
+
+            String json =
+                    gson.toJson(ResponseUtils.success("Phiên đấu giá đã tạo thành công", detail));
             ctx.status(201).result(json).contentType("application/json");
-            
+
         } catch (AuctionException e) {
             throw AuctionAppException.from(e);
         } catch (AuthValidationException e) {

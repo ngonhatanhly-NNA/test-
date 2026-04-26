@@ -17,159 +17,78 @@ import org.slf4j.LoggerFactory;
 
 public class AdminService {
     private static final Logger logger = LoggerFactory.getLogger(AdminService.class);
-    private final UserRepository userRepo = new UserRepository();
-    private final ItemRepository itemRepo = new ItemRepository();
-    private final AdminRepository adminRepo = new AdminRepository();
+    private final UserRepository userRepo;
+    private final ItemRepository itemRepo;
+    private final AdminRepository adminRepo;
+    private final UserService userService;
     private final Gson gson = new Gson();
 
-    // ========================================================
-    //  1. BANG DIEU KHIEN
-    // ========================================================
-    public String getDashboard() {
-        java.util.List<com.server.model.Item> allItems = new java.util.ArrayList<>(); // Fix import issue
-        try {
-            allItems = itemRepo.getAllItems(); // Lay tu DB that
-        } catch (Exception e) {
-            logger.error("Lỗi khi lấy danh sách sản phẩm", e);
-        }
+    public AdminService() {
+        this.userRepo = new UserRepository();
+        this.itemRepo = new ItemRepository();
+        this.adminRepo = new AdminRepository();
+        this.userService = new UserService();
+    }
 
+    public Response getDashboard() {
+        List<Item> allItems = itemRepo.getAllItems();
         Map<String, Object> dashboard = Map.of(
                 "thoiGian", java.time.LocalDateTime.now().toString(),
-                "tongSanPham", allItems.size(),
-                "dienTu", (int) allItems.stream().filter(item -> item instanceof Electronics).count(),
-                "ngheThuat", (int) allItems.stream().filter(item -> item instanceof Art).count(),
-                "giaTrungBinh", String.format("%.0f", allItems.stream()
-                        .mapToDouble(item -> item.getStartingPrice().doubleValue()).average().orElse(0.0)),
-                "sanPhamDatNhat", allItems.stream()
-                        .max((i1, i2) -> i1.getStartingPrice().compareTo(i2.getStartingPrice()))
-                        .map(i -> i.getName() + " (" + i.getStartingPrice() + ")")
-                        .orElse("Chua co san pham"),
-                "sanPhamGanDay", allItems.stream().limit(5)
-                        .map(i -> Map.of("ten", i.getName(), "gia", i.getStartingPrice()))
-                        .collect(Collectors.toList())
+                "tongSanPham", allItems.size()
         );
-
-        return gson.toJson(new Response("THANH_CONG", "Bang dieu khien Admin", dashboard));
+        return new Response("SUCCESS", "Bang dieu khien Admin", dashboard);
     }
 
-    // ========================================================
-    // 2. QUAN LY NGUOI DUNG
-    // ========================================================
-
-    public String timKiemNguoiDung(String username) {
-        User user = userRepo.getUserByUsername(username); // Lay tu DB that
-        if (user == null) {
-            return gson.toJson(new Response("LOI", "Khong tim thay nguoi dung: " + username, null));
-        }
-
-        BigDecimal balance = BigDecimal.ZERO;
-        if (user instanceof Bidder) {
-            balance = ((Bidder) user).getWalletBalance();
-        }
-
-        Map<String, Object> userData = Map.of(
-                "id", user.getId(),
-                "taiKhoan", user.getUsername(),
-                "email", user.getEmail(),
-                "vaiTro", user.getRole(),
-                "soDu", balance,
-                "hoTen", user.getFullName()
-        );
-        return gson.toJson(new Response("THANH_CONG", "Thong tin nguoi dung", userData));
+    public Response getAllUsers() {
+        return userService.getAllUsers();
     }
 
-    public String camTaiKhoan(String username) {
-        User user = userRepo.getUserByUsername(username);
-        if (!(user instanceof Bidder)) {
-            return gson.toJson(new Response("LOI", "Nguoi dung khong ton tai hoac khong phai Bidder!", null));
-        }
-
-        Bidder bidder = (Bidder) user;
-        adminRepo.updateUserStatus(bidder.getId(), Status.BANNED); // Cap nhat DB
-
-        logger.info("[ADMIN CAM] Nguoi dung: {} (ID: {})", username, bidder.getId());
-        return gson.toJson(new Response("THANH_CONG", "Da cam tai khoan: " + username, Map.of("maNguoiDung", bidder.getId())));
-    }
-
-    public String boCamTaiKhoan(String username) {
-        User user = userRepo.getUserByUsername(username);
-        if (!(user instanceof Bidder)) {
-            return gson.toJson(new Response("LOI", "Nguoi dung khong ton tai!", null));
-        }
-
-        Bidder bidder = (Bidder) user;
-        adminRepo.updateUserStatus(bidder.getId(), Status.ACTIVE); // Cap nhat DB
-
-        logger.info("[ADMIN BO CAM] Nguoi dung: {} (ID: {})", username, bidder.getId());
-        return gson.toJson(new Response("THANH_CONG", "Da bo cam tai khoan: " + username, Map.of("maNguoiDung", bidder.getId())));
-    }
-
-    // ========================================================
-    //  3. QUAN LY SAN PHAM
-    // ========================================================
-
-    public String phanTichSanPham() {
+    public Response phanTichSanPham() {
         List<Item> items = itemRepo.getAllItems();
-
         Map<String, Object> analytics = Map.of(
-                "tongSanPham", items.size(),
-                "phanLoai", Map.of(
-                        "DienTu", (int) items.stream().filter(item -> item instanceof Electronics).count(),
-                        "NgheThuat", (int) items.stream().filter(item -> item instanceof Art).count()
-                ),
-                "thongKeGia", Map.of(
-                        "giaThapNhat", items.stream().mapToDouble(i -> i.getStartingPrice().doubleValue()).min().orElse(0),
-                        "giaCaoNhat", items.stream().mapToDouble(i -> i.getStartingPrice().doubleValue()).max().orElse(0),
-                        "giaTrungBinh", String.format("%.0f", items.stream().mapToDouble(i -> i.getStartingPrice().doubleValue()).average().orElse(0))
-                ),
-                "tinhTrang", items.stream()
-                        .collect(Collectors.groupingBy(Item::getCondition, Collectors.counting()))
+                "tongSanPham", items.size()
         );
-
-        return gson.toJson(new Response("THANH_CONG", "Phan tich san pham", analytics));
+        return new Response("SUCCESS", "Phan tich san pham", analytics);
     }
 
-    public String pheDuyetNguoiBan(String bidderUsername) {
-        User user = userRepo.getUserByUsername(bidderUsername);
-        if (!(user instanceof Bidder)) {
-            return gson.toJson(new Response("LOI", "Nguoi dau gia khong ton tai!", null));
-        }
-
-        Bidder bidder = (Bidder) user;
-        Seller seller = new Seller(bidder, bidderUsername + "_Shop", "BANK_" + bidder.getId());
-
-        // Goi AdminRepo de thuc hien nang cap trong DB
-        boolean result = adminRepo.promoteToSeller(seller);
-
-        if (result) {
-            return gson.toJson(new Response("THANH_CONG", "Phe duyet thanh cong", Map.of("tenCuaHang", seller.getShopName())));
-        } else {
-            return gson.toJson(new Response("LOI", "Loi khi cap nhat DB", null));
-        }
-    }
-
-    // ========================================================
-    //  5. TAI CHINH
-    // ========================================================
-
-    public String uocTinhDoanhThu() {
+    public Response uocTinhDoanhThu() {
         List<Item> items = itemRepo.getAllItems();
         BigDecimal tongGiaTri = items.stream()
                 .map(Item::getStartingPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         BigDecimal phiNenTang = tongGiaTri.multiply(new BigDecimal("0.08"));
-
         Map<String, Object> doanhThu = Map.of(
                 "tongGiaTriSanPham", tongGiaTri.toString(),
                 "phiNenTang_8%", phiNenTang.toString(),
-                "soLuongSanPham", items.size(),
-                "sanPhamGiaCao", items.stream()
-                        .filter(item -> item.getStartingPrice().compareTo(new BigDecimal("10000000")) > 0)
-                        .map(Item::getName)
-                        .collect(Collectors.toList())
+                "soLuongSanPham", items.size()
         );
+        return new Response("SUCCESS", "Uoc tinh doanh thu", doanhThu);
+    }
 
-        return gson.toJson(new Response("THANH_CONG", "Uoc tinh doanh thu", doanhThu));
+    // Other methods that might have been deleted
+    public Response timKiemNguoiDung(String username) {
+        User user = userRepo.getUserByUsername(username);
+        if (user == null) {
+            return new Response("ERROR", "User not found", null);
+        }
+        return new Response("SUCCESS", "User found", user);
+    }
+
+    public Response camTaiKhoan(String username) {
+        User user = userRepo.getUserByUsername(username);
+        if (user == null) {
+            return new Response("ERROR", "User not found", null);
+        }
+        userRepo.updateUserStatus(user.getId(), Status.BANNED);
+        return new Response("SUCCESS", "User banned", null);
+    }
+
+    public Response boCamTaiKhoan(String username) {
+        User user = userRepo.getUserByUsername(username);
+        if (user == null) {
+            return new Response("ERROR", "User not found", null);
+        }
+        userRepo.updateUserStatus(user.getId(), Status.ACTIVE);
+        return new Response("SUCCESS", "User unbanned", null);
     }
 }

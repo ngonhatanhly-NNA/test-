@@ -7,7 +7,9 @@ import com.shared.network.Response;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,6 +104,34 @@ public class UserService {
             return new Response("FAIL", "Không tìm thấy người dùng", null);
         } catch (Exception e) {
             return new Response("ERROR", "Lỗi hệ thống: " + e.getMessage(), null);
+        }
+    }
+
+    /**
+     * Lấy danh sách tất cả người dùng.
+     * @return Một đối tượng Response chứa danh sách người dùng hoặc thông báo lỗi.
+     */
+    public Response getAllUsers() {
+        try {
+            List<User> users = userRepository.getAllUsers();
+            if (users != null && !users.isEmpty()) {
+                // Chuyển đổi danh sách User thành danh sách Map<String, Object> để trả về
+                List<Map<String, Object>> userListDTO = users.stream()
+                    .map(user -> {
+                        ProfileMapper mapper = mappers.get(user.getClass());
+                        if (mapper != null) {
+                            return mapper.map(user);
+                        } else {
+                            return createBaseProfileMap(user);
+                        }
+                    })
+                    .collect(Collectors.toList());
+                return new Response("SUCCESS", "Lấy danh sách người dùng thành công", userListDTO);
+            }
+            return new Response("FAIL", "Không tìm thấy người dùng nào", null);
+        } catch (Exception e) {
+            logger.error("Lỗi khi lấy tất cả người dùng: {}", e.getMessage(), e);
+            return new Response("ERROR", "Lỗi hệ thống khi lấy danh sách người dùng: " + e.getMessage(), null);
         }
     }
 

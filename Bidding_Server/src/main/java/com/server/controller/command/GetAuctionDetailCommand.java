@@ -26,7 +26,8 @@ public class GetAuctionDetailCommand extends BaseApiCommand {
 
         try {
             AuctionDetailDTO detail = auctionService.getAuctionDetail(auctionId);
-            String json = gson.toJson(ResponseUtils.success("Đã tải chi tiết phiên đấu giá", detail));
+            String json =
+                    gson.toJson(ResponseUtils.success("Đã tải chi tiết phiên đấu giá", detail));
             ctx.status(200).result(json).contentType("application/json");
         } catch (AuctionException e) {
             throw AuctionAppException.from(e);

@@ -1,139 +1,228 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.paint.LinearGradient?>
+<?import javafx.scene.paint.Stop?>
 <?import javafx.scene.text.Font?>
-<?import javafx.scene.chart.CategoryAxis?>
-<?import javafx.scene.chart.LineChart?>
-<?import javafx.scene.chart.NumberAxis?>
 
-<VBox prefHeight="720.0" prefWidth="1150.0" spacing="20.0" style="-fx-background-color: #F4F4F4; -fx-padding: 30;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.ViewLiveAuctions">
+<VBox prefHeight="720.0" prefWidth="1150.0" spacing="20.0" style="-fx-background-color: #E8EEF2; -fx-padding: 25;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.ViewLiveAuctions">
 
     <HBox alignment="CENTER_LEFT">
-        <VBox>
-            <Label text="Live Auction Room" textFill="#1a1a1a">
+        <VBox spacing="2.0">
+            <Label text="Live Auction Room" textFill="#0F172A">
                 <font>
-                    <Font name="System Bold" size="28.0" />
+                    <Font name="System Bold" size="32.0" />
+                </font>
+                <style>
+                    -fx-letter-spacing: 1px;
+                    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4, 0, 0, 2);
+                </style>
+            </Label>
+            <Label text="Real-time auction experience" textFill="#64748B">
+                <font>
+                    <Font name="System" size="14.0" />
                 </font>
             </Label>
-            <Label text="Dữ liệu từ server — bấm Làm mới nếu giá chưa cập nhật" textFill="#666666" />
         </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        <Button fx:id="refreshButton" onAction="#handleRefreshAuctions" style="-fx-background-color: transparent; -fx-border-color: #E3B04B; -fx-border-radius: 5; -fx-text-fill: #E3B04B; -fx-cursor: hand;" text="🔄 Làm mới" />
+        <Button fx:id="refreshButton" onAction="#handleRefreshAuctions" style="-fx-background-color: #FFFFFF; -fx-border-color: #CBD5E1; -fx-border-width: 2; -fx-border-radius: 25; -fx-background-radius: 25; -fx-text-fill: #1E293B; -fx-cursor: hand; -fx-padding: 10 25; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 15, 0, 0, 6);" text="🔄 Refresh">
+            <font>
+                <Font name="System Bold" size="13.0" />
+            </font>
+        </Button>
     </HBox>
 
-    <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+    <HBox spacing="25.0" VBox.vgrow="ALWAYS">
 
-        <VBox prefWidth="300.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
-            <Label text="Đang diễn ra" textFill="#1a1a1a">
-                <font>
-                    <Font name="System Bold" size="18.0" />
-                </font>
-            </Label>
-            <Separator />
-
+        <VBox prefWidth="290.0" spacing="15.0" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-width: 1.5; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 35, 0, 0, 15);">
+            <HBox alignment="CENTER_LEFT">
+                <Label text="In progress" textFill="#1E293B">
+                    <font>
+                        <Font name="System Bold" size="20.0" />
+                    </font>
+                </Label>
+                <Region HBox.hgrow="ALWAYS" />
+                <Label style="-fx-background-color: #FFF1F2; -fx-text-fill: #E11D48; -fx-padding: 5 12; -fx-background-radius: 12; -fx-border-color: #FDA4AF; -fx-border-width: 1.5; -fx-border-radius: 12;" text="● Live">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+            </HBox>
+            <Separator style="-fx-background-color: transparent; -fx-border-color: #E2E8F0; -fx-border-width: 2 0 0 0;" />
+            
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: white; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
                 <content>
-                    <VBox fx:id="auctionsContainer" spacing="15.0" style="-fx-background-color: white;" />
+                    <VBox fx:id="auctionsContainer" spacing="12.0" style="-fx-background-color: white; -fx-padding: 4;" />
                 </content>
             </ScrollPane>
         </VBox>
 
-
-        <VBox prefWidth="320.0" spacing="15.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);">
-            <Pane prefHeight="250.0" style="-fx-background-color: #f8f9fa; -fx-background-radius: 8;">
-                <ImageView fx:id="itemImageView" fitHeight="250.0" fitWidth="300.0" layoutX="15.0" pickOnBounds="true" preserveRatio="true">
+        <VBox prefWidth="320.0" spacing="20.0" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-width: 1.5; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 35, 0, 0, 15);">
+            
+            <StackPane prefHeight="260.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 16; -fx-border-color: linear-gradient(to bottom right, #CBD5E1, #F1F5F9); -fx-border-radius: 16; -fx-border-width: 3; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                <ImageView fx:id="itemImageView" fitHeight="230.0" fitWidth="280.0" pickOnBounds="true" preserveRatio="true">
                     <image>
                         <Image url="@../images/item116.png" />
                     </image>
+                    <effect>
+                        <DropShadow color="#00000040" offsetY="10.0" radius="15.0" />
+                    </effect>
                 </ImageView>
-            </Pane>
+            </StackPane>
 
-            <Label fx:id="itemNameLabel" text="Đang tải tên sản phẩm..." textFill="#1a1a1a" wrapText="true">
+            <VBox spacing="6.0">
+                <Label fx:id="itemNameLabel" text="Item #1" textFill="#0F172A" wrapText="true">
+                    <font>
+                        <Font name="System Bold" size="26.0" />
+                    </font>
+                </Label>
+                <Label text="Seller: (updating)" textFill="#64748B">
+                    <font>
+                        <Font size="14.0" />
+                    </font>
+                </Label>
+            </VBox>
+            <Separator style="-fx-background-color: transparent; -fx-border-color: #E2E8F0; -fx-border-width: 2 0 0 0;" />
+            <Label lineSpacing="6.0" text="Description" textFill="#475569" wrapText="true">
                 <font>
-                    <Font name="System Bold" size="22.0" />
+                    <Font size="14.0" />
                 </font>
             </Label>
-            <Label text="Seller: (xem chi tiết trên server)" textFill="#888888" />
-            <Separator />
-            <Label text="Mô tả: Thông tin chi tiết có thể mở rộng từ sau." textFill="#555555" wrapText="true" />
         </VBox>
 
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" HBox.hgrow="ALWAYS">
+            <content>
+                <VBox spacing="16.0" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-width: 1.5; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 22; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 35, 0, 0, 15);">
 
-        <VBox spacing="20.0" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 30; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);" HBox.hgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label fx:id="statusLabel" text="Status: OPEN" textFill="#10B981">
+                            <font>
+                                <Font name="System Bold" size="15.0" />
+                            </font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="remainingLabel" style="-fx-background-color: #F8FAFC; -fx-padding: 6 12; -fx-background-radius: 8; -fx-border-color: #CBD5E1; -fx-border-width: 1.5; -fx-border-radius: 8; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 4, 0, 0, 2);" text="⏳ Remaining: 1h 55m" textFill="#475569">
+                            <font>
+                                <Font name="System Bold" size="12.0" />
+                            </font>
+                        </Label>
+                    </HBox>
 
-            <Label fx:id="statusLabel" text="Tình trạng: —" textFill="#28a745">
-                <font>
-                    <Font name="System Bold" size="14.0" />
-                </font>
-            </Label>
-            <Label fx:id="remainingLabel" text="Còn lại: —" textFill="#666666" />
+                    <VBox alignment="CENTER" spacing="6.0" style="-fx-background-color: linear-gradient(to bottom right, #0F172A, #1E293B); -fx-border-color: linear-gradient(to right, #F59E0B, #FDE047, #D97706); -fx-border-width: 2.5; -fx-background-radius: 16; -fx-border-radius: 16; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4), 30, 0, 0, 5);">
+                        <Label style="-fx-letter-spacing: 1.5px;" text="CURRENT HIGHEST BID" textFill="#94A3B8">
+                            <font>
+                                <Font name="System Bold" size="13.0" />
+                            </font>
+                        </Label>
+                        
+                        <Label fx:id="currentPriceLabel" text="0.0 VNĐ">
+                            <font>
+                                <Font name="System Bold" size="44.0" />
+                            </font>
+                            <textFill>
+                                <LinearGradient endX="1.0" endY="1.0">
+                                    <stops>
+                                        <Stop color="#FDE047" />
+                                        <Stop color="#F59E0B" offset="0.6" />
+                                        <Stop color="#D97706" offset="1.0" />
+                                    </stops>
+                                </LinearGradient>
+                            </textFill>
+                            <effect>
+                                <DropShadow color="#00000080" offsetY="4.0" radius="5.0" />
+                            </effect>
+                        </Label>
+                        
+                        <Label fx:id="leaderLabel" style="-fx-background-color: rgba(255,255,255,0.1); -fx-border-color: rgba(255,255,255,0.2); -fx-border-radius: 12; -fx-padding: 4 12; -fx-background-radius: 12;" text="Current Winner: No bids" textFill="#F8FAFC">
+                            <font>
+                                <Font name="System Bold" size="13.0" />
+                            </font>
+                        </Label>
+                    </VBox>
 
-            <VBox spacing="5.0" style="-fx-background-color: #fffbf0; -fx-border-color: #E3B04B; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;">
-                <Label text="GIÁ CAO NHẤT HIỆN TẠI:" textFill="#666666" />
-                <Label fx:id="currentPriceLabel" text="— VNĐ" textFill="#e3b04b">
-                    <font>
-                        <Font name="System Bold" size="36.0" />
-                    </font>
-                </Label>
-                <Label fx:id="leaderLabel" text="Người dẫn đầu: —" textFill="#333333" />
+                    <LineChart fx:id="priceChart" animated="false" createSymbols="true" legendVisible="false" prefHeight="120.0" style="-fx-padding: 0;">
+                        <xAxis>
+                            <CategoryAxis label="Time" tickLabelFill="#94A3B8" />
+                        </xAxis>
+                        <yAxis>
+                            <NumberAxis label="Price (VNĐ)" tickLabelFill="#94A3B8" />
+                        </yAxis>
+                    </LineChart>
 
-                <LineChart fx:id="priceChart" prefHeight="200.0" createSymbols="true" legendVisible="false" animated="false">
-                    <xAxis>
-                        <CategoryAxis label="Thời gian" />
-                    </xAxis>
-                    <yAxis>
-                        <NumberAxis label="Giá (VNĐ)" />
-                    </yAxis>
-                </LineChart>
-                <Separator />
-            </VBox>
+                    <VBox spacing="8.0">
+                        <HBox spacing="12.0">
+                            <TextField fx:id="bidAmountField" prefHeight="50.0" promptText="EX: 1.600.000 VNĐ" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-width: 1.5; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-size: 15px; -fx-font-weight: bold; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 3);" HBox.hgrow="ALWAYS" />
+                            
+                            <Button onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="150.0" style="-fx-background-color: linear-gradient(to right, #F59E0B, #FCD34D); -fx-text-fill: #451A03; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.6), 20, 0, 0, 6);" text="PLACE BID">
+                                <font>
+                                    <Font name="System ExtraBold" size="15.0" />
+                                </font>
+                            </Button>
+                        </HBox>
+                        <Label fx:id="stepHintLabel" text="* Minimum step price: 50000.0 VNĐ" textFill="#94A3B8">
+                            <font>
+                                <Font name="System Bold" size="12.0" />
+                            </font>
+                        </Label>
+                    </VBox>
 
-            <Separator />
+                    <VBox spacing="12.0" style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 18; -fx-effect: innershadow(gaussian, rgba(255,255,255,1), 10, 0, 0, 0);">
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <Label text="🤖 Activate Auto-bid" textFill="#1E293B">
+                                <font>
+                                    <Font name="System Bold" size="14.0" />
+                                </font>
+                            </Label>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Label fx:id="autoBidStatusLabel" style="-fx-background-color: #E2E8F0; -fx-padding: 4 10; -fx-background-radius: 6; -fx-border-color: #CBD5E1; -fx-border-radius: 6;" text="Inactive" textFill="#64748B">
+                                 <font>
+                                    <Font name="System Bold" size="11.0" />
+                                </font>
+                            </Label>
+                        </HBox>
+                        
+                        <CheckBox fx:id="enableAutoBidCheckBox" text="Highest limit" textFill="#475569">
+                            <font>
+                                <Font name="System Bold" size="12.0" />
+                            </font>
+                        </CheckBox>
+                        
+                        <TextField fx:id="maxAutoBidField" prefHeight="42.0" promptText="Enter maximum auto-bid price..." style="-fx-background-color: #FFFFFF; -fx-background-radius: 8; -fx-border-color: #94A3B8; -fx-border-radius: 8; -fx-padding: 0 12; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.06), 6, 0, 0, 2);" />
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <Button onAction="#handleUpdateAutoBid" prefHeight="40.0" style="-fx-background-color: linear-gradient(to right, #1E293B, #334155); -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 25; -fx-effect: dropshadow(gaussian, rgba(30,41,59,0.4), 12, 0, 0, 4);" text="Save">
+                                <font>
+                                    <Font name="System Bold" size="13.0" />
+                                </font>
+                            </Button>
+                            <Button onAction="#handleCancelAutoBid" prefHeight="40.0" style="-fx-background-color: #FEF2F2; -fx-border-color: #EF4444; -fx-text-fill: #DC2626; -fx-border-radius: 8; -fx-border-width: 2; -fx-cursor: hand; -fx-padding: 0 15; -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.15), 8, 0, 0, 2);" text="Cancel Auto-bid">
+                                <font>
+                                    <Font name="System Bold" size="12.0" />
+                                </font>
+                            </Button>
+                        </HBox>
+                    </VBox>
+                    
+                </VBox>
+            </content>
+        </ScrollPane>
 
-            <VBox spacing="10.0">
-                <Label text="SỐ TIỀN BẠN MUỐN ĐẶT (VNĐ):" textFill="#1a1a1a">
-                    <font>
-                        <Font name="System Bold" size="14.0" />
-                    </font>
-                </Label>
-                <HBox spacing="15.0">
-                    <TextField fx:id="bidAmountField" prefHeight="45.0" promptText="VD: 1600000" style="-fx-background-radius: 8; -fx-border-color: #cccccc; -fx-border-radius: 8; -fx-font-size: 16px;" HBox.hgrow="ALWAYS" />
-                    <Button onAction="#handlePlaceBid" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand;" text="ĐẶT GIÁ NGAY">
-                        <font>
-                            <Font name="System Bold" size="16.0" />
-                        </font>
-                    </Button>
-                </HBox>
-                <Label fx:id="stepHintLabel" text="* Bước giá tối thiểu: —" textFill="#999999" />
-            </VBox>
-
-            <Separator />
-
-            <VBox spacing="10.0">
-                <Label text="Auto-bid (tùy chọn)" textFill="#1a1a1a">
-                    <font>
-                        <Font name="System Bold" size="14.0" />
-                    </font>
-                </Label>
-                <CheckBox fx:id="enableAutoBidCheckBox" text="Bật auto-bid (giá tối đa)" />
-                <TextField fx:id="maxAutoBidField" prefHeight="40.0" promptText="Giá tối đa hệ thống được phép đấu thay bạn" style="-fx-background-radius: 8; -fx-border-color: #cccccc; -fx-border-radius: 8;" />
-                <HBox spacing="10.0">
-                    <Button onAction="#handleUpdateAutoBid" prefHeight="36.0" style="-fx-background-color: #333; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;" text="Cập nhật mức tối đa" />
-                    <Button onAction="#handleCancelAutoBid" prefHeight="36.0" style="-fx-background-color: transparent; -fx-border-color: #c00; -fx-text-fill: #c00; -fx-border-radius: 6; -fx-cursor: hand;" text="Hủy auto-bid" />
-                </HBox>
-                <Label fx:id="autoBidStatusLabel" text="" textFill="#666666" />
-            </VBox>
-        </VBox>
     </HBox>
 </VBox>

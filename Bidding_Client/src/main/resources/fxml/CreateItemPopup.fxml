@@ -8,44 +8,74 @@
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefWidth="450.0" spacing="15.0" style="-fx-background-color: white; -fx-padding: 30; -fx-border-radius: 10; -fx-background-radius: 10;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.CreateItemController">
+<VBox prefWidth="520.0" spacing="22.0" style="-fx-background-color: #FFFFFF; -fx-padding: 40; -fx-border-radius: 20; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.15), 35, 0, 0, 10);" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.CreateItemController">
     <children>
-        <Label text="Thêm Sản Phẩm Đấu Giá" textFill="#1a1a1a">
-            <font>
-                <Font name="System Bold" size="22.0" />
-            </font>
-        </Label>
-
-        <VBox spacing="5.0">
-            <Label text="Tên sản phẩm" textFill="#666666" />
-            <TextField fx:id="txtItemName" promptText="Nhập tên sản phẩm..." style="-fx-padding: 8; -fx-background-radius: 5; -fx-border-color: #ccc; -fx-border-radius: 5;" />
+        
+        <VBox spacing="4.0">
+            <Label text="Create Auction Item" textFill="#0F172A">
+                <font>
+                    <Font name="System Bold" size="28.0" />
+                </font>
+                <style>
+                    -fx-letter-spacing: 0.5px;
+                </style>
+            </Label>
+            <Label text="List a new asset for bidding on the marketplace." textFill="#64748B">
+                <font>
+                    <Font size="14.0" />
+                </font>
+            </Label>
         </VBox>
 
-        <VBox spacing="5.0">
-            <Label text="Loại hàng" textFill="#666666" />
-            <ComboBox fx:id="cbCategory" prefWidth="400.0" promptText="Chọn danh mục" style="-fx-background-color: white; -fx-border-color: #ccc; -fx-border-radius: 5;" />
+        <VBox spacing="8.0">
+            <Label text="Item Name" textFill="#475569">
+                <font>
+                    <Font name="System Bold" size="13.0" />
+                </font>
+            </Label>
+            <TextField fx:id="txtItemName" prefHeight="48.0" promptText="Enter item name..." style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);" />
         </VBox>
 
-        <HBox spacing="15.0">
+        <VBox spacing="8.0">
+            <Label text="Category" textFill="#475569">
+                <font>
+                    <Font name="System Bold" size="13.0" />
+                </font>
+            </Label>
+            <ComboBox fx:id="cbCategory" prefHeight="48.0" prefWidth="500.0" promptText="Select category" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);" />
+        </VBox>
+
+        <HBox spacing="20.0">
             <children>
-                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                    <Label text="Giá khởi điểm ($)" textFill="#666666" />
-                    <TextField fx:id="txtStartPrice" promptText="0.00" style="-fx-padding: 8; -fx-background-radius: 5; -fx-border-color: #ccc; -fx-border-radius: 5;" />
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                    <Label text="Starting Price ($)" textFill="#475569">
+                        <font>
+                            <Font name="System Bold" size="13.0" />
+                        </font>
+                    </Label>
+                    <TextField fx:id="txtStartPrice" prefHeight="48.0" promptText="0.00" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-size: 14px; -fx-font-weight: bold; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);" />
                 </VBox>
-                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                    <Label text="Ngày kết thúc" textFill="#666666" />
-                    <DatePicker fx:id="dpEndDate" prefWidth="200.0" style="-fx-border-color: #ccc; -fx-border-radius: 5;" />
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                    <Label text="End Date" textFill="#475569">
+                        <font>
+                            <Font name="System Bold" size="13.0" />
+                        </font>
+                    </Label>
+                    <DatePicker fx:id="dpEndDate" prefHeight="48.0" prefWidth="250.0" promptText="Select date" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);" />
                 </VBox>
             </children>
         </HBox>
 
-        <VBox spacing="5.0">
-            <Label text="Mô tả chi tiết" textFill="#666666" />
-            <TextArea fx:id="txtDescription" prefHeight="80.0" promptText="Nhập thông tin mô tả sản phẩm..." style="-fx-border-color: #ccc; -fx-border-radius: 5;" wrapText="true" />
+        <VBox spacing="8.0">
+            <Label text="Detailed Description" textFill="#475569">
+                <font>
+                    <Font name="System Bold" size="13.0" />
+                </font>
+            </Label>
+            <TextArea fx:id="txtDescription" prefHeight="100.0" promptText="Enter detailed product information..." style="-fx-control-inner-background: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 5; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);" wrapText="true" />
         </VBox>
 
         <HBox alignment="CENTER_RIGHT" spacing="15.0">
@@ -53,9 +83,18 @@
                 <Insets top="10.0" />
             </VBox.margin>
             <children>
-                <Button mnemonicParsing="false" onAction="#handleCancel" style="-fx-background-color: transparent; -fx-border-color: #999; -fx-border-radius: 5; -fx-text-fill: #666; -fx-cursor: hand;" text="Hủy bỏ" />
-                <Button mnemonicParsing="false" onAction="#handleSaveItem" style="-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;" text="Đăng Sản Phẩm" />
+                <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="48.0" prefWidth="120.0" style="-fx-background-color: #FEF2F2; -fx-border-color: #F87171; -fx-border-radius: 10; -fx-background-radius: 10; -fx-text-fill: #DC2626; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.1), 5, 0, 0, 2);" text="Cancel">
+                    <font>
+                        <Font name="System Bold" size="14.0" />
+                    </font>
+                </Button>
+                <Button mnemonicParsing="false" onAction="#handleSaveItem" prefHeight="48.0" prefWidth="170.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FDE047); -fx-text-fill: #451A03; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 5);" text="Publish Item">
+                    <font>
+                        <Font name="System ExtraBold" size="15.0" />
+                    </font>
+                </Button>
             </children>
         </HBox>
+        
     </children>
 </VBox>

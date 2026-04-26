@@ -53,4 +53,12 @@ public class UserQueryFactory {
                 "FROM users u LEFT JOIN admins a ON u.id = a.user_id LEFT JOIN bidders b ON u.id = b.user_id LEFT JOIN sellers s ON b.user_id = s.bidder_id " +
                 "WHERE u.id = ?";
     }
+
+    /**
+     * Truy vấn tất cả user
+     */
+    public static String getFullUserQueryForAll() {
+        return "SELECT u.*, a.roleLevel, a.lastLoginIp, b.walletBalance, b.creditCardInfo, s.shopName, s.rating, s.totalReviews, s.bankAccountNumber, s.isVerified " +
+                "FROM users u LEFT JOIN admins a ON u.id = a.user_id LEFT JOIN bidders b ON u.id = b.user_id LEFT JOIN sellers s ON b.user_id = s.bidder_id";
+    }
 }

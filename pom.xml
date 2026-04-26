@@ -21,8 +21,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.test.skip>true</maven.test.skip>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <jacoco.version>0.8.10</jacoco.version>
-        <junit.jupiter.version>5.10.0</junit.jupiter.version>
+        
+        <jacoco.version>0.8.14</jacoco.version>
+        <junit.jupiter.version>5.14.1</junit.jupiter.version>
+        
         <logback.version>1.4.11</logback.version>
         <hibernate.version>6.2.0.Final</hibernate.version>
         <checkstyle.version>10.12.5</checkstyle.version>

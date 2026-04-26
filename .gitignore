@@ -1,4 +1,15 @@
-.idea/
-*.iml
+# Bỏ qua thư mục build của Maven
 target/
+out/
+
+# Bỏ qua file Bytecode
+*.class
+
+# Bỏ qua thư mục log và các file log
+logs/
+*.log
+
+# Bỏ qua cấu hình cá nhân của IntelliJ
+.idea/
 .vscode/
+*.iml

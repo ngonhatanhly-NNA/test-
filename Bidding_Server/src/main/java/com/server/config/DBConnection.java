@@ -21,7 +21,7 @@ public class DBConnection {
 
         String jdbcUrl = getEnvOrDefault("DB_URL", "jdbc:mysql://localhost:3306/auction_db");
         String dbUser = getEnvOrDefault("DB_USER", "root");
-        String dbPassword = getEnvOrDefault("DB_PASSWORD", "phong2007");
+        String dbPassword = getEnvOrDefault("DB_PASSWORD", "");
         config.setJdbcUrl(jdbcUrl);
         config.setUsername(dbUser);
         config.setPassword(dbPassword);
@@ -30,7 +30,8 @@ public class DBConnection {
         config.setMinimumIdle(5);
 
         this.dataSource = new HikariDataSource(config);
-        logger.info("HikariCP pool initialized | URL: {} | User: {} | MaxPoolSize: 20", jdbcUrl, dbUser);
+        logger.info("HikariCP pool initialized | URL: {} | User: {} | MaxPoolSize: 20", jdbcUrl,
+                dbUser);
     }
 
     private String getEnvOrDefault(String key, String fallback) {

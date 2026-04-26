@@ -1,6 +1,6 @@
-//Mục đích của class này là gom tất cả các đoạn code
-//lặp đi lặp lại (như khối try-catch, xử lý lỗi, parse JSON chung) vào một chỗ.
-//Các chức năng cụ thể chỉ việc kế thừa nó.
+// Mục đích của class này là gom tất cả các đoạn code
+// lặp đi lặp lại (như khối try-catch, xử lý lỗi, parse JSON chung) vào một chỗ.
+// Các chức năng cụ thể chỉ việc kế thừa nó.
 
 package com.server.controller.command;
 
@@ -33,7 +33,7 @@ public abstract class BaseApiCommand implements Handler {
             ctx.status(400).result(errorJson).contentType("application/json");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Unhandled server error", e);
-          
+
             String fatalJson = gson.toJson(ResponseUtils.internalError("Lỗi máy chủ."));
             ctx.status(500).result(fatalJson).contentType("application/json");
         }
@@ -41,5 +41,6 @@ public abstract class BaseApiCommand implements Handler {
 
     // Hàm trừu tượng (BẮT BUỘC các class con (Create, Update, Delete) phải tự viết nội dung)
     protected abstract void execute(Context ctx) throws Exception;
-    //Template method pattern: Định nghĩa một quy trình chuẩn trong BaseApiCommand, nhưng để các bước cụ thể (execute) do class con quyết định thực hiện như thế nào.
+    // Template method pattern: Định nghĩa một quy trình chuẩn trong BaseApiCommand, nhưng để các
+    // bước cụ thể (execute) do class con quyết định thực hiện như thế nào.
 }

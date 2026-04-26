@@ -8,165 +8,180 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<!-- Đảm bảo fx:controller trỏ đúng đến file Java -->
-<ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #F4F4F4;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.UserProfileController">
+<ScrollPane fitToWidth="true" style="-fx-background-color: #E8EEF2; -fx-background: #E8EEF2; -fx-border-color: transparent;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.UserProfileController">
     <content>
-        <VBox alignment="TOP_CENTER" spacing="30.0" style="-fx-background-color: #F4F4F4; -fx-padding: 40;">
+        <VBox alignment="TOP_CENTER" spacing="35.0" style="-fx-background-color: transparent; -fx-padding: 40;">
 
-            <VBox alignment="CENTER">
-                <Label text="User Profile" textFill="#1a1a1a">
+            <VBox alignment="CENTER" spacing="5.0">
+                <Label text="HỒ SƠ CÁ NHÂN" textFill="#1E293B">
                     <font>
-                        <Font name="System Bold" size="28.0" />
+                        <Font name="System Bold" size="32.0" />
+                    </font>
+                    <style>
+                        -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 2, 0, 0, 1);
+                    </style>
+                </Label>
+                <Label text="Quản lý thông tin tài khoản, bảo mật và vai trò trên hệ thống" textFill="#64748B">
+                     <font>
+                        <Font name="System Italic" size="14.0" />
                     </font>
                 </Label>
-                <Label text="Handle user's profile and password" textFill="#666666" />
             </VBox>
 
-            <VBox maxWidth="650.0" spacing="25.0" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 40; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 15, 0, 0, 5);">
+            <VBox maxWidth="750.0" spacing="25.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-padding: 45; -fx-effect: dropshadow(gaussian, rgba(17,24,39,0.06), 30, 0, 5, 5);">
 
-                <HBox alignment="CENTER_LEFT" spacing="20.0">
-                    <Circle fill="#E3B04B" radius="40.0" />
-                    <VBox alignment="CENTER_LEFT" spacing="5.0">
-                        <Label fx:id="lblHeaderName" text="Tên Người Dùng" textFill="#1a1a1a">
+                <HBox alignment="CENTER_LEFT" spacing="25.0">
+                    <Circle fill="linear-gradient(to bottom right, #D4AF37, #FDE047)" radius="45.0" stroke="#FFFFFF" strokeType="INSIDE" strokeWidth="4.0">
+                        <style>
+                            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5);
+                        </style>
+                    </Circle>
+                    <VBox alignment="CENTER_LEFT" spacing="8.0">
+                        <Label fx:id="lblHeaderName" text="Đang tải..." textFill="#1E293B">
                             <font>
-                                <Font name="System Bold" size="22.0" />
+                                <Font name="System Bold" size="26.0" />
                             </font>
                         </Label>
-                        <Label fx:id="lblRoleTag" style="-fx-background-color: #e0e0e0; -fx-padding: 3 8 3 8; -fx-background-radius: 10;" text="Vai trò: Đang tải..." textFill="#555555">
+                        <Label fx:id="lblRoleTag" style="-fx-background-color: #F8FAFC; -fx-padding: 6 15; -fx-background-radius: 20; -fx-border-color: #E2E8F0; -fx-border-radius: 20;" text="Vai trò: Đang tải..." textFill="#64748B">
                             <font>
-                                <Font name="System Bold" size="12.0" />
+                                <Font name="System Bold" size="13.0" />
                             </font>
                         </Label>
                     </VBox>
                 </HBox>
 
-                <Separator />
+                <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 1 0 0 0;" />
 
-                <VBox spacing="15.0">
-                    <Label text="THÔNG TIN CƠ BẢN" textFill="#e3b04b">
-                        <font><Font name="System Bold" size="14.0" /></font>
+                <VBox spacing="18.0">
+                    <Label text="THÔNG TIN CƠ BẢN" textFill="#B8860B">
+                        <font><Font name="System Bold" size="15.0" /></font>
                     </Label>
 
-                    <HBox spacing="15.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Tên đăng nhập:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtUsername" disable="true" prefHeight="40.0" style="-fx-background-color: #f0f0f0; -fx-background-radius: 6;" />
+                    <HBox spacing="20.0">
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Tên đăng nhập:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtUsername" disable="true" prefHeight="45.0" style="-fx-background-color: #F1F5F9; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-padding: 0 15; -fx-text-fill: #94A3B8;" />
                         </VBox>
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Họ và Tên:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtFullName" prefHeight="40.0" style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
-                        </VBox>
-                    </HBox>
-
-                    <HBox spacing="15.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Email:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtEmail" prefHeight="40.0" style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
-                        </VBox>
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Số điện thoại:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtPhone" prefHeight="40.0" style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Họ và Tên:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtFullName" prefHeight="45.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
                         </VBox>
                     </HBox>
 
-                    <VBox spacing="5.0">
-                        <Label text="Địa chỉ:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                        <TextField fx:id="txtAddress" prefHeight="40.0" style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
+                    <HBox spacing="20.0">
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Email:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtEmail" prefHeight="45.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
+                        </VBox>
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Số điện thoại:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtPhone" prefHeight="45.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
+                        </VBox>
+                    </HBox>
+
+                    <VBox spacing="8.0">
+                        <Label text="Địa chỉ giao hàng:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                        <TextField fx:id="txtAddress" prefHeight="45.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
                     </VBox>
                 </VBox>
 
-                <VBox fx:id="vboxBidder" spacing="15.0">
-                    <Separator />
-                    <Label text="THÔNG TIN TÀI CHÍNH (BIDDER)" textFill="#e3b04b">
-                        <font><Font name="System Bold" size="14.0" /></font>
+                <VBox fx:id="vboxBidder" spacing="18.0">
+                    <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 1 0 0 0;" />
+                    <Label text="THÔNG TIN TÀI CHÍNH (BIDDER)" textFill="#B8860B">
+                        <font><Font name="System Bold" size="15.0" /></font>
                     </Label>
-                    <HBox spacing="15.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Số dư ví (VNĐ):" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtWalletBalance" disable="true" prefHeight="40.0" style="-fx-background-color: #f0f0f0; -fx-background-radius: 6; -fx-font-weight: bold; -fx-text-fill: #28a745;" />
+                    
+                    <HBox spacing="20.0">
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Số dư ví (VNĐ):" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtWalletBalance" disable="true" prefHeight="45.0" style="-fx-background-color: #F1F5F9; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-weight: bold; -fx-text-fill: #059669;" />
                         </VBox>
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Thẻ tín dụng (Credit Card):" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtCreditCard" prefHeight="40.0" promptText="VD: 4422 1133..." style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Thẻ tín dụng (Credit Card):" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtCreditCard" prefHeight="45.0" promptText="VD: 4422 1133..." style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
                         </VBox>
                     </HBox>
 
-                    <HBox fx:id="upgradeToSellerBox" alignment="CENTER_LEFT" spacing="10.0" style="-fx-padding: 10 0 0 0;">
-                        <Label text="Bạn muốn bán hàng?" textFill="#555555">
-                            <font><Font name="System Italic" size="12.0" /></font>
+                    <HBox fx:id="upgradeToSellerBox" alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #FFFDF0; -fx-border-color: #FDE047; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 12 15;">
+                        <Label text="Bạn muốn đăng bán sản phẩm?" textFill="#9A7B00">
+                            <font><Font name="System Bold" size="13.0" /></font>
                         </Label>
-                        <!-- Bỏ onAction, thêm fx:id cho Button -->
-                        <Button fx:id="upgradeButton" style="-fx-background-color: transparent; -fx-text-fill: #E3B04B; -fx-border-color: #E3B04B; -fx-border-radius: 4; -fx-cursor: hand;" text="Yêu cầu làm Seller">
-                            <font><Font name="System Bold" size="12.0" /></font>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button fx:id="upgradeButton" prefHeight="35.0" style="-fx-background-color: transparent; -fx-text-fill: #B8860B; -fx-border-color: #D4AF37; -fx-border-radius: 8; -fx-border-width: 1.5; -fx-cursor: hand; -fx-padding: 0 15;" text="Yêu Cầu Làm Seller">
+                            <font><Font name="System Bold" size="13.0" /></font>
                         </Button>
                     </HBox>
                 </VBox>
 
-                <VBox fx:id="vboxSeller" spacing="15.0">
-                    <Separator />
-                    <Label text="THÔNG TIN CỬA HÀNG (SELLER)" textFill="#e3b04b">
-                        <font><Font name="System Bold" size="14.0" /></font>
+                <VBox fx:id="vboxSeller" spacing="18.0">
+                    <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 1 0 0 0;" />
+                    <Label text="THÔNG TIN CỬA HÀNG (SELLER)" textFill="#B8860B">
+                        <font><Font name="System Bold" size="15.0" /></font>
                     </Label>
 
-                    <HBox spacing="15.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Tên Cửa Hàng (Shop Name):" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtShopName" prefHeight="40.0" style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
+                    <HBox spacing="20.0">
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Tên Cửa Hàng (Shop Name):" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtShopName" prefHeight="45.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
                         </VBox>
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Số Tài Khoản Ngân Hàng:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtBank" prefHeight="40.0" style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Số Tài Khoản Ngân Hàng:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtBank" prefHeight="45.0" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
                         </VBox>
                     </HBox>
 
-                    <HBox spacing="15.0">
-                        <Label fx:id="lblRating" text="⭐ Đánh giá: 0.0" textFill="#333333" />
-                        <Label fx:id="lblReviews" text="📝 Lượt đánh giá: 0" textFill="#333333" />
-                        <Label fx:id="lblVerified" text="✅ Trạng thái: Chưa xác minh" textFill="#dc3545" />
+                    <HBox spacing="20.0" style="-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15;">
+                        <Label fx:id="lblRating" text="⭐ Đánh giá: 0.0" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
+                        <Separator orientation="VERTICAL" />
+                        <Label fx:id="lblReviews" text="📝 Lượt đánh giá: 0" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblVerified" style="-fx-background-color: #FEF2F2; -fx-padding: 4 10; -fx-background-radius: 6;" text="Trạng thái: Chưa xác minh" textFill="#DC2626"><font><Font name="System Bold" size="12.0" /></font></Label>
                     </HBox>
                 </VBox>
 
-                <VBox fx:id="vboxAdmin" spacing="15.0">
-                    <Separator />
-                    <Label text="BẢNG ĐIỀU KHIỂN (ADMIN)" textFill="#dc3545">
-                        <font><Font name="System Bold" size="14.0" /></font>
+                <VBox fx:id="vboxAdmin" spacing="18.0">
+                    <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 1 0 0 0;" />
+                    <Label text="BẢNG ĐIỀU KHIỂN QUẢN TRỊ (ADMIN)" textFill="#DC2626">
+                        <font><Font name="System Bold" size="15.0" /></font>
                     </Label>
-                    <HBox spacing="15.0">
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Cấp độ Quyền (Role Level):" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtRoleLevel" disable="true" prefHeight="40.0" style="-fx-background-color: #f0f0f0;" />
+                    
+                    <HBox spacing="20.0">
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Cấp độ Quyền (Role Level):" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtRoleLevel" disable="true" prefHeight="45.0" style="-fx-background-color: #F1F5F9; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-padding: 0 15; -fx-text-fill: #DC2626; -fx-font-weight: bold;" />
                         </VBox>
-                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                            <Label text="Last Login IP:" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                            <TextField fx:id="txtLastLoginIp" disable="true" prefHeight="40.0" style="-fx-background-color: #f0f0f0;" />
+                        <VBox spacing="8.0" HBox.hgrow="ALWAYS">
+                            <Label text="Last Login IP:" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                            <TextField fx:id="txtLastLoginIp" disable="true" prefHeight="45.0" style="-fx-background-color: #F1F5F9; -fx-background-radius: 10; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-padding: 0 15; -fx-text-fill: #94A3B8;" />
                         </VBox>
                     </HBox>
                 </VBox>
 
-                <Separator />
+                <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 1 0 0 0;" />
 
-                <VBox spacing="5.0">
-                    <Label text="Đổi Mật Khẩu (Bỏ trống nếu giữ nguyên):" textFill="#555555"><font><Font name="System Bold" size="12.0" /></font></Label>
-                    <PasswordField fx:id="txtPassword" prefHeight="40.0" promptText="Nhập mật khẩu mới..." style="-fx-border-color: #cccccc; -fx-border-radius: 6; -fx-background-radius: 6;" />
+                <VBox spacing="25.0">
+                    <VBox spacing="8.0">
+                        <Label text="Đổi Mật Khẩu (Bỏ trống nếu giữ nguyên):" textFill="#475569"><font><Font name="System Bold" size="13.0" /></font></Label>
+                        <PasswordField fx:id="txtPassword" prefHeight="45.0" promptText="Nhập mật khẩu mới..." style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
+                    </VBox>
+
+                    <VBox alignment="CENTER" spacing="15.0">
+                        <Button onAction="#handleUpdateProfile" prefHeight="55.0" prefWidth="280.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FDE047); -fx-text-fill: #664A00; -fx-background-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 18, 0, 0, 6);" text="LƯU THÔNG TIN">
+                            <font>
+                                <Font name="System ExtraBold" size="16.0" />
+                            </font>
+                        </Button>
+                        
+                        <Label fx:id="lblStatus" text="" textFill="#059669">
+                            <font><Font name="System Bold" size="14.0" /></font>
+                        </Label>
+                    </VBox>
                 </VBox>
-
-                <HBox alignment="CENTER" style="-fx-padding: 10 0 0 0;">
-                    <Button onAction="#handleUpdateProfile" prefHeight="45.0" prefWidth="250.0" style="-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-background-radius: 6; -fx-cursor: hand;" text="CẬP NHẬT THÔNG TIN">
-                        <font>
-                            <Font name="System Bold" size="16.0" />
-                        </font>
-                    </Button>
-                </HBox>
-
-                <HBox alignment="CENTER">
-                    <Label fx:id="lblStatus" text="" textFill="#28a745">
-                        <font><Font name="System Bold" size="14.0" /></font>
-                    </Label>
-                </HBox>
 
             </VBox>
         </VBox>

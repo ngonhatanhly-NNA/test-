@@ -54,20 +54,9 @@ public class AdminRepository implements IAdminRepository {
         }
     }
 
-    @Override
-    public boolean updateUserStatus(long userId, Status newStatus) {
-        // SQL thuc hien luu trang thai moi vao database
-        String sql = "UPDATE users SET status = ?, updated_at = NOW() WHERE id = ?";
-        try (Connection conn = DBConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, newStatus.name()); // Luu ten Enum (ACTIVE, BANNED...)
-            pstmt.setLong(2, userId);
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            logger.error("Lỗi cập nhật trạng thái user {} sang {}: {}", userId, newStatus, e.getMessage(), e);
-            return false;
-        }
-    }
+    // This method is now moved to UserRepository
+    // @Override
+    // public boolean updateUserStatus(long userId, Status newStatus) { ... }
 
     @Override
     public boolean promoteToSeller(Seller seller) {
@@ -99,4 +88,3 @@ public class AdminRepository implements IAdminRepository {
         }
     }
 }
-

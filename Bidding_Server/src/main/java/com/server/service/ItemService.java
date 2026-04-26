@@ -2,9 +2,8 @@ package com.server.service;
 
 import com.server.DAO.ItemRepository;
 import com.server.model.Item;
-import com.google.gson.Gson;
 import com.shared.dto.CreateItemRequestDTO;
-import com.shared.dto.ItemResponseDTO; // Nhớ import cái hộp DTO của em
+import com.shared.dto.ItemResponseDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,28 +13,18 @@ import org.slf4j.LoggerFactory;
 
 public class ItemService {
 
-    private ItemRepository itemRepo;
+    private final ItemRepository itemRepo;
     private static final Logger logger = LoggerFactory.getLogger(ItemService.class);
-    // ====================================================================
-    // CODE MỚI (CHUẨN SOLID DÀNH CHO LUỒNG DTO)
-    // ====================================================================
 
-    // Constructor kiểu Dependency Injection: Không tự dùng chữ 'new' nữa,
-    // ai xài Service này thì tự truyền Repo vào.
     public ItemService(ItemRepository itemRepo) {
         this.itemRepo = itemRepo;
     }
 
-    // Hàm trả về List các hộp DTO (ItemResponseDTO) thay vì chuỗi String cứng nhắc
     public List<ItemResponseDTO> getAllItemsDTO() {
-        // 1. Nhờ thủ kho lấy danh sách gốc từ DB
         List<Item> rawItems = itemRepo.getAllItems();
 
-        // 2. Dùng băng chuyền (Stream) gọt bớt dữ liệu thừa, đóng gói vào DTO
         return rawItems.stream().map(item -> {
-            // Tự động trích xuất loại "VEHICLE", "ART", "ELECTRONICS" từ tên Class
             String type = item.getClass().getSimpleName().toUpperCase();
-
             return new ItemResponseDTO(
                     item.getId(),
                     item.getName(),
@@ -47,14 +36,11 @@ public class ItemService {
         }).collect(Collectors.toList());
     }
 
-    // Hàm nhận DTO từ Command, biến thành Model và lưu xuống DB
-    public boolean createNewItem(CreateItemRequestDTO dto) {
+    public void createNewItem(CreateItemRequestDTO dto) {
         try {
-            // Sức mạnh của Factory: Không cần if-else, chỉ cần truyền type và extraProps
-            // Factory sẽ tự biết nó là Electronics, Art hay Vehicle để đúc ra đúng khuôn
             Item newItem = com.server.model.ItemFactory.createItem(
                     dto.getType(),
-                    0, // ID truyền 0 vì MySQL sẽ tự động tăng (AUTO_INCREMENT)
+                    0, // ID is 0 because it's auto-incremented by the DB
                     dto.getName(),
                     dto.getDescription(),
                     dto.getStartingPrice(),
@@ -62,13 +48,11 @@ public class ItemService {
                     dto.getImageUrls(),
                     dto.getExtraProps()
             );
-
-            // Giao cho thủ kho (Repository) cất vào database
-            return itemRepo.saveItem(newItem);
+            
+            itemRepo.saveItem(newItem);
 
         } catch (Exception e) {
-            logger.error("Lỗi khi đúc sản phẩm từ DTO: " + e.getMessage());
-            return false;
+            logger.error("Lỗi khi tạo sản phẩm từ DTO: " + e.getMessage(), e);
         }
     }
 }

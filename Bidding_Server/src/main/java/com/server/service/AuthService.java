@@ -6,6 +6,7 @@ import com.server.exception.AuthValidationException;
 import com.server.exception.DuplicateUserException;
 import com.server.exception.InvalidCredentialException;
 import com.server.exception.UserNotFoundException;
+import com.server.model.Status; // Import Status enum
 import com.server.model.User;
 import com.server.model.Bidder;
 import com.shared.dto.*;
@@ -56,12 +57,8 @@ public class AuthService {
         String hashedPassword = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
         Bidder newBidder = new Bidder(dto.getUsername(), hashedPassword, dto.getEmail(), dto.getFullName());
 
-        // Đoạn này nếu bạn có logic hash mật khẩu riêng thì cứ để
-        // newBidder.updatePassword(dto.getPassword());
-
         boolean isSaved = userRepository.saveUser(newBidder);
 
-        // Đưa về controller để controller đóng gói lại và trả cho Client
         if (!isSaved) {
             logger.error("Đăng ký thất bại do hệ thống!");
             throw new AppException("REGISTER_FAILED", "Đăng ký thất bại do hệ thống!", 500);
@@ -84,11 +81,19 @@ public class AuthService {
 
         User userInDb = userRepository.getUserByUsername(loginData.getUsername());
 
-        // Kiểm tra tồn tại
         if (userInDb == null) {
             logger.error("Người dùng không tồn tại: " + loginData.getUsername());
             throw new UserNotFoundException(loginData.getUsername());
         }
+
+        // ========================================================
+        // LOGIC KIỂM TRA TRẠNG THÁI TÀI KHOẢN
+        // ========================================================
+        if (userInDb.getStatus() == Status.BANNED) {
+            logger.warn("Tài khoản bị khóa đăng nhập: '{}'", loginData.getUsername());
+            throw new AuthValidationException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+        }
+        // ========================================================
 
         if (!isPasswordValid(loginData.getPassword(), userInDb.getPasswordHash())) {
             logger.error("Sai mật khẩu cho người dùng: " + loginData.getUsername());
@@ -98,9 +103,6 @@ public class AuthService {
         return createUserProfile(userInDb);
     }
 
-    /**
-     * Lấy thông tin profile của user bằng username
-     */
     public UserProfileResponseDTO getUserProfile(String username) {
         if (isBlank(username)) {
             logger.error("Username không được để trống!");
@@ -116,9 +118,6 @@ public class AuthService {
         return createUserProfile(user);
     }
 
-    /**
-     * Cập nhật thông tin profile của user
-     */
     public void updateProfile(BaseProfileUpdateDTO updateData) {
         if (updateData == null || updateData.getId() <= 0) {
             logger.error("Dữ liệu cập nhật không hợp lệ!");
@@ -131,7 +130,6 @@ public class AuthService {
             throw new UserNotFoundException("User ID: " + updateData.getId());
         }
 
-        // Cập nhật các trường nếu có dữ liệu
         if (updateData.getFullName() != null && !updateData.getFullName().trim().isEmpty()) {
             user.setFullName(updateData.getFullName());
         }

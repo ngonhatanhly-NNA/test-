@@ -1,4 +1,4 @@
-//Một class riêng biệt chỉ làm đúng một nhiệm vụ là Lấy danh sách sản phẩm.
+// Một class riêng biệt chỉ làm đúng một nhiệm vụ là Lấy danh sách sản phẩm.
 
 package com.server.controller.command;
 
