@@ -25,14 +25,12 @@ public class UpdateAutoBidAmountCommand extends BaseApiCommand {
         }
 
         AutoBidUpdateDTO updateRequest = gson.fromJson(ctx.body(), AutoBidUpdateDTO.class);
-        if (updateRequest == null || updateRequest.getBidderId() <= 0
-                || updateRequest.getMaxBidAmount() == null) {
+        if (updateRequest == null || updateRequest.getBidderId() <= 0 || updateRequest.getMaxBidAmount() == null) {
             throw new AuthValidationException("Request không hợp lệ");
         }
 
         try {
-            auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(),
-                    updateRequest.getMaxBidAmount());
+            auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
             String json = gson.toJson(ResponseUtils.success("Auto-bid updated successfully", null));
             ctx.status(200).result(json).contentType("application/json");
         } catch (AuctionException e) {

@@ -95,6 +95,16 @@ public class AuctionNetwork {
         return response.body();
     }
 
+    // --- THÊM VÀO ĐỂ MỞ PHIÊN ĐẤU GIÁ ---
+    public static Response createAuction(CreateAuctionDTO dto) throws Exception {
+        String jsonResponse = postJson(BASE_URL, gson.toJson(dto));
+        // Đóng gói DTO thành JSON và bắn POST lên API tạo Auction
+        // Lưu ý: Tùy theo ApiRouter của Lead cấu hình là "/create" hay "/"
+        // Thường thì chuẩn REST sẽ là POST vào BASE_URL
+        return gson.fromJson(jsonResponse, Response.class);
+        /*(Ghi chú: Nếu lúc chạy thực tế Server báo lỗi 404 Not Found ở đường dẫn này, em hãy check lại file ApiRouter.java xem bạn Lead định nghĩa endpoint tạo auction là /api/auctions hay /api/auctions/create để sửa lại url nhé).*/
+    }
+
     private static String postJson(String uri, String jsonBody) throws Exception {
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create(uri))
                 .header("Content-Type", "application/json")

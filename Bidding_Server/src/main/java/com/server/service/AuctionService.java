@@ -112,16 +112,6 @@ public class AuctionService {
     // ========== Main Business Logic ==========
 
     /**
-     * Lấy danh sách các phiên đấu giá đang hoạt động
-     */
-    public List<AuctionDetailDTO> getActiveAuctions() {
-        return auctionCache.values().stream()
-                .filter(a -> a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN)
-                .map(this::toDetailDto)
-                .toList();
-    }
-
-    /**
      * Xử lý yêu cầu đặt giá từ client
      *
      * @throws AuctionException nếu validation thất bại hoặc có lỗi
@@ -203,11 +193,11 @@ public class AuctionService {
         processor.start();
     }
 
-    // ===== Auction Repo get and update ========
 
+    // ==== Auction Network ====
     /**
      * Chi tiết phiên đấu giá: ưu tiên bản trong cache (giá / gia hạn giờ mới nhất),
-     * current price, winner, end time, status, websocket require
+     * nếu không có thì đọc từ DB (phiên đã kết thúc hoặc chưa load cache).
      */
     public AuctionDetailDTO getAuctionDetail(long auctionId) throws AuctionException {
         Auction auction = auctionCache.get(auctionId);
@@ -218,7 +208,6 @@ public class AuctionService {
         return toDetailDto(auction);
     }
 
-    /**pass Auction to DTO -> to repo */
     private AuctionDetailDTO toDetailDto(Auction auction) {
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         String bidderName = auction.getWinnerId() != null ? "User_" + auction.getWinnerId() : "No bids";
@@ -244,8 +233,6 @@ public class AuctionService {
             bidderName, Math.max(0, remaining));
     }
 
-    // ===== Anti-snipping handle =====
-
     /**
      * Handle anti-sniping: Extend auction time nếu bid ở giây cuối
      */
@@ -258,8 +245,15 @@ public class AuctionService {
         }
     }
 
-    // ========== Scheduling & Cleanup ==========
+    /**
+     * Xử lý tự động đặt giá cho các người dùng khác có auto-bid
+     * Được gọi sau khi một đơn đặt giá thủ công thành công
+     */
+    private void processAutoBidsFromOtherUsers(Auction auction) {
+        autoBidProcessor.process( auction, this.bidQueue);
+    }
 
+    // ========== Scheduling & Cleanup ==========
     /**
      * Lên lịch kết thúc phiên đấu giá
      */
@@ -274,9 +268,9 @@ public class AuctionService {
 
             // Lên lịch task mới
             ScheduledFuture<?> newTask = scheduler.schedule(
-                () -> finishAuction(auction.getId()),
-                delay,
-                TimeUnit.MILLISECONDS
+                    () -> finishAuction(auction.getId()),
+                    delay,
+                    TimeUnit.MILLISECONDS
             );
             scheduledTasks.put(auction.getId(), newTask);
         } else {
@@ -294,8 +288,8 @@ public class AuctionService {
             try {
                 Auction auction = auctionCache.get(auctionId);
                 if (auction != null &&
-                    (auction.getStatus() == Auction.AuctionStatus.RUNNING ||
-                     auction.getStatus() == Auction.AuctionStatus.OPEN)) {
+                        (auction.getStatus() == Auction.AuctionStatus.RUNNING ||
+                                auction.getStatus() == Auction.AuctionStatus.OPEN)) {
 
                     auction.setStatus(Auction.AuctionStatus.FINISHED);
                     auctionRepository.save(auction);
@@ -306,8 +300,8 @@ public class AuctionService {
                     scheduledTasks.remove(auctionId);
 
                     AuctionLogger.logAuctionFinished(auctionId,
-                        auction.getWinnerId() != null ? auction.getWinnerId() : 0,
-                        auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid().toString() : "0");
+                            auction.getWinnerId() != null ? auction.getWinnerId() : 0,
+                            auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid().toString() : "0");
                 }
             } finally {
                 lock.unlock();
@@ -315,7 +309,8 @@ public class AuctionService {
         }
     }
 
-    // ========== Public Auto - bid Methods ==========
+    // ========== Public API Methods ==========
+
 
     public void setEventListener(AuctionEventListener listener) {
         this.eventListener = listener;
@@ -336,15 +331,6 @@ public class AuctionService {
                     request.getMaxAutoBidAmount().toString());
         }
     }
-
-    /**
-     * Xử lý tự động đặt giá cho các người dùng khác có auto-bid
-     * Được gọi sau khi một đơn đặt giá thủ công thành công
-     */
-    private void processAutoBidsFromOtherUsers(Auction auction) {
-        autoBidProcessor.process( auction, this.bidQueue);
-    }
-
 
     /**
      * Hủy auto-bid cho một người dùng
@@ -379,6 +365,71 @@ public class AuctionService {
             throw e;
         } catch (Exception e) {
             throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy danh sách các phiên đấu giá đang hoạt động
+     */
+    public List<AuctionDetailDTO> getActiveAuctions() {
+        return auctionCache.values().stream()
+                .filter(a -> a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN)
+                .map(this::toDetailDto)
+                .toList();
+    }
+
+    /**
+     * Tạo phiên đấu giá mới
+     */
+    /**
+     * Tạo phiên đấu giá mới
+     */
+    public long createAuction(CreateAuctionDTO dto) throws AuctionException {
+        try {
+            logger.info("Bắt đầu xử lý tạo Auction: ItemId={}, SellerId={}, Start={}, End={}, Step={}",
+                    dto.getItemId(), dto.getSellerId(), dto.getStartTime(), dto.getEndTime(), dto.getStepPrice());
+
+            if (dto.getItemId() <= 0 || dto.getSellerId() <= 0) {
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "ItemId và SellerId phải lớn hơn 0");
+            }
+
+            if (dto.getStepPrice() == null || dto.getStepPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Step price phải lớn hơn 0");
+            }
+
+            java.time.LocalDateTime startTime = java.time.LocalDateTime.parse(dto.getStartTime());
+            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(dto.getEndTime());
+
+            if (endTime.isBefore(startTime)) {
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "End time phải sau start time");
+            }
+
+            Auction auction = new Auction();
+            auction.setItemId(dto.getItemId());
+            auction.setSellerId(dto.getSellerId());
+            auction.setStartTime(startTime);
+            auction.setEndTime(endTime);
+            auction.setStepPrice(dto.getStepPrice());
+            auction.setCurrentHighestBid(BigDecimal.ZERO);
+            auction.setStatus(Auction.AuctionStatus.OPEN);
+
+            // GỌI XUỐNG REPOSITORY ĐỂ LƯU
+            long auctionId = auctionRepository.create(auction);
+
+            // NẾU DATABASE TRẢ VỀ -1, BẮT LẠI VÀ QUĂNG MÌN LÊN CHO COMMAND XỬ LÝ
+            if (auctionId <= 0) {
+                throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Không thể lưu phiên đấu giá vào Database.");
+            }
+
+            auction.setId(auctionId);
+            cacheAndScheduleAuction(auction);
+            AuctionLogger.logInfo("Phiên đấu giá " + auctionId + " đã tạo thành công");
+
+            return auctionId;
+        } catch (AuctionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Lỗi tạo phiên: " + e.getMessage());
         }
     }
 

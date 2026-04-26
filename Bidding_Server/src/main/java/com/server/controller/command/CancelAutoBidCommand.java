@@ -31,8 +31,7 @@ public class CancelAutoBidCommand extends BaseApiCommand {
 
         try {
             auctionService.cancelAutoBid(auctionId, cancelRequest.getBidderId());
-            String json =
-                    gson.toJson(ResponseUtils.success("Auto-bid cancelled successfully", null));
+            String json = gson.toJson(ResponseUtils.success("Auto-bid cancelled successfully", null));
             ctx.status(200).result(json).contentType("application/json");
         } catch (AuctionException e) {
             throw AuctionAppException.from(e);

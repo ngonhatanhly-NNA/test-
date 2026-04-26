@@ -26,4 +26,7 @@ public class BidTransaction extends Entity {
     public LocalDateTime getTimestamp() { return timestamp; }
     public boolean isAutoBid() { return isAutoBid; }
     public void setAutoBid(boolean autoBid) { isAutoBid = autoBid; }
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
 }

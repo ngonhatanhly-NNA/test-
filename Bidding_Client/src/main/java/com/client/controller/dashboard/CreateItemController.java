@@ -2,32 +2,79 @@ package com.client.controller.dashboard;
 
 import com.client.network.ItemNetwork;
 import com.shared.dto.CreateItemRequestDTO;
-import com.shared.network.Response;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class CreateItemController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CreateItemController.class);
+
     @FXML private TextField txtItemName;
-    @FXML private ComboBox<String> cbCategory; // Lưu ý: Trong UI đặt là cbCategory, nhưng data map sang 'type'
+    @FXML private ComboBox<String> cbCategory;
     @FXML private TextField txtStartPrice;
-    @FXML private DatePicker dpEndDate;
     @FXML private TextArea txtDescription;
+
+    // --- BẮT CÁC THÀNH PHẦN DYNAMIC UI TỪ FXML ---
+    @FXML private VBox vboxElectronics, vboxVehicle, vboxArt;
+
+    // Thuộc tính Electronics
+    @FXML private TextField txtElecBrand, txtElecModel, txtElecWarranty;
+    // Thuộc tính Vehicle
+    @FXML private TextField txtVehYear, txtVehMileage, txtVehVin;
+    // Thuộc tính Art
+    @FXML private TextField txtArtArtist, txtArtMaterial;
+    @FXML private ComboBox<String> cbArtCert;
 
     private final ItemNetwork itemNetwork = new ItemNetwork();
 
     @FXML
     public void initialize() {
+        // Đổ dữ liệu vào ComboBox
         cbCategory.getItems().addAll("ELECTRONICS", "VEHICLE", "ART");
+        cbArtCert.getItems().addAll("Yes", "No");
+
+        // LẮNG NGHE SỰ KIỆN: Khi người dùng chọn Category, UI sẽ biến hình!
+        cbCategory.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            hideAllDynamicFields(); // Giấu hết đi trước
+
+            if (newVal == null) return;
+            switch (newVal) {
+                case "ELECTRONICS":
+                    showVBox(vboxElectronics);
+                    break;
+                case "VEHICLE":
+                    showVBox(vboxVehicle);
+                    break;
+                case "ART":
+                    showVBox(vboxArt);
+                    break;
+            }
+        });
+    }
+
+    // Tắt tàng hình và bung ra
+    private void showVBox(VBox box) {
+        box.setVisible(true);
+        box.setManaged(true);
+    }
+
+    // Bật tàng hình và thu gọn lại
+    private void hideAllDynamicFields() {
+        vboxElectronics.setVisible(false); vboxElectronics.setManaged(false);
+        vboxVehicle.setVisible(false); vboxVehicle.setManaged(false);
+        vboxArt.setVisible(false); vboxArt.setManaged(false);
     }
 
     @FXML
@@ -39,46 +86,65 @@ public class CreateItemController {
     @FXML
     void handleSaveItem(ActionEvent event) {
         try {
-            // 1. Thu thập dữ liệu
             String name = txtItemName.getText();
-            String type = cbCategory.getValue(); // Nối với thuộc tính 'type' của DTO
+            String type = cbCategory.getValue();
             String desc = txtDescription.getText();
 
-            // Xử lý giá tiền cẩn thận
             String priceStr = txtStartPrice.getText().trim();
-            if (priceStr.isEmpty()) throw new NumberFormatException();
+            if (priceStr.isEmpty()) throw new NumberFormatException("Giá không được để trống");
             BigDecimal price = new BigDecimal(priceStr);
 
-            // Tạm thời chưa có giao diện nhập thuộc tính riêng, ta tạo Map rỗng
+            // ================= ĐÓNG GÓI EXTRA PROPS =================
             HashMap<String, Object> extraProperties = new HashMap<>();
 
-            // 2. TẠO HỘP PIZZA VỚI BUILDER PATTERN!
+            if ("ELECTRONICS".equals(type)) {
+                extraProperties.put("brand", txtElecBrand.getText());
+                extraProperties.put("model", txtElecModel.getText());
+                // Parse an toàn cho số
+                String warranty = txtElecWarranty.getText();
+                extraProperties.put("warrantyMonths", warranty.isEmpty() ? 0 : Integer.parseInt(warranty));
+
+            } else if ("VEHICLE".equals(type)) {
+                String year = txtVehYear.getText();
+                String mileage = txtVehMileage.getText();
+                extraProperties.put("manufactureYear", year.isEmpty() ? 0 : Integer.parseInt(year));
+                extraProperties.put("mileage", mileage.isEmpty() ? 0 : Integer.parseInt(mileage));
+                extraProperties.put("vinNumber", txtVehVin.getText());
+
+            } else if ("ART".equals(type)) {
+                extraProperties.put("artistName", txtArtArtist.getText());
+                extraProperties.put("material", txtArtMaterial.getText());
+                extraProperties.put("hasCertificateOfAuthenticity", "Yes".equals(cbArtCert.getValue()));
+            }
+            // =========================================================
+
+            // Dùng Builder Pattern
             CreateItemRequestDTO requestDTO = new CreateItemRequestDTO.Builder()
                     .name(name)
                     .type(type)
                     .startingPrice(price)
                     .description(desc)
-                    .condition("NEW") // Tạm fix cứng vì UI chưa có trường nhập Condition
-                    .imageUrls(new java.util.ArrayList<>()) // Tạm fix cứng vì UI chưa có trường nhập ảnh
+                    .condition("NEW")
+                    .imageUrls(new ArrayList<>()) // Bọc chống đạn
                     .extraProps(extraProperties)
                     .build();
 
-            System.out.println("Đang gửi yêu cầu lên Server...");
+            logger.info("Đang gửi yêu cầu tạo Item lên Server...");
 
-            // 3. Giao cho Shipper (Đã có Cookie) gửi đi
             itemNetwork.createItem(requestDTO).thenAccept(response -> {
                 Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
-                        System.out.println("Tạo sản phẩm THÀNH CÔNG! Check DB ngay!");
-                        handleCancel(null); // Đóng popup
+                        logger.info("Tạo sản phẩm THÀNH CÔNG! Đóng popup.");
+                        handleCancel(null);
                     } else {
-                        System.out.println("Lỗi Server: " + response.getMessage());
+                        logger.error("Lỗi Server: {}", response.getMessage());
+                        // TODO: Sau này có thể show cái Alert Box đỏ đỏ ở đây cho User xem
                     }
                 });
             });
 
         } catch (NumberFormatException e) {
-            System.out.println("Lỗi: Giá tiền phải là một con số hợp lệ!");
+            logger.error("Dữ liệu số nhập vào không hợp lệ: {}", e.getMessage());
         }
     }
 }

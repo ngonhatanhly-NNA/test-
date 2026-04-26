@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox prefWidth="480.0" spacing="22.0" style="-fx-background-color: #FFFFFF; -fx-padding: 35; -fx-border-radius: 15; -fx-background-radius: 15; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.15), 35, 0, 0, 10);" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.CreateAuctionController">
+    <children>
+
+        <VBox spacing="4.0">
+            <Label text="Open Live Auction" textFill="#0F172A">
+                <font><Font name="System Bold" size="26.0" /></font>
+            </Label>
+            <Label text="Set the schedule and step price for this item." textFill="#64748B">
+                <font><Font size="14.0" /></font>
+            </Label>
+        </VBox>
+
+        <VBox spacing="8.0">
+            <Label text="Start Time" textFill="#475569">
+                <font><Font name="System Bold" size="13.0" /></font>
+            </Label>
+            <HBox spacing="10.0">
+                <DatePicker fx:id="dpStartDate" prefHeight="45.0" promptText="Select Date" HBox.hgrow="ALWAYS" style="-fx-font-size: 14px; -fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8;" />
+                <TextField fx:id="txtStartTime" prefHeight="45.0" prefWidth="100.0" promptText="HH:mm" style="-fx-font-size: 14px; -fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-alignment: center;" />
+            </HBox>
+        </VBox>
+
+        <VBox spacing="8.0">
+            <Label text="End Time" textFill="#475569">
+                <font><Font name="System Bold" size="13.0" /></font>
+            </Label>
+            <HBox spacing="10.0">
+                <DatePicker fx:id="dpEndDate" prefHeight="45.0" promptText="Select Date" HBox.hgrow="ALWAYS" style="-fx-font-size: 14px; -fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8;" />
+                <TextField fx:id="txtEndTime" prefHeight="45.0" prefWidth="100.0" promptText="HH:mm" style="-fx-font-size: 14px; -fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-alignment: center;" />
+            </HBox>
+        </VBox>
+
+        <VBox spacing="8.0">
+            <Label text="Minimum Step Price ($)" textFill="#475569">
+                <font><Font name="System Bold" size="13.0" /></font>
+            </Label>
+            <TextField fx:id="txtStepPrice" prefHeight="45.0" promptText="e.g., 50.00" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 0 15;" />
+        </VBox>
+
+        <HBox alignment="CENTER_RIGHT" spacing="15.0">
+            <VBox.margin><Insets top="15.0" /></VBox.margin>
+            <children>
+                <Button mnemonicParsing="false" onAction="#handleCancel" prefHeight="45.0" prefWidth="100.0" style="-fx-background-color: #FEF2F2; -fx-border-color: #F87171; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: #DC2626; -fx-cursor: hand;" text="Cancel">
+                    <font><Font name="System Bold" size="14.0" /></font>
+                </Button>
+                <Button mnemonicParsing="false" onAction="#handleStartAuction" prefHeight="45.0" prefWidth="150.0" style="-fx-background-color: #059669; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(5,150,105,0.4), 10, 0, 0, 3);" text="Start Auction">
+                    <font><Font name="System ExtraBold" size="14.0" /></font>
+                </Button>
+            </children>
+        </HBox>
+
+    </children>
+</VBox>

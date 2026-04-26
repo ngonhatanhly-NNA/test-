@@ -26,8 +26,7 @@ public class CreateItemCommand extends BaseApiCommand {
 
         // 3. Nếu code chạy được xuống đến đây, chắc chắn 100% là LƯU THÀNH CÔNG (Happy Path)
         // Ta dùng nguyên xi bộ công cụ ResponseUtils để trả về.
-        String jsonSuccess =
-                gson.toJson(ResponseUtils.success("Đăng bán sản phẩm thành công!", null));
+        String jsonSuccess = gson.toJson(ResponseUtils.success("Đăng bán sản phẩm thành công!", null));
         ctx.status(200).result(jsonSuccess).contentType("application/json");
     }
 }

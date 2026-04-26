@@ -6,10 +6,10 @@ Một hệ thống đấu giá trực tuyến được xây dựng dựa trên k
 
 | STT | Họ và Tên | Mã Sinh Viên | Vai trò (Role) |
 |:---:|:---|:---|:---|
-| 1 | Ngô Nhật Ánh | 25020030 |Service  / UI-UX / Network / DAO - Set up|
-| 2 | Đinh Anh Vũ | 25020432 | Service  / UI-UX / Network / DAO |
-| 3 | Hoàng Văn Tưởng | 25020383 |  Service / Network |
-| 4 | Mai Thế Phong | 25020310 | Service - Network |
+| 1 | Ngô Nhật Ánh | 25020030 | Main FrontEnd - Backend Auth, Auction, User - DTO net, DB set up and Net setup - Configuration |
+| 2 | Đinh Anh Vũ | 25020432 | Frontend - Backend Item, User - DTO net - DB setup| 
+| 3 | Hoàng Văn Tưởng | 25020383 | Admin FrontEnd - Backend Admin - Seller - Bidder |
+| 4 | Mai Thế Phong | 25020310 | Backend Admin - Seller - Bidder |
 
 ---
 
@@ -18,7 +18,7 @@ Một hệ thống đấu giá trực tuyến được xây dựng dựa trên k
 * **Ngôn ngữ lõi:** Java 25
 * **Giao diện Frontend:** JavaFX, FXML, CSS, SceneBuilder
 * **Cơ sở dữ liệu:** MySQL 8.x, JDBC Driver (v9.6.0)
-* **Giao tiếp mạng (Networking):** TCP/IP Sockets, WebSocket, REST API (HTTP)
+* **Giao tiếp mạng (Networking):** WebSocket, REST API (HTTP) (Javalin)
 * **Quản lý dự án & Build tool:** Maven
 * **Định dạng dữ liệu:** JSON (Đóng/mở gói DTO qua thư viện Gson)
 * **IDE Khuyên dùng:** IntelliJ IDEA
