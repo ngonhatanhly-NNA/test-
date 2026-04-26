@@ -24,33 +24,25 @@
             <children>
                 <VBox alignment="CENTER_LEFT">
                     <Label text="SELLER PORTAL" textFill="#D4AF37">
-                        <font>
-                            <Font name="System Bold" size="24.0" />
-                        </font>
-                        <style>
-                            -fx-letter-spacing: 2px;
-                            -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 10, 0, 0, 2);
-                        </style>
+                        <font><Font name="System Bold" size="24.0" /></font>
                     </Label>
                     <Label text="Manage your business and auctions" textFill="#94A3B8">
-                        <font>
-                            <Font name="System Italic" size="13.0" />
-                        </font>
+                        <font><Font name="System Italic" size="13.0" /></font>
                     </Label>
                 </VBox>
-                
+
                 <Region HBox.hgrow="ALWAYS" />
-                
+
                 <HBox alignment="CENTER" spacing="15.0">
-                    <Button onAction="#createNewItem" prefHeight="40.0" style="-fx-background-color: linear-gradient(to right, #F59E0B, #FDE047); -fx-text-fill: #451A03; -fx-background-radius: 8; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4), 12, 0, 0, 4); -fx-padding: 0 20;" text="➕ ADD NEW ITEM">
-                        <font>
-                            <Font name="System ExtraBold" size="13.0" />
-                        </font>
+                    <Button onAction="#createNewItem" prefHeight="40.0"
+                            style="-fx-background-color: linear-gradient(to right, #F59E0B, #FDE047); -fx-text-fill: #451A03; -fx-background-radius: 8; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.4), 12, 0, 0, 4); -fx-padding: 0 20;"
+                            text="➕ ADD NEW ITEM">
+                        <font><Font name="System ExtraBold" size="13.0" /></font>
                     </Button>
-                    <Button onAction="#refreshData" prefHeight="40.0" style="-fx-background-color: rgba(255,255,255,0.1); -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: #F8FAFC; -fx-cursor: hand; -fx-padding: 0 20;" text="🔄 Refresh">
-                        <font>
-                            <Font name="System Bold" size="13.0" />
-                        </font>
+                    <Button onAction="#refreshData" prefHeight="40.0"
+                            style="-fx-background-color: rgba(255,255,255,0.1); -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: #F8FAFC; -fx-cursor: hand; -fx-padding: 0 20;"
+                            text="🔄 Refresh">
+                        <font><Font name="System Bold" size="13.0" /></font>
                     </Button>
                 </HBox>
             </children>
@@ -60,12 +52,15 @@
     <center>
         <TabPane style="-fx-background-color: transparent; -fx-tab-min-height: 40px; -fx-tab-min-width: 160px; -fx-font-weight: bold; -fx-font-size: 14px;" tabClosingPolicy="UNAVAILABLE">
 
+            <!-- TAB 1: OVERVIEW -->
             <Tab text="Overview">
                 <VBox spacing="25" style="-fx-padding: 30px;">
                     <HBox spacing="30">
-                        <VBox alignment="CENTER" spacing="5.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 35px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" HBox.hgrow="ALWAYS">
-                            <Label style="-fx-font-size: 14px; -fx-text-fill: #64748B; -fx-font-weight: bold; -fx-tracking: 1.5px;" text="⭐ STORE RATING" />
-                            <Label fx:id="lblRating" style="-fx-font-size: 52px; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(245,158,11,0.3), 10, 0, 0, 3);">
+                        <VBox alignment="CENTER" spacing="5.0"
+                              style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 35px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                              HBox.hgrow="ALWAYS">
+                            <Label style="-fx-font-size: 14px; -fx-text-fill: #64748B; -fx-font-weight: bold;" text="⭐ STORE RATING" />
+                            <Label fx:id="lblRating" style="-fx-font-size: 52px; -fx-font-weight: bold;" text="0.0 ★">
                                 <textFill>
                                     <LinearGradient endX="1.0" endY="1.0">
                                         <stops>
@@ -77,44 +72,63 @@
                             </Label>
                         </VBox>
 
-                        <VBox alignment="CENTER" spacing="5.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 35px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" HBox.hgrow="ALWAYS">
-                            <Label style="-fx-font-size: 14px; -fx-text-fill: #64748B; -fx-font-weight: bold; -fx-tracking: 1.5px;" text="📦 TOTAL INVENTORY" />
-                            <Label fx:id="lblTotalItems" style="-fx-font-size: 52px; -fx-font-weight: bold; -fx-text-fill: #2563EB; -fx-effect: dropshadow(gaussian, rgba(37,99,235,0.3), 10, 0, 0, 3);" text="0" />
+                        <VBox alignment="CENTER" spacing="5.0"
+                              style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 35px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                              HBox.hgrow="ALWAYS">
+                            <Label style="-fx-font-size: 14px; -fx-text-fill: #64748B; -fx-font-weight: bold;" text="📦 TOTAL INVENTORY" />
+                            <Label fx:id="lblTotalItems"
+                                   style="-fx-font-size: 52px; -fx-font-weight: bold; -fx-text-fill: #2563EB;" text="0" />
                         </VBox>
                     </HBox>
 
-                    <VBox spacing="15" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" VBox.vgrow="ALWAYS">
+                    <VBox spacing="15"
+                          style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                          VBox.vgrow="ALWAYS">
                         <Label style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="Recent Activities" />
-                        <ListView fx:id="listViewActivities" style="-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);" VBox.vgrow="ALWAYS" />
+                        <ListView fx:id="listViewActivities"
+                                  style="-fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-font-size: 14px;"
+                                  VBox.vgrow="ALWAYS" />
                     </VBox>
                 </VBox>
             </Tab>
 
+            <!-- TAB 2: ITEM MANAGEMENT -->
             <Tab text="Item Management">
                 <VBox spacing="20" style="-fx-padding: 30px;">
-                    <VBox spacing="20" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" VBox.vgrow="ALWAYS">
-                        
+                    <VBox spacing="20"
+                          style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                          VBox.vgrow="ALWAYS">
+
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="Your Inventory" HBox.hgrow="ALWAYS" />
-                            
-                            <Button onAction="#showAllItems" prefHeight="45.0" style="-fx-background-color: transparent; -fx-text-fill: #3B82F6; -fx-border-color: #3B82F6; -fx-border-radius: 8; -fx-cursor: hand;" text="Reload All Items">
+
+                            <Button onAction="#showAllItems" prefHeight="45.0"
+                                    style="-fx-background-color: transparent; -fx-text-fill: #3B82F6; -fx-border-color: #3B82F6; -fx-border-radius: 8; -fx-cursor: hand;"
+                                    text="Reload All Items">
                                 <font><Font name="System Bold" size="14.0" /></font>
                             </Button>
 
-                            <TextField fx:id="txtSearchItem" prefHeight="45.0" prefWidth="320.0" promptText="🔍 Search item by name..." style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-font-size: 14px; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 5, 0, 0, 2);" />
-                            <Button onAction="#handleSearchItem" prefHeight="45.0" prefWidth="130.0" style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(30,41,59,0.3), 10, 0, 0, 3);" text="SEARCH">
+                            <TextField fx:id="txtSearchItem" prefHeight="45.0" prefWidth="320.0"
+                                       promptText="🔍 Search item by name..."
+                                       style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-font-size: 14px; -fx-padding: 0 15;" />
+                            <Button onAction="#handleSearchItem" prefHeight="45.0" prefWidth="130.0"
+                                    style="-fx-background-color: #1E293B; -fx-text-fill: white; -fx-background-radius: 10; -fx-cursor: hand;"
+                                    text="SEARCH">
                                 <font><Font name="System ExtraBold" size="14.0" /></font>
                             </Button>
                         </HBox>
 
-                        <TableView fx:id="tableItems" style="-fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" VBox.vgrow="ALWAYS">
+                        <!-- TableView với fx:id cho TẤT CẢ CỘT để Controller bind được -->
+                        <TableView fx:id="tableItems"
+                                   style="-fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-font-size: 14px;"
+                                   VBox.vgrow="ALWAYS">
                             <columns>
-                                <TableColumn prefWidth="90" style="-fx-alignment: CENTER;" text="Item ID" />
-                                <TableColumn prefWidth="300" text="Item Name" />
-                                <TableColumn prefWidth="160" style="-fx-alignment: CENTER_RIGHT;" text="Starting Price" />
-                                <TableColumn prefWidth="150" style="-fx-alignment: CENTER;" text="Category" />
-                                <TableColumn prefWidth="150" style="-fx-alignment: CENTER;" text="Status" />
-                                <TableColumn prefWidth="180" style="-fx-alignment: CENTER;" text="Action" />
+                                <TableColumn fx:id="colItemId" prefWidth="90" style="-fx-alignment: CENTER;" text="Item ID" />
+                                <TableColumn fx:id="colItemName" prefWidth="300" text="Item Name" />
+                                <TableColumn fx:id="colStartingPrice" prefWidth="160" style="-fx-alignment: CENTER_RIGHT;" text="Starting Price" />
+                                <TableColumn fx:id="colCategory" prefWidth="150" style="-fx-alignment: CENTER;" text="Category" />
+                                <TableColumn fx:id="colStatus" prefWidth="150" style="-fx-alignment: CENTER;" text="Status" />
+                                <TableColumn fx:id="colAction" prefWidth="180" style="-fx-alignment: CENTER;" text="Action" />
                             </columns>
                             <columnResizePolicy>
                                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -124,65 +138,92 @@
                 </VBox>
             </Tab>
 
+            <!-- TAB 3: SELLING ANALYSIS -->
             <Tab text="Selling Analysis">
                 <VBox spacing="20" style="-fx-padding: 30px;">
-                    <VBox spacing="20" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" VBox.vgrow="ALWAYS">
+                    <VBox spacing="20"
+                          style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                          VBox.vgrow="ALWAYS">
                         <HBox alignment="CENTER_LEFT">
-                            <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="📈 Performance Analytics" HBox.hgrow="ALWAYS" />
-                            <Button onAction="#loadStatistics" prefHeight="45.0" prefWidth="180.0" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(16,185,129,0.3), 10, 0, 0, 3);" text="GENERATE REPORT">
-                                 <font><Font name="System ExtraBold" size="14.0" /></font>
+                            <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"
+                                   text="📈 Performance Analytics" HBox.hgrow="ALWAYS" />
+                            <Button onAction="#loadStatistics" prefHeight="45.0" prefWidth="180.0"
+                                    style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-background-radius: 10; -fx-cursor: hand;"
+                                    text="GENERATE REPORT">
+                                <font><Font name="System ExtraBold" size="14.0" /></font>
                             </Button>
                         </HBox>
-                        <TextArea fx:id="textAreaStatistics" editable="false" style="-fx-font-family: 'Consolas'; -fx-font-size: 15px; -fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 8, 0, 0, 2);" wrapText="true" VBox.vgrow="ALWAYS" />
+                        <TextArea fx:id="textAreaStatistics" editable="false"
+                                  style="-fx-font-family: 'Consolas'; -fx-font-size: 15px; -fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10;"
+                                  wrapText="true" VBox.vgrow="ALWAYS"
+                                  promptText="Nhấn 'GENERATE REPORT' để tải báo cáo..." />
                     </VBox>
                 </VBox>
             </Tab>
 
+            <!-- TAB 4: LIVE AUCTION MONITORING -->
             <Tab text="Live Auction Monitoring">
                 <HBox spacing="30" style="-fx-padding: 30px;">
 
-                    <VBox prefWidth="450" spacing="15" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" HBox.hgrow="ALWAYS">
+                    <VBox prefWidth="450" spacing="15"
+                          style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 25px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                          HBox.hgrow="ALWAYS">
                         <HBox alignment="CENTER_LEFT" spacing="10">
-                            <Label style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="🔴 Active Sessions" HBox.hgrow="ALWAYS" />
-                            <Button onAction="#loadLiveAuctions" prefHeight="40.0" style="-fx-background-color: #F1F5F9; -fx-text-fill: #334155; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand;" text="Reload">
+                            <Label style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;"
+                                   text="🔴 Active Sessions" HBox.hgrow="ALWAYS" />
+                            <Button onAction="#loadLiveAuctions" prefHeight="40.0"
+                                    style="-fx-background-color: #F1F5F9; -fx-text-fill: #334155; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-background-radius: 8; -fx-cursor: hand;"
+                                    text="Reload">
                                 <font><Font name="System Bold" size="13.0" /></font>
                             </Button>
                         </HBox>
-                        <ListView fx:id="listViewAuctions" style="-fx-font-size: 15px; -fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.04), 6, 0, 0, 2);" VBox.vgrow="ALWAYS" />
+                        <ListView fx:id="listViewAuctions"
+                                  style="-fx-font-size: 15px; -fx-background-color: #F8FAFC; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10;"
+                                  VBox.vgrow="ALWAYS" />
                     </VBox>
 
                     <VBox prefWidth="650" spacing="20" HBox.hgrow="ALWAYS">
-                        <VBox spacing="30" style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 35px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);" VBox.vgrow="ALWAYS">
-                            
-                            <Label maxWidth="Infinity" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0F172A; -fx-border-color: #F1F5F9; -fx-border-width: 0 0 2 0; -fx-padding: 0 0 15 0;" text="Live Bidding Details" />
+                        <VBox spacing="30"
+                              style="-fx-background-color: #FFFFFF; -fx-background-radius: 16; -fx-padding: 35px; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 25, 0, 5, 5);"
+                              VBox.vgrow="ALWAYS">
+
+                            <Label maxWidth="Infinity"
+                                   style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0F172A; -fx-border-color: #F1F5F9; -fx-border-width: 0 0 2 0; -fx-padding: 0 0 15 0;"
+                                   text="Live Bidding Details" />
 
                             <VBox spacing="20" style="-fx-padding: 10 0 10 0;">
                                 <HBox alignment="CENTER_LEFT" spacing="15">
                                     <Label prefWidth="180" style="-fx-font-size: 16px; -fx-text-fill: #64748B;" text="Item Name:" />
-                                    <Label fx:id="lblAuctionItemName" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="---" />
+                                    <Label fx:id="lblAuctionItemName"
+                                           style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #1E293B;" text="---" />
                                 </HBox>
 
                                 <HBox alignment="CENTER_LEFT" spacing="15">
                                     <Label prefWidth="180" style="-fx-font-size: 16px; -fx-text-fill: #64748B;" text="Leading Bidder:" />
-                                    <Label fx:id="lblLeadingBidder" style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2563EB;" text="---" />
+                                    <Label fx:id="lblLeadingBidder"
+                                           style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2563EB;" text="---" />
                                 </HBox>
 
                                 <HBox alignment="CENTER_LEFT" spacing="15">
                                     <Label prefWidth="180" style="-fx-font-size: 16px; -fx-text-fill: #64748B;" text="Time Remaining:" />
-                                    <Label fx:id="lblTimeRemaining" style="-fx-font-size: 20px; -fx-text-fill: #EA580C; -fx-font-weight: bold;" text="---" />
+                                    <Label fx:id="lblTimeRemaining"
+                                           style="-fx-font-size: 20px; -fx-text-fill: #EA580C; -fx-font-weight: bold;" text="---" />
                                 </HBox>
 
                                 <HBox alignment="CENTER_LEFT" spacing="15">
                                     <Label prefWidth="180" style="-fx-font-size: 16px; -fx-text-fill: #64748B;" text="Minimum Bid Step:" />
-                                    <Label fx:id="lblBidStep" style="-fx-font-size: 18px; -fx-text-fill: #1E293B;" text="---" />
+                                    <Label fx:id="lblBidStep"
+                                           style="-fx-font-size: 18px; -fx-text-fill: #1E293B;" text="---" />
                                 </HBox>
                             </VBox>
 
-                            <VBox alignment="CENTER" spacing="12" style="-fx-background-color: linear-gradient(to bottom right, #FEF2F2, #FEE2E2); -fx-border-color: #EF4444; -fx-border-width: 2.5; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 40px; -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.3), 20, 0, 0, 5);">
-                                <Label style="-fx-font-size: 16px; -fx-text-fill: #B91C1C; -fx-font-weight: bold; -fx-tracking: 2px;" text="HIGHEST CURRENT BID" />
-                                <Label fx:id="lblCurrentAuctionPrice" style="-fx-font-size: 56px; -fx-font-weight: bold; -fx-text-fill: #DC2626; -fx-effect: dropshadow(gaussian, rgba(220,38,38,0.4), 10, 0, 0, 2);" text="0 VNĐ" />
+                            <VBox alignment="CENTER" spacing="12"
+                                  style="-fx-background-color: linear-gradient(to bottom right, #FEF2F2, #FEE2E2); -fx-border-color: #EF4444; -fx-border-width: 2.5; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 40px; -fx-effect: dropshadow(gaussian, rgba(239,68,68,0.3), 20, 0, 0, 5);">
+                                <Label style="-fx-font-size: 16px; -fx-text-fill: #B91C1C; -fx-font-weight: bold;" text="HIGHEST CURRENT BID" />
+                                <Label fx:id="lblCurrentAuctionPrice"
+                                       style="-fx-font-size: 56px; -fx-font-weight: bold; -fx-text-fill: #DC2626;" text="0 VNĐ" />
                             </VBox>
-                            
+
                         </VBox>
                     </VBox>
                 </HBox>

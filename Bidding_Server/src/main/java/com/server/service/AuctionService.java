@@ -13,7 +13,9 @@ import com.shared.dto.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -40,6 +42,7 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final BidTransactionRepository bidRepository;
     private AutoBidRepository autoBidRepository;
+    private final ItemService itemService;
 
     // ========== Concurrent Collections ==========
     private final ConcurrentHashMap<Long, Auction> auctionCache = new ConcurrentHashMap<>();
@@ -63,6 +66,7 @@ public class AuctionService {
             AuctionRepository auctionRepo,
             BidTransactionRepository bidRepo,
             AutoBidRepository autoBidRepo,
+            ItemService itemService,
             BidValidationChain validationChain,
             AntiSnipingStrategy antiSnipingStrategy,
             BidProcessor bidProcessor,
@@ -71,6 +75,7 @@ public class AuctionService {
         this.auctionRepository = auctionRepo;
         this.bidRepository = bidRepo;
         this.autoBidRepository = autoBidRepo;
+        this.itemService = itemService;
 
         this.validationChain = validationChain;
         this.antiSnipingStrategy = antiSnipingStrategy;
@@ -194,7 +199,7 @@ public class AuctionService {
     }
 
 
-    // ==== Auction Network ====
+    // ==== Auction Network - DTO Convertor (need redefine) ====
     /**
      * Chi tiết phiên đấu giá: ưu tiên bản trong cache (giá / gia hạn giờ mới nhất),
      * nếu không có thì đọc từ DB (phiên đã kết thúc hoặc chưa load cache).
@@ -211,10 +216,19 @@ public class AuctionService {
     private AuctionDetailDTO toDetailDto(Auction auction) {
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         String bidderName = auction.getWinnerId() != null ? "User_" + auction.getWinnerId() : "No bids";
-        String itemName = auctionRepository.findItemNameByItemId(auction.getItemId());
-        if (itemName == null || itemName.isBlank()) {
-            itemName = "Item #" + auction.getItemId();
+        
+        Item item = itemService.getItemById(auction.getItemId());
+
+        String itemName = "Item #" + auction.getItemId();
+        String itemType = "GENERAL";
+        Map<String, String> itemSpecifics = new HashMap<>();
+
+        if (item != null) {
+            itemName = item.getName() != null ? item.getName() : itemName;
+            itemType = itemService.extractItemType(item);
+            itemSpecifics = itemService.extractItemSpecifics(item);
         }
+
         return new AuctionDetailDTO(
                 auction.getId(),
                 auction.getItemId(),
@@ -222,7 +236,9 @@ public class AuctionService {
                 auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
                 bidderName,
                 Math.max(0, remaining),
-                auction.getStepPrice()
+                auction.getStepPrice(),
+                itemType,        // Truyền Type
+                itemSpecifics    // Truyền Map thuộc tính
         );
     }
 

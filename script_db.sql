@@ -68,6 +68,7 @@ CREATE TABLE sellers (
 -- BẢNG CHA: Items
 CREATE TABLE items (
                        id INT AUTO_INCREMENT PRIMARY KEY,
+                       seller_id INT NOT NULL,
                        item_type VARCHAR(50) NOT NULL,
                        name VARCHAR(100) NOT NULL,
                        description TEXT,
@@ -83,7 +84,8 @@ CREATE TABLE items (
                        hasCertificateOfAuthenticity BOOLEAN,
                        manufactureYear INT,
                        vinNumber VARCHAR(50),
-                       mileage INT
+                       mileage INT,
+                       FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- BẢNG: Auctions

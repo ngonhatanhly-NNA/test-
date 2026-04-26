@@ -3,12 +3,14 @@ package com.server.route;
 import com.server.controller.AuctionController;
 import com.server.controller.AuthController;
 import com.server.controller.AdminController;
-import com.server.controller.UserController; // <-- THÊM IMPORT
+import com.server.controller.SellerController;
+import com.server.controller.UserController;
 import com.server.controller.command.CancelAutoBidCommand;
 import com.server.controller.command.CreateAuctionCommand;
 import com.server.controller.command.CreateItemCommand;
 import com.server.controller.command.GetActiveAuctionsCommand;
 import com.server.controller.command.GetAllItemsCommand;
+import com.server.controller.command.GetItemsBySellerIdCommand;
 import com.server.controller.command.GetAuctionDetailCommand;
 import com.server.controller.command.GetBidHistoryCommand;
 import com.server.controller.command.PlaceBidCommand;
@@ -32,28 +34,34 @@ public class ApiRouter {
     private final AuthController authController;
     private final AuctionController auctionController;
     private final AdminController adminController;
+    private final SellerController sellerController;
     private final ItemService itemService;
     private final AuctionService auctionService;
     private final JwtUtil jwtUtil;
-    private final UserController userController; // <-- THÊM BIẾN
+    private final UserController userController;
 
-    public ApiRouter(AuthController authController, AuctionController auctionController, AdminController adminController, ItemService itemService, AuctionService auctionService, JwtUtil jwtUtil, UserController userController) { // <-- THÊM VÀO CONSTRUCTOR
+    public ApiRouter(AuthController authController, AuctionController auctionController,
+                     AdminController adminController, SellerController sellerController,
+                     ItemService itemService, AuctionService auctionService,
+                     JwtUtil jwtUtil, UserController userController) {
         this.authController = authController;
         this.auctionController = auctionController;
         this.adminController = adminController;
+        this.sellerController = sellerController;
         this.itemService = itemService;
         this.auctionService = auctionService;
         this.jwtUtil = jwtUtil;
-        this.userController = userController; // <-- GÁN GIÁ TRỊ
+        this.userController = userController;
     }
 
     public void setupRoutes(Javalin app) {
         UserService userService = new UserService();
         AuthGuard authGuard = new AuthGuard(userService, jwtUtil);
 
+        // --- Bảo vệ các routes ---
         app.before("/api/admin/*", ctx -> authGuard.requireRole(ctx, Role.ADMIN));
         app.before("/api/users/profile", ctx -> authGuard.requireLogin(ctx));
-        app.before("/api/users/upgrade-to-seller", ctx -> authGuard.requireRole(ctx, Role.BIDDER)); // <-- BẢO VỆ ROUTE MỚI
+        app.before("/api/users/upgrade-to-seller", ctx -> authGuard.requireRole(ctx, Role.BIDDER));
         app.before("/api/items", ctx -> {
             if (ctx.method() == HandlerType.POST) {
                 authGuard.requireRole(ctx, Role.SELLER);
@@ -73,9 +81,8 @@ public class ApiRouter {
         app.get("/api/users/profile", ctx -> authController.getUserProfile(ctx));
         app.put("/api/users/update", new UpdateProfileCommand(userService));
 
-        // --- ĐĂNG KÝ API MỚI ---
         app.post("/api/users/upgrade-to-seller", ctx -> {
-            String username = authGuard.getUsernameFromToken(ctx); // Lấy username từ token
+            String username = authGuard.getUsernameFromToken(ctx);
             String resultJson = userController.handleUpgradeToSeller(username);
             ctx.json(resultJson);
         });
@@ -83,6 +90,7 @@ public class ApiRouter {
         // --- Nhóm API Sản phẩm (Items) ---
         app.get("/api/items", new GetAllItemsCommand(itemService));
         app.post("/api/items", new CreateItemCommand(itemService));
+        app.get("/api/items/seller/{sellerId}", new GetItemsBySellerIdCommand(itemService));
 
         // --- Nhóm API Đấu giá (Auctions) ---
         app.post("/api/auctions", new CreateAuctionCommand(auctionService));
@@ -94,6 +102,14 @@ public class ApiRouter {
         // Auto-bid
         app.post("/api/auctions/{auctionId}/auto-bid/cancel", new CancelAutoBidCommand(auctionService));
         app.put("/api/auctions/{auctionId}/auto-bid/update", new UpdateAutoBidAmountCommand(auctionService));
+
+        // --- Nhóm API Seller (MỚI) ---
+        // GET /api/sellers/{sellerId}           -> thông tin seller
+        // GET /api/sellers/{sellerId}/items     -> danh sách items của seller
+        // GET /api/sellers/{sellerId}/statistics -> thống kê bán hàng
+        app.get("/api/sellers/{sellerId}", ctx -> sellerController.getSellerById(ctx));
+        app.get("/api/sellers/{sellerId}/items", ctx -> sellerController.getSellerItems(ctx));
+        app.get("/api/sellers/{sellerId}/statistics", ctx -> sellerController.getSellerStatistics(ctx));
 
         // --- Nhóm API Admin ---
         app.get("/api/admin/dashboard", ctx -> adminController.getDashboard(ctx));

@@ -1,34 +1,38 @@
 package com.server;
 
-import com.server.DAO.*;
-import com.server.config.DBConnection;
+import java.net.InetSocketAddress;
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import com.server.controller.*;
+import com.server.service.*;
+import org.java_websocket.WebSocket;
+import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.server.WebSocketServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.server.DAO.AuctionRepository;
+import com.server.DAO.AutoBidRepository;
+import com.server.DAO.BidTransactionRepository;
+import com.server.DAO.ItemRepository;
+import com.server.DAO.UserRepository;
+import com.server.config.DBConnection;
 import com.server.route.ApiRouter;
 import com.server.security.JwtUtil;
-import com.server.service.*;
+import com.server.DAO.SellerRepository;
 import com.server.service.auction.antisnipe.DefaultAntiSnipingStrategy;
 import com.server.service.auction.processor.AutoBidProcessor;
 import com.server.service.auction.processor.ManualBidProcessor;
 import com.server.service.auction.strategy.BidValidationChain;
 import com.server.websocket.Broadcaster;
+
 import io.javalin.Javalin;
-
-import org.java_websocket.WebSocket;
-import org.java_websocket.handshake.ClientHandshake;
-import org.java_websocket.server.WebSocketServer;
-
-import java.net.InetSocketAddress;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ServerApp extends WebSocketServer {
 
     public ServerApp(InetSocketAddress address) { super(address); }
     private static final Logger logger = LoggerFactory.getLogger(ServerApp.class);
-    // PHẦN WEBSOCKET (CHỈ DÙNG CHO ĐẤU GIÁ SAU NÀY)
     private AuctionService auctionService;
     private com.google.gson.Gson gson = new com.google.gson.Gson();
 
@@ -52,23 +56,16 @@ public class ServerApp extends WebSocketServer {
             logger.error("Lỗi xử lý message từ client {}: {}", conn.getRemoteSocketAddress(), e.getMessage());
         }
     }
-    @Override public void onError(WebSocket conn, Exception ex) { 
+    @Override public void onError(WebSocket conn, Exception ex) {
         logger.error("Lỗi xảy ra với client {}: {}", conn.getRemoteSocketAddress(), ex.getMessage());
-        ex.printStackTrace(); 
+        ex.printStackTrace();
     }
-    @Override public void onStart() { 
+    @Override public void onStart() {
         logger.info("WebSocket server started on port {}", getPort());
-    }   
+    }
 
-    /**
-     * Xử lý WebSocket message từ client
-     */
     private void handleAuctionMessage(String message) {
-        if (message == null || message.isEmpty() || auctionService == null) {
-            return;
-        }
-
-        // Parse message format: "TYPE:JSON_PAYLOAD"
+        if (message == null || message.isEmpty() || auctionService == null) return;
         String[] parts = message.split(":", 2);
         if (parts.length < 2) return;
 
@@ -77,112 +74,87 @@ public class ServerApp extends WebSocketServer {
 
         try {
             switch (type) {
-                case "PLACE_BID":
-                    handlePlaceBid(payload);
-                    break;
-                case "CANCEL_AUTO_BID":
-                    handleCancelAutoBid(payload);
-                    break;
-                case "UPDATE_AUTO_BID":
-                    handleUpdateAutoBid(payload);
-                    break;
-                default:
-                    logger.warn("Loại message không hợp lệ: {}", type);
+                case "PLACE_BID": handlePlaceBid(payload); break;
+                case "CANCEL_AUTO_BID": handleCancelAutoBid(payload); break;
+                case "UPDATE_AUTO_BID": handleUpdateAutoBid(payload); break;
+                default: logger.warn("Loại message không hợp lệ: {}", type);
             }
         } catch (Exception e) {
             logger.error("Lỗi xử lý message {}: {}", type, e.getMessage());
         }
     }
 
-    /**
-     * Xử lý đặt giá từ WebSocket
-     */
     private void handlePlaceBid(String payload) throws Exception {
         com.shared.dto.BidRequestDTO bidRequest = gson.fromJson(payload, com.shared.dto.BidRequestDTO.class);
-        if (bidRequest != null) {
-            auctionService.placeBid(bidRequest);
-        }
+        if (bidRequest != null) auctionService.placeBid(bidRequest);
     }
 
-    /**
-     * Xử lý hủy auto-bid từ WebSocket
-     */
     private void handleCancelAutoBid(String payload) throws Exception {
         com.shared.dto.AutoBidCancelDTO cancelRequest = gson.fromJson(payload, com.shared.dto.AutoBidCancelDTO.class);
-        if (cancelRequest != null) {
-            auctionService.cancelAutoBid(cancelRequest.getAuctionId(), cancelRequest.getBidderId());
-        }
+        if (cancelRequest != null) auctionService.cancelAutoBid(cancelRequest.getAuctionId(), cancelRequest.getBidderId());
     }
 
-    /**
-     * Xử lý cập nhật auto-bid từ WebSocket
-     */
     private void handleUpdateAutoBid(String payload) throws Exception {
         com.shared.dto.AutoBidUpdateDTO updateRequest = gson.fromJson(payload, com.shared.dto.AutoBidUpdateDTO.class);
-        if (updateRequest != null) {
-            auctionService.updateAutoBidAmount(updateRequest.getAuctionId(), updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
-        }
+        if (updateRequest != null) auctionService.updateAutoBidAmount(updateRequest.getAuctionId(), updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
     }
 
-
-    // ====== HÀM MAIN CHẠY CẢ 2 HỆ THỐNG ======
     public static void main(String[] args) {
         try (Connection conn = DBConnection.getInstance().getConnection()) {
-            if (conn != null) {
-                logger.info("Kết nối DB qua HikariCP thành công!");
-            }
+            if (conn != null) logger.info("Kết nối DB qua HikariCP thành công!");
         } catch (SQLException e) {
             logger.error("Lỗi kết nối DB: {}", e.getMessage());
-            return; // Dừng server luôn nếu không kết nối được Database
+            return;
         }
 
         // Khởi động WebSocket (Cổng 8080)
         ServerApp wsServer = new ServerApp(new InetSocketAddress("localhost", 8080));
         wsServer.start();
 
-        // 3. Khởi động REST API (CỔNG 7070)
-        logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
-        
-        // Khoi tao cac DI, update fix cho nay sau :)
+        // Khởi tạo Repositories
         UserRepository userRepo = new UserRepository();
         ItemRepository itemRepo = new ItemRepository();
         AuctionRepository auctionRepo = new AuctionRepository();
         BidTransactionRepository bidRepo = new BidTransactionRepository();
         AutoBidRepository autoBidRepo = new AutoBidRepository();
+        SellerRepository sellerRepo = new SellerRepository(); // <-- THÊM MỚI
 
+        // Khởi tạo Services
         BidValidationChain validator = new BidValidationChain();
         ManualBidProcessor manualProc = new ManualBidProcessor();
         AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo);
         Broadcaster broadcaster = new Broadcaster();
 
-        AuctionService auctionService = new AuctionService(
-                auctionRepo, bidRepo, autoBidRepo,
-                validator, new DefaultAntiSnipingStrategy(), manualProc, autoProc);
-
-        // Gắn broadcaster để gửi real-time updates qua WebSocket
-        auctionService.setEventListener(broadcaster);
-        
-        // Gắn auctionService vào WebSocket server để xử lý messages
-        wsServer.setAuctionService(auctionService);
-
         AuthService authService = new AuthService(userRepo);
         ItemService itemService = new ItemService(itemRepo);
         AdminService adminService = new AdminService();
         UserService userService = new UserService(); // <-- KHỞI TẠO USER SERVICE
+        SellerService sellerService = new SellerService(sellerRepo);
+        AuctionService auctionService = new AuctionService(
+                auctionRepo, bidRepo, autoBidRepo, itemService,
+                validator, new DefaultAntiSnipingStrategy(), manualProc, autoProc);
+
+        // Gắn broadcaster để gửi real-time updates qua WebSocket
+        auctionService.setEventListener(broadcaster);
+        wsServer.setAuctionService(auctionService);
         JwtUtil jwtUtil = JwtUtil.fromEnvironment();
 
+        // Khởi tạo Controllers
         AuthController authController = new AuthController(authService, jwtUtil);
         AuctionController auctionController = new AuctionController(auctionService);
         AdminController adminController = new AdminController(adminService);
-        UserController userController = new UserController(userService); // <-- KHỞI TẠO USER CONTROLLER
+        UserController userController = new UserController(userService);
+        SellerController sellerController = new SellerController(sellerService);
 
-        // ===========================================//
+        // Khởi động REST API (Cổng 7070)
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
         }).start(7070);
         logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 
-        ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController, itemService, auctionService, jwtUtil, userController); // <-- TRUYỀN USER CONTROLLER VÀO
+        // Truyền SellerController vào ApiRouter
+        ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController,
+                sellerController, itemService, auctionService, jwtUtil, userController);
         apiRouter.setupRoutes(app);
     }
 }

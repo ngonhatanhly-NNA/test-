@@ -11,7 +11,7 @@ public class ItemFactory {
     // Functional Interface đại diện cho hàm khởi tạo Item
     @FunctionalInterface
     public interface ItemCreator {
-        Item create(int id, String name, String description, BigDecimal startPrice,
+        Item create(int id, int sellerId, String name, String description, BigDecimal startPrice,
                     String condition, List<String> imageUrls, Map<String, Object> extraProps);
     }
 
@@ -20,25 +20,31 @@ public class ItemFactory {
 
     // Khối static Đăng ký Creator
     static {
-        registry.put("ELECTRONICS", (id, name, desc, price, cond, imgs, props) -> {
+        registry.put("ELECTRONICS", (id, sellerId, name, desc, price, cond, imgs, props) -> {
             String brand = (String) props.get("brand");
             String model = (String) props.get("model");
             int warranty = props.get("warrantyMonths") != null ? (Integer) props.get("warrantyMonths") : 0;
-            return new Electronics(id, name, desc, price, cond, imgs, brand, model, warranty);
+            Electronics e = new Electronics(id, name, desc, price, cond, imgs, brand, model, warranty);
+            e.setSellerId(sellerId);
+            return e;
         });
 
-        registry.put("VEHICLE", (id, name, desc, price, cond, imgs, props) -> {
+        registry.put("VEHICLE", (id, sellerId, name, desc, price, cond, imgs, props) -> {
             int manufactureYear = props.get("manufactureYear") != null ? (Integer) props.get("manufactureYear") : 2000;
             int mileage = props.get("mileage") != null ? (Integer) props.get("mileage") : 0;
             String vinNumber = (String) props.get("vinNumber");
-            return new Vehicle(id, name, desc, price, cond, imgs, manufactureYear, mileage, vinNumber);
+            Vehicle v = new Vehicle(id, name, desc, price, cond, imgs, manufactureYear, mileage, vinNumber);
+            v.setSellerId(sellerId);
+            return v;
         });
 
-        registry.put("ART", (id, name, desc, price, cond, imgs, props) -> {
+        registry.put("ART", (id, sellerId, name, desc, price, cond, imgs, props) -> {
             String artistName = (String) props.get("artistName");
             String material = (String) props.get("material");
             boolean hasCertificate = props.get("hasCertificateOfAuthenticity") != null ? (Boolean) props.get("hasCertificateOfAuthenticity") : false;
-            return new Art(id, name, desc, price, cond, imgs, artistName, material, hasCertificate);
+            Art a = new Art(id, name, desc, price, cond, imgs, artistName, material, hasCertificate);
+            a.setSellerId(sellerId);
+            return a;
         });
     }
 
@@ -48,7 +54,7 @@ public class ItemFactory {
         registry.put(type.toUpperCase(), creator);
     }
 
-    public static Item createItem(String type, int id, String name, String description,
+    public static Item createItem(String type, int id, int sellerId, String name, String description,
                                   BigDecimal startPrice, String condition,
                                   List<String> imageUrls, Map<String, Object> extraProps) {
 
@@ -65,6 +71,6 @@ public class ItemFactory {
             throw new IllegalArgumentException("Hệ thống không hỗ trợ loại sản phẩm: " + type);
         }
 
-        return creator.create(id, name, description, startPrice, condition, imageUrls, extraProps);
+        return creator.create(id, sellerId, name, description, startPrice, condition, imageUrls, extraProps);
     }
 }

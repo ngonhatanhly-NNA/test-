@@ -3,6 +3,7 @@ package com.client.controller.dashboard;
 import com.client.network.ItemNetwork;
 import com.client.session.ClientSession;
 import com.shared.dto.ItemResponseDTO;
+import com.shared.dto.ItemResponseDTO;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -52,9 +53,13 @@ public class MyInventoryController {
     private void loadMyItems() {
         logger.info("Đang tải danh sách sản phẩm từ Server...");
 
-        itemNetwork.getAllItems().thenAccept(items -> {
+        long sellerId = ClientSession.getUserId();
+        logger.info("MyInventoryController: Current seller ID = {}", sellerId);
+
+        itemNetwork.getMyItems(sellerId).thenAccept(items -> {
             // Có dữ liệu rồi, quay lại luồng UI để vẽ
             Platform.runLater(() -> {
+                logger.info("MyInventoryController: Received {} items from server", items != null ? items.size() : 0);
                 sellingItemsContainer.getChildren().clear(); // Xóa sạch đồ cũ trước khi bày đồ mới
 
                 if (items != null && !items.isEmpty()) {

@@ -15,6 +15,9 @@ public class CreateItemRequestDTO {
     // 2. Thông tin PHÂN LOẠI
     private String type; // Chỉ được phép là: "ELECTRONICS", "ART", hoặc "VEHICLE"
 
+    // 2.5. Thông tin SELLER
+    private Integer sellerId; // ID của seller tạo item này
+
     // 3. Thông tin RIÊNG (Tùy loại mặt hàng mới có)
     // Dùng Map (kiểu Từ điển) là cách thông minh nhất để chứa các thuộc tính tự do
     // mà không cần phải tạo ra 3 cái DTO khác nhau.
@@ -26,13 +29,14 @@ public class CreateItemRequestDTO {
     // --- Constructor có tham số (Dùng khi đóng gói ở Client) ---
     public CreateItemRequestDTO(String name, String description, BigDecimal startingPrice,
                                 String condition, List<String> imageUrls,
-                                String type, Map<String, Object> extraProps) {
+                                String type, Integer sellerId, Map<String, Object> extraProps) {
         this.name = name;
         this.description = description;
         this.startingPrice = startingPrice;
         this.condition = condition;
         this.imageUrls = imageUrls;
         this.type = type;
+        this.sellerId = sellerId;
         this.extraProps = extraProps;
     }
 
@@ -43,6 +47,7 @@ public class CreateItemRequestDTO {
     public String getCondition() { return condition; }
     public List<String> getImageUrls() { return imageUrls; }
     public String getType() { return type; }
+    public Integer getSellerId() { return sellerId; }
     public Map<String, Object> getExtraProps() { return extraProps; }
 
     // --- SETTERS (Để an toàn, có thể bỏ qua Setters nếu muốn DTO chỉ đọc, nhưng cứ tạo cho đầy đủ) ---
@@ -52,6 +57,7 @@ public class CreateItemRequestDTO {
     public void setCondition(String condition) { this.condition = condition; }
     public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
     public void setType(String type) { this.type = type; }
+    public void setSellerId(Integer sellerId) { this.sellerId = sellerId; }
     public void setExtraProps(Map<String, Object> extraProps) { this.extraProps = extraProps; }
 
     // --- BUILDER PATTERN ---
@@ -62,6 +68,7 @@ public class CreateItemRequestDTO {
         private String condition;
         private List<String> imageUrls;
         private String type;
+        private Integer sellerId;
         private Map<String, Object> extraProps;
 
         public Builder name(String name) { this.name = name; return this; }
@@ -70,10 +77,11 @@ public class CreateItemRequestDTO {
         public Builder condition(String condition) { this.condition = condition; return this; }
         public Builder imageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; return this; }
         public Builder type(String type) { this.type = type; return this; }
+        public Builder sellerId(Integer sellerId) { this.sellerId = sellerId; return this; }
         public Builder extraProps(Map<String, Object> extraProps) { this.extraProps = extraProps; return this; }
 
         public CreateItemRequestDTO build() {
-            return new CreateItemRequestDTO(name, description, startingPrice, condition, imageUrls, type, extraProps);
+            return new CreateItemRequestDTO(name, description, startingPrice, condition, imageUrls, type, sellerId, extraProps);
         }
     }
 }

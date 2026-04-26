@@ -61,6 +61,41 @@ public class ItemNetwork {
                     return new ArrayList<ItemResponseDTO>();
                 });
     }
+
+    // Hàm lấy danh sách items của seller hiện tại
+    public CompletableFuture<List<ItemResponseDTO>> getMyItems(long sellerId) {
+        String url = SERVER_URL + "/seller/" + sellerId;
+        System.out.println("ItemNetwork.getMyItems: Calling URL: " + url);
+
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(url))
+                .GET()
+                .header("Accept", "application/json")
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    String jsonString = response.body();
+                    System.out.println("ItemNetwork.getMyItems: Response: " + jsonString);
+                    Response serverResponse = gson.fromJson(jsonString, Response.class);
+
+                    if ("SUCCESS".equals(serverResponse.getStatus())) {
+                        String dataJson = gson.toJson(serverResponse.getData());
+                        Type listType = new TypeToken<List<ItemResponseDTO>>(){}.getType();
+                        List<ItemResponseDTO> items = gson.fromJson(dataJson, listType);
+                        System.out.println("ItemNetwork.getMyItems: Successfully loaded " + items.size() + " items");
+                        return items;
+                    } else {
+                        System.out.println("Lỗi từ Server: " + serverResponse.getMessage());
+                        return new ArrayList<ItemResponseDTO>();
+                    }
+                })
+                .exceptionally(e -> {
+                    System.out.println("Lỗi kết nối mạng: " + e.getMessage());
+                    e.printStackTrace();
+                    return new ArrayList<ItemResponseDTO>();
+                });
+    }
+
     // Hàm gửi yêu cầu tạo sản phẩm lên Server
     public CompletableFuture<Response> createItem(CreateItemRequestDTO itemDTO) {
         String jsonBody = gson.toJson(itemDTO);

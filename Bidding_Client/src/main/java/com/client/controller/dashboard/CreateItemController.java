@@ -1,6 +1,7 @@
 package com.client.controller.dashboard;
 
 import com.client.network.ItemNetwork;
+import com.client.session.ClientSession;
 import com.shared.dto.CreateItemRequestDTO;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -126,6 +127,7 @@ public class CreateItemController {
                     .description(desc)
                     .condition("NEW")
                     .imageUrls(new ArrayList<>()) // Bọc chống đạn
+                    .sellerId((int) ClientSession.getUserId())
                     .extraProps(extraProperties)
                     .build();
 
