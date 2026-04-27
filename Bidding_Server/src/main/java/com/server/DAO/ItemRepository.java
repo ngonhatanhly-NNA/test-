@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,7 @@ public class ItemRepository {
     // =====================================================================
     // HÀM 1: LƯU SẢN PHẨM MỚI VÀO DATABASE (NÉM EXCEPTION CHUẨN)
     // =====================================================================
-    public void saveItem(Item item) {
+    public long saveItem(Item item) {
         // Khôi phục lại đúng tên cột SQL nguyên bản
         String sql = "INSERT INTO items (seller_id, item_type, name, description, startingPrice, item_condition, imageUrls, " +
                 "brand, model, warrantyMonths, " +
@@ -33,7 +34,7 @@ public class ItemRepository {
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             // PHỤC HỒI LOGIC SET THAM SỐ CHI TIẾT
             pstmt.setInt(1, item.getSellerId());
@@ -98,6 +99,13 @@ public class ItemRepository {
                 throw new ItemException(ItemException.ErrorCode.ITEM_SAVE_FAILED, "Không có dòng nào được lưu.");
             }
 
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getLong(1);
+                }
+            }
+            throw new ItemException(ItemException.ErrorCode.ITEM_SAVE_FAILED, "Không lấy được ID sản phẩm vừa tạo.");
+
         } catch (SQLException e) {
             logger.error("LỖI LƯU ITEM VÀO DATABASE: {}", e.getMessage(), e);
             throw new ItemException(ItemException.ErrorCode.ITEM_SAVE_FAILED, e.getMessage());
@@ -118,6 +126,7 @@ public class ItemRepository {
             while (rs.next()) {
                 String itemType = rs.getString("item_type");
                 int id = rs.getInt("id");
+                int sellerId = rs.getInt("seller_id");
                 String name = rs.getString("name");
                 String description = rs.getString("description");
                 BigDecimal startingPrice = rs.getBigDecimal("startingPrice");
@@ -129,23 +138,31 @@ public class ItemRepository {
                     imgList = java.util.Arrays.asList(imgString.split(","));
                 }
 
-                if ("Electronics".equals(itemType)) {
+                String normalizedType = normalizeItemType(itemType);
+
+                if ("ELECTRONICS".equals(normalizedType)) {
                     String brand = rs.getString("brand");
                     String model = rs.getString("model");
                     int warrantyMonths = rs.getInt("warrantyMonths");
-                    itemList.add(new Electronics(id, name, description, startingPrice, condition, imgList, brand, model, warrantyMonths));
+                    Electronics e = new Electronics(id, name, description, startingPrice, condition, imgList, brand, model, warrantyMonths);
+                    e.setSellerId(sellerId);
+                    itemList.add(e);
 
-                } else if ("Art".equals(itemType)) {
+                } else if ("ART".equals(normalizedType)) {
                     String artistName = rs.getString("artistName");
                     String material = rs.getString("material");
                     boolean hasCertificateOfAuthenticity = rs.getBoolean("hasCertificateOfAuthenticity");
-                    itemList.add(new Art(id, name, description, startingPrice, condition, imgList, artistName, material, hasCertificateOfAuthenticity));
+                    Art a = new Art(id, name, description, startingPrice, condition, imgList, artistName, material, hasCertificateOfAuthenticity);
+                    a.setSellerId(sellerId);
+                    itemList.add(a);
 
-                } else if ("Vehicle".equals(itemType)) {
+                } else if ("VEHICLE".equals(normalizedType)) {
                     int manufactureYear = rs.getInt("manufactureYear");
                     String vinNumber = rs.getString("vinNumber");
                     int mileage = rs.getInt("mileage");
-                    itemList.add(new Vehicle(id, name, description, startingPrice, condition, imgList, manufactureYear, mileage, vinNumber));
+                    Vehicle v = new Vehicle(id, name, description, startingPrice, condition, imgList, manufactureYear, mileage, vinNumber);
+                    v.setSellerId(sellerId);
+                    itemList.add(v);
                 }
             }
         } catch (Exception e) {
@@ -185,7 +202,9 @@ public class ItemRepository {
                         imgList = java.util.Arrays.asList(imgString.split(","));
                     }
 
-                    if ("Electronics".equals(itemType)) {
+                    String normalizedType = normalizeItemType(itemType);
+
+                    if ("ELECTRONICS".equals(normalizedType)) {
                         String brand = rs.getString("brand");
                         String model = rs.getString("model");
                         int warrantyMonths = rs.getInt("warrantyMonths");
@@ -193,7 +212,7 @@ public class ItemRepository {
                         e.setSellerId(retrievedSellerId);
                         itemList.add(e);
 
-                    } else if ("Art".equals(itemType)) {
+                    } else if ("ART".equals(normalizedType)) {
                         String artistName = rs.getString("artistName");
                         String material = rs.getString("material");
                         boolean hasCertificateOfAuthenticity = rs.getBoolean("hasCertificateOfAuthenticity");
@@ -201,7 +220,7 @@ public class ItemRepository {
                         a.setSellerId(retrievedSellerId);
                         itemList.add(a);
 
-                    } else if ("Vehicle".equals(itemType)) {
+                    } else if ("VEHICLE".equals(normalizedType)) {
                         int manufactureYear = rs.getInt("manufactureYear");
                         String vinNumber = rs.getString("vinNumber");
                         int mileage = rs.getInt("mileage");
@@ -247,6 +266,7 @@ public class ItemRepository {
                 if (rs.next()) {
                     String itemType = rs.getString("item_type");
                     int id = rs.getInt("id");
+                    int sellerId = rs.getInt("seller_id");
                     String name = rs.getString("name");
                     String description = rs.getString("description");
                     BigDecimal startingPrice = rs.getBigDecimal("startingPrice");
@@ -258,23 +278,31 @@ public class ItemRepository {
                         imgList = java.util.Arrays.asList(imgString.split(","));
                     }
 
-                    if ("Electronics".equals(itemType)) {
+                    String normalizedType = normalizeItemType(itemType);
+
+                    if ("ELECTRONICS".equals(normalizedType)) {
                         String brand = rs.getString("brand");
                         String model = rs.getString("model");
                         int warrantyMonths = rs.getInt("warrantyMonths");
-                        return new Electronics(id, name, description, startingPrice, condition, imgList, brand, model, warrantyMonths);
+                        Electronics e = new Electronics(id, name, description, startingPrice, condition, imgList, brand, model, warrantyMonths);
+                        e.setSellerId(sellerId);
+                        return e;
 
-                    } else if ("Art".equals(itemType)) {
+                    } else if ("ART".equals(normalizedType)) {
                         String artistName = rs.getString("artistName");
                         String material = rs.getString("material");
                         boolean hasCertificateOfAuthenticity = rs.getBoolean("hasCertificateOfAuthenticity");
-                        return new Art(id, name, description, startingPrice, condition, imgList, artistName, material, hasCertificateOfAuthenticity);
+                        Art a = new Art(id, name, description, startingPrice, condition, imgList, artistName, material, hasCertificateOfAuthenticity);
+                        a.setSellerId(sellerId);
+                        return a;
 
-                    } else if ("Vehicle".equals(itemType)) {
+                    } else if ("VEHICLE".equals(normalizedType)) {
                         int manufactureYear = rs.getInt("manufactureYear");
                         String vinNumber = rs.getString("vinNumber");
                         int mileage = rs.getInt("mileage");
-                        return new Vehicle(id, name, description, startingPrice, condition, imgList, manufactureYear, mileage, vinNumber);
+                        Vehicle v = new Vehicle(id, name, description, startingPrice, condition, imgList, manufactureYear, mileage, vinNumber);
+                        v.setSellerId(sellerId);
+                        return v;
                     }
                 }
             }
@@ -282,5 +310,12 @@ public class ItemRepository {
             logger.error("Lỗi lấy thông tin sản phẩm cho itemId {}: {}", itemId, e.getMessage(), e);
         }
         return null;
+    }
+
+    private String normalizeItemType(String itemType) {
+        if (itemType == null) {
+            return "";
+        }
+        return itemType.trim().toUpperCase();
     }
 }

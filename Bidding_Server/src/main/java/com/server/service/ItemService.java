@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.server.DAO.ItemRepository;
+import com.server.exception.ItemException;
 import com.server.model.Art;
 import com.server.model.Electronics;
 import com.server.model.Item;
@@ -41,9 +42,6 @@ public class ItemService {
         }).collect(Collectors.toList());
     }
 
-    public Item getItemById(long itemId) {
-        return itemRepo.findItemById(itemId);
-    }
     public List<ItemResponseDTO> getItemsBySellerIdDTO(int sellerId) {
         logger.info("ItemService.getItemsBySellerIdDTO: Fetching items for seller ID: {}", sellerId);
         List<Item> rawItems = itemRepo.getItemsBySellerId(sellerId);
@@ -62,12 +60,15 @@ public class ItemService {
             );
         }).collect(Collectors.toList());
     }
-
-    public void createNewItem(CreateItemRequestDTO dto) {
+    public ItemResponseDTO createNewItem(CreateItemRequestDTO dto) {
         try {
+            if (dto == null) {
+                throw new ItemException(ItemException.ErrorCode.INVALID_ITEM_DATA, "Request tạo sản phẩm bị null");
+            }
+
             Item newItem = com.server.model.ItemFactory.createItem(
                     dto.getType(),
-                    0, // ID is 0 because it's auto-incremented by the DB
+                    0,
                     dto.getSellerId() != null ? dto.getSellerId() : 0,
                     dto.getName(),
                     dto.getDescription(),
@@ -76,12 +77,34 @@ public class ItemService {
                     dto.getImageUrls(),
                     dto.getExtraProps()
             );
-            
-            itemRepo.saveItem(newItem);
 
+            long newItemId = itemRepo.saveItem(newItem);
+            newItem.setId(newItemId);
+
+            String type = extractItemType(newItem);
+            return new ItemResponseDTO(
+                    newItem.getId(),
+                    newItem.getName(),
+                    newItem.getDescription(),
+                    newItem.getStartingPrice(),
+                    type,
+                    newItem.getImageUrls()
+            );
+
+        } catch (ItemException e) {
+            logger.error("Lỗi khi tạo sản phẩm từ DTO: {}", e.getMessage(), e);
+            throw e;
         } catch (Exception e) {
-            logger.error("Lỗi khi tạo sản phẩm từ DTO: " + e.getMessage(), e);
+            logger.error("Lỗi khi tạo sản phẩm từ DTO: {}", e.getMessage(), e);
+            throw new ItemException(ItemException.ErrorCode.FACTORY_CREATE_FAILED, e.getMessage());
         }
+    }
+
+    public Item getItemById(long itemId) {
+        if (itemId <= 0) {
+            return null;
+        }
+        return itemRepo.findItemById(itemId);
     }
 
     public Map<String, String> extractItemSpecifics(Item item) {
@@ -92,18 +115,18 @@ public class ItemService {
             specifics.put("Năm sản xuất", String.valueOf(v.getManufactureYear()));
             specifics.put("Số KM", v.getMileage() + " km");
             specifics.put("Số VIN", v.getVinNumber());
-        }
+        } 
         else if (item instanceof Art a) {
             specifics.put("Tác giả", a.getArtistName());
             specifics.put("Chất liệu", a.getMaterial());
             specifics.put("Chứng nhận Auth", a.isHasCertificateOfAuthenticity() ? "Có" : "Không");
-        }
+        } 
         else if (item instanceof Electronics e) {
             specifics.put("Hãng", e.getBrand());
             specifics.put("Dòng máy", e.getModel());
             specifics.put("Bảo hành", e.getWarrantyMonths() + " tháng");
         }
-
+        
         return specifics;
     }
 

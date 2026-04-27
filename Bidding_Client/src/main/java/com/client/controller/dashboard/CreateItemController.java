@@ -2,10 +2,13 @@ package com.client.controller.dashboard;
 
 import com.client.network.ItemNetwork;
 import com.client.session.ClientSession;
+import com.google.gson.Gson;
 import com.shared.dto.CreateItemRequestDTO;
+import com.shared.dto.ItemResponseDTO;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -39,6 +42,8 @@ public class CreateItemController {
     @FXML private ComboBox<String> cbArtCert;
 
     private final ItemNetwork itemNetwork = new ItemNetwork();
+    private final Gson gson = new Gson();
+    private ItemResponseDTO createdItem;
 
     @FXML
     public void initialize() {
@@ -135,12 +140,20 @@ public class CreateItemController {
 
             itemNetwork.createItem(requestDTO).thenAccept(response -> {
                 Platform.runLater(() -> {
-                    if ("SUCCESS".equals(response.getStatus())) {
+                    if (response != null && "SUCCESS".equals(response.getStatus())) {
+                        if (response.getData() != null) {
+                            createdItem = gson.fromJson(gson.toJson(response.getData()), ItemResponseDTO.class);
+                        }
                         logger.info("Tạo sản phẩm THÀNH CÔNG! Đóng popup.");
                         handleCancel(null);
                     } else {
-                        logger.error("Lỗi Server: {}", response.getMessage());
-                        // TODO: Sau này có thể show cái Alert Box đỏ đỏ ở đây cho User xem
+                        String message = response != null ? response.getMessage() : "Không nhận được phản hồi từ server";
+                        logger.error("Lỗi Server: {}", message);
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Create Item Failed");
+                        alert.setHeaderText(null);
+                        alert.setContentText(message);
+                        alert.showAndWait();
                     }
                 });
             });
@@ -148,5 +161,9 @@ public class CreateItemController {
         } catch (NumberFormatException e) {
             logger.error("Dữ liệu số nhập vào không hợp lệ: {}", e.getMessage());
         }
+    }
+
+    public ItemResponseDTO getCreatedItem() {
+        return createdItem;
     }
 }

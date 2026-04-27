@@ -93,18 +93,24 @@
                         <Font name="System Bold" size="26.0" />
                     </font>
                 </Label>
-                <Label text="Seller: (updating)" textFill="#64748B">
+                <Label fx:id="itemTypeLabel" text="Type: GENERAL" textFill="#64748B">
                     <font>
                         <Font size="14.0" />
                     </font>
                 </Label>
+                <Label fx:id="sellerNameLabel" text="Seller: ---" textFill="#64748B">
+                    <font>
+                        <Font size="13.0" />
+                    </font>
+                </Label>
             </VBox>
             <Separator style="-fx-background-color: transparent; -fx-border-color: #E2E8F0; -fx-border-width: 2 0 0 0;" />
-            <Label lineSpacing="6.0" text="Description" textFill="#475569" wrapText="true">
+            <Label fx:id="itemDescriptionLabel" lineSpacing="6.0" text="Description" textFill="#475569" wrapText="true">
                 <font>
                     <Font size="14.0" />
                 </font>
             </Label>
+            <VBox fx:id="itemSpecificsBox" spacing="4.0" />
         </VBox>
 
         <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" HBox.hgrow="ALWAYS">

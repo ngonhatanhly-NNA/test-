@@ -21,27 +21,27 @@ public class ItemFactory {
     // Khối static Đăng ký Creator
     static {
         registry.put("ELECTRONICS", (id, sellerId, name, desc, price, cond, imgs, props) -> {
-            String brand = (String) props.get("brand");
-            String model = (String) props.get("model");
-            int warranty = props.get("warrantyMonths") != null ? (Integer) props.get("warrantyMonths") : 0;
+            String brand = asString(props.get("brand"));
+            String model = asString(props.get("model"));
+            int warranty = asInt(props.get("warrantyMonths"), 0);
             Electronics e = new Electronics(id, name, desc, price, cond, imgs, brand, model, warranty);
             e.setSellerId(sellerId);
             return e;
         });
 
         registry.put("VEHICLE", (id, sellerId, name, desc, price, cond, imgs, props) -> {
-            int manufactureYear = props.get("manufactureYear") != null ? (Integer) props.get("manufactureYear") : 2000;
-            int mileage = props.get("mileage") != null ? (Integer) props.get("mileage") : 0;
-            String vinNumber = (String) props.get("vinNumber");
+            int manufactureYear = asInt(props.get("manufactureYear"), 2000);
+            int mileage = asInt(props.get("mileage"), 0);
+            String vinNumber = asString(props.get("vinNumber"));
             Vehicle v = new Vehicle(id, name, desc, price, cond, imgs, manufactureYear, mileage, vinNumber);
             v.setSellerId(sellerId);
             return v;
         });
 
         registry.put("ART", (id, sellerId, name, desc, price, cond, imgs, props) -> {
-            String artistName = (String) props.get("artistName");
-            String material = (String) props.get("material");
-            boolean hasCertificate = props.get("hasCertificateOfAuthenticity") != null ? (Boolean) props.get("hasCertificateOfAuthenticity") : false;
+            String artistName = asString(props.get("artistName"));
+            String material = asString(props.get("material"));
+            boolean hasCertificate = asBoolean(props.get("hasCertificateOfAuthenticity"), false);
             Art a = new Art(id, name, desc, price, cond, imgs, artistName, material, hasCertificate);
             a.setSellerId(sellerId);
             return a;
@@ -72,5 +72,37 @@ public class ItemFactory {
         }
 
         return creator.create(id, sellerId, name, description, startPrice, condition, imageUrls, extraProps);
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : String.valueOf(value).trim();
+    }
+
+    private static int asInt(Object value, int defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return Integer.parseInt(String.valueOf(value).trim());
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    private static boolean asBoolean(Object value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        String normalized = String.valueOf(value).trim().toLowerCase();
+        if (normalized.isEmpty()) {
+            return defaultValue;
+        }
+        return normalized.equals("true") || normalized.equals("yes") || normalized.equals("1");
     }
 }

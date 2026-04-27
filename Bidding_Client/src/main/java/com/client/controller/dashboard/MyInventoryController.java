@@ -3,7 +3,6 @@ package com.client.controller.dashboard;
 import com.client.network.ItemNetwork;
 import com.client.session.ClientSession;
 import com.shared.dto.ItemResponseDTO;
-import com.shared.dto.ItemResponseDTO;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -23,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
-
 public class MyInventoryController {
 
     private static final Logger logger = LoggerFactory.getLogger(MyInventoryController.class);
@@ -108,7 +105,24 @@ public class MyInventoryController {
         btnOpenAuction.setOnAction(e -> openCreateAuctionPopup(item.getId()));
 
         card.getChildren().addAll(lblName, lblType, lblPrice, btnOpenAuction);
+        card.setUserData(item.getId());
         return card;
+    }
+
+    private void addOrReplaceInventoryItem(ItemResponseDTO item) {
+        if (item == null || sellingItemsContainer == null) {
+            return;
+        }
+
+        sellingItemsContainer.getChildren().removeIf(node -> {
+            Object data = node.getUserData();
+            return data instanceof Long existingId && existingId == item.getId();
+        });
+
+        sellingItemsContainer.getChildren().removeIf(node ->
+                node instanceof Label lbl && lbl.getText() != null && lbl.getText().contains("Kho đồ của bạn đang trống"));
+
+        sellingItemsContainer.getChildren().add(0, createItemCard(item));
     }
 
     // --- HÀM 3: MỞ CỬA SỔ SET NGÀY GIỜ VÀ TRUYỀN ID SẢN PHẨM SANG ---
@@ -139,6 +153,7 @@ public class MyInventoryController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/CreateItemPopup.fxml"));
             Parent root = loader.load();
+            CreateItemController createItemController = loader.getController();
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
@@ -146,7 +161,10 @@ public class MyInventoryController {
             stage.setScene(new Scene(root));
             stage.showAndWait(); // Lệnh này làm luồng UI tạm dừng, chờ Popup đóng lại
 
-            // BÙM! Khi popup tắt đi, tự động tải lại danh sách để hiện sản phẩm vừa tạo
+            if (createItemController != null && createItemController.getCreatedItem() != null) {
+                addOrReplaceInventoryItem(createItemController.getCreatedItem());
+            }
+            // Đồng bộ lại từ server để chắc chắn dữ liệu chuẩn DB
             loadMyItems();
 
         } catch (IOException e) {

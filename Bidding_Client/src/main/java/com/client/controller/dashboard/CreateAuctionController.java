@@ -2,7 +2,9 @@ package com.client.controller.dashboard;
 
 import com.client.network.AuctionNetwork;
 import com.client.session.ClientSession;
+import com.google.gson.Gson;
 import com.shared.dto.CreateAuctionDTO;
+import com.shared.dto.AuctionDetailDTO;
 import com.shared.network.Response;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -24,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
 public class CreateAuctionController {
 
     private static final Logger logger = LoggerFactory.getLogger(CreateAuctionController.class);
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private final Gson gson = new Gson();
 
     @FXML private DatePicker dpStartDate;
     @FXML private TextField txtStartTime;
@@ -87,6 +91,17 @@ public class CreateAuctionController {
                     // Quay lại luồng UI chính để cập nhật giao diện
                     Platform.runLater(() -> {
                         if ("SUCCESS".equals(response.getStatus())) {
+                            AuctionDetailDTO createdAuction = parseCreatedAuction(response);
+                            if (createdAuction != null) {
+                                ViewLiveAuctions liveView = ViewLiveAuctions.getExistingInstance();
+                                if (liveView != null) {
+                                    liveView.addOrUpdateAuctionRealtime(createdAuction);
+                                }
+                                SellerDashboardController sellerView = SellerDashboardController.getExistingInstance();
+                                if (sellerView != null) {
+                                    sellerView.addOrUpdateAuctionRealtime(createdAuction);
+                                }
+                            }
                             logger.info("Đưa sản phẩm lên Sàn Đấu Giá THÀNH CÔNG! Đóng popup.");
                             handleCancel(null);
                         } else {
@@ -108,7 +123,19 @@ public class CreateAuctionController {
 
     private LocalDateTime combineDateTime(LocalDate date, String timeStr) {
         if (date == null) throw new NullPointerException("Chưa chọn ngày");
-        LocalTime time = LocalTime.parse(timeStr.trim());
+        LocalTime time = LocalTime.parse(timeStr.trim(), TIME_FORMATTER);
         return LocalDateTime.of(date, time);
+    }
+
+    private AuctionDetailDTO parseCreatedAuction(Response response) {
+        if (response == null || response.getData() == null) {
+            return null;
+        }
+        try {
+            return gson.fromJson(gson.toJson(response.getData()), AuctionDetailDTO.class);
+        } catch (Exception e) {
+            logger.warn("Không parse được auction vừa tạo: {}", e.getMessage());
+            return null;
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.client.network;
 
 import com.client.controller.dashboard.ViewLiveAuctions;
 import com.google.gson.Gson;
+import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.AuctionUpdateDTO;
 import com.shared.network.Response;
 import javafx.application.Platform;
@@ -24,6 +25,13 @@ public class MyWebSocketClient extends WebSocketClient {
     // Design Pattern Singleton: Đảm bảo Client chỉ có 1 kết nối duy nhất
     public static void connectToServer() {
         try {
+            if (instance != null) {
+                org.java_websocket.enums.ReadyState state = instance.getReadyState();
+                if (state == org.java_websocket.enums.ReadyState.OPEN
+                        || state == org.java_websocket.enums.ReadyState.NOT_YET_CONNECTED) {
+                    return;
+                }
+            }
             instance = new MyWebSocketClient(new URI("ws://localhost:8080"));
             instance.connect();
         } catch (Exception e) {
@@ -38,8 +46,9 @@ public class MyWebSocketClient extends WebSocketClient {
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         logger.info("Đã kết nối thành công tới Server!");
-        if (ViewLiveAuctions.getInstance() != null) {
-            ViewLiveAuctions.getInstance().updateConnectionStatus(true, "🟢 Đã kết nối Server Realtime");
+        ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+        if (view != null) {
+            view.updateConnectionStatus(true, "🟢 Đã kết nối Server Realtime");
         }
     }
 
@@ -47,19 +56,57 @@ public class MyWebSocketClient extends WebSocketClient {
     public void onMessage(String message) {
         logger.info("Server trả lời: {}", message);
         Gson gson = new Gson();
+        String[] parts = message != null ? message.split(":", 2) : new String[0];
+        if (parts.length == 2) {
+            String type = parts[0].trim();
+            String payload = parts[1].trim();
 
-        // NẾU LÀ TIN NHẮN CẬP NHẬT GIÁ ĐẤU
-        if (message.startsWith("AUCTION_UPDATE:")) {
-            String jsonStr = message.substring("AUCTION_UPDATE:".length());
-            AuctionUpdateDTO updateData = gson.fromJson(jsonStr, AuctionUpdateDTO.class);
+            if ("AUCTION_UPDATE".equals(type)) {
+                AuctionUpdateDTO updateData = gson.fromJson(payload, AuctionUpdateDTO.class);
+                Platform.runLater(() -> {
+                    ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+                    if (view != null) {
+                        view.updatePriceRealtime(updateData);
+                    }
+                });
+                return;
+            }
 
-            Platform.runLater(() -> {
-                if (ViewLiveAuctions.getInstance() != null) {
-                    ViewLiveAuctions.getInstance().updatePriceRealtime(updateData);
+            if ("AUCTION_CREATED".equals(type)) {
+                AuctionDetailDTO detail = gson.fromJson(payload, AuctionDetailDTO.class);
+                Platform.runLater(() -> {
+                    ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+                    if (view != null) {
+                        view.addOrUpdateAuctionRealtime(detail);
+                    }
+                    com.client.controller.dashboard.SellerDashboardController sellerView =
+                            com.client.controller.dashboard.SellerDashboardController.getExistingInstance();
+                    if (sellerView != null) {
+                        sellerView.addOrUpdateAuctionRealtime(detail);
+                    }
+                });
+                return;
+            }
+
+            if ("AUCTION_FINISHED".equals(type)) {
+                try {
+                    long auctionId = Long.parseLong(payload);
+                    Platform.runLater(() -> {
+                        ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+                        if (view != null) {
+                            view.removeAuctionRealtime(auctionId);
+                        }
+                        com.client.controller.dashboard.SellerDashboardController sellerView =
+                                com.client.controller.dashboard.SellerDashboardController.getExistingInstance();
+                        if (sellerView != null) {
+                            sellerView.removeAuctionRealtime(auctionId);
+                        }
+                    });
+                } catch (NumberFormatException e) {
+                    logger.warn("Không parse được AUCTION_FINISHED payload: {}", payload);
                 }
-                logger.info("GIÁ MỚI REALTIME: {}", updateData.getCurrentPrice());
-            });
-            return; 
+                return;
+            }
         }
 
         //NẾU LÀ CÁC THÔNG BÁO KHÁC (ví dụ: đăng nhập, đăng ký)
@@ -78,8 +125,9 @@ public class MyWebSocketClient extends WebSocketClient {
     @Override
     public void onClose(int code, String reason, boolean remote) {
         logger.info("Kết nối với Server đã đóng. Code: {}, Lý do: {}", code, reason);
-        if (ViewLiveAuctions.getInstance() != null) {
-            ViewLiveAuctions.getInstance().updateConnectionStatus(false, "🔴 Mất kết nối. Đang thử lại...");
+        ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+        if (view != null) {
+            view.updateConnectionStatus(false, "🔴 Mất kết nối. Đang thử lại...");
         }
         new Thread( () -> {
             try {
@@ -95,8 +143,9 @@ public class MyWebSocketClient extends WebSocketClient {
     @Override
     public void onError(Exception ex) {
         logger.error("Lỗi WebSocket: {}", ex.getMessage());
-        if (ViewLiveAuctions.getInstance() != null) {
-            ViewLiveAuctions.getInstance().updateConnectionStatus(false, "🔴 Lỗi đường truyền!");
+        ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+        if (view != null) {
+            view.updateConnectionStatus(false, "🔴 Lỗi đường truyền!");
         }
      }
 }

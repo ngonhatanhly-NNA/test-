@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 public class Broadcaster implements AuctionEventListener {
     // CopyOnWriterSet for safety in mlti-thread
@@ -29,10 +28,21 @@ public class Broadcaster implements AuctionEventListener {
     // Auction Serveice gọi khi kết ối thành cong
     @Override
     public void onAuctionUpdate (AuctionUpdateDTO update) {
-        String jsonUpdate = gson.toJson(update);
+        broadcast("AUCTION_UPDATE", gson.toJson(update));
+    }
 
-        // Báo cho CLient biết gói tin cập nhật phiên đấu giá 1 sp
-        String msg = "AUCTION_UPDATE: " + jsonUpdate;
+    @Override
+    public void onAuctionCreated(AuctionDetailDTO detail) {
+        broadcast("AUCTION_CREATED", gson.toJson(detail));
+    }
+
+    @Override
+    public void onAuctionFinished(long auctionId) {
+        broadcast("AUCTION_FINISHED", String.valueOf(auctionId));
+    }
+
+    private void broadcast(String type, String payload) {
+        String msg = type + ":" + payload;
 
         for (WebSocket client : clients) {
             try {
@@ -41,7 +51,7 @@ public class Broadcaster implements AuctionEventListener {
                 }
             } catch (Exception e) {
                 // Nếu 1 client lỗi, ghi log lại và vòng lặp vẫn chạy tiếp cho các client khác
-                logger.error("Lỗi khi gửi thông tin đấu giá cho client {}: {}", 
+                logger.error("Lỗi khi gửi thông tin đấu giá cho client {}: {}",
                              client.getRemoteSocketAddress(), e.getMessage());
             }
         }

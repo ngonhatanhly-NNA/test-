@@ -34,6 +34,8 @@ import java.util.concurrent.Executors;
  */
 public class SellerDashboardController {
 
+    private static SellerDashboardController instance;
+
     // ---- Overview Tab ----
     @FXML private Label lblRating;
     @FXML private Label lblTotalItems;
@@ -73,10 +75,19 @@ public class SellerDashboardController {
     private List<AuctionDetailDTO> currentAuctions;
     private ObservableList<ItemResponseDTO> allItems = FXCollections.observableArrayList();
 
+    public SellerDashboardController() {
+        instance = this;
+    }
+
+    public static SellerDashboardController getExistingInstance() {
+        return instance;
+    }
+
     @FXML
     public void initialize() {
         setupTableColumns();
         loadDashboardData();
+        loadLiveAuctions();
     }
 
     /**
@@ -339,33 +350,7 @@ public class SellerDashboardController {
                 currentAuctions = AuctionNetwork.parseActiveAuctionList(response);
 
                 Platform.runLater(() -> {
-                    if (currentAuctions != null && !currentAuctions.isEmpty()) {
-                        ObservableList<String> auctionList = FXCollections.observableArrayList();
-                        for (AuctionDetailDTO auction : currentAuctions) {
-                            String price = auction.getCurrentPrice() != null
-                                    ? currencyFormat.format(auction.getCurrentPrice()) + " VND"
-                                    : "---";
-                            String displayText = String.format("[ID: %d] %s - Giá: %s",
-                                    auction.getAuctionId(),
-                                    auction.getItemName(),
-                                    price);
-                            auctionList.add(displayText);
-                        }
-                        if (listViewAuctions != null) {
-                            listViewAuctions.setItems(auctionList);
-                            listViewAuctions.setOnMouseClicked(e -> {
-                                int idx = listViewAuctions.getSelectionModel().getSelectedIndex();
-                                if (idx >= 0 && idx < currentAuctions.size()) {
-                                    displayAuctionDetails(currentAuctions.get(idx));
-                                }
-                            });
-                        }
-                    } else {
-                        if (listViewAuctions != null) {
-                            listViewAuctions.setItems(FXCollections.observableArrayList(
-                                    "Không có phiên đấu giá nào đang diễn ra"));
-                        }
-                    }
+                    renderLiveAuctions();
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
@@ -412,6 +397,64 @@ public class SellerDashboardController {
                     ? currencyFormat.format(auction.getStepPrice()) + " VND"
                     : "---";
             lblBidStep.setText(step);
+        }
+    }
+
+    public void addOrUpdateAuctionRealtime(AuctionDetailDTO auction) {
+        if (auction == null) {
+            return;
+        }
+        if (currentAuctions == null) {
+            currentAuctions = FXCollections.observableArrayList();
+        }
+
+        for (int i = 0; i < currentAuctions.size(); i++) {
+            if (currentAuctions.get(i).getAuctionId() == auction.getAuctionId()) {
+                currentAuctions.set(i, auction);
+                renderLiveAuctions();
+                return;
+            }
+        }
+
+        currentAuctions.add(0, auction);
+        renderLiveAuctions();
+    }
+
+    public void removeAuctionRealtime(long auctionId) {
+        if (currentAuctions == null || currentAuctions.isEmpty()) {
+            return;
+        }
+
+        currentAuctions.removeIf(a -> a.getAuctionId() == auctionId);
+        renderLiveAuctions();
+    }
+
+    private void renderLiveAuctions() {
+        if (listViewAuctions == null) {
+            return;
+        }
+
+        if (currentAuctions != null && !currentAuctions.isEmpty()) {
+            ObservableList<String> auctionList = FXCollections.observableArrayList();
+            for (AuctionDetailDTO auction : currentAuctions) {
+                String price = auction.getCurrentPrice() != null
+                        ? currencyFormat.format(auction.getCurrentPrice()) + " VND"
+                        : "---";
+                String displayText = String.format("[ID: %d] %s - Giá: %s",
+                        auction.getAuctionId(),
+                        auction.getItemName(),
+                        price);
+                auctionList.add(displayText);
+            }
+            listViewAuctions.setItems(auctionList);
+            listViewAuctions.setOnMouseClicked(e -> {
+                int idx = listViewAuctions.getSelectionModel().getSelectedIndex();
+                if (idx >= 0 && idx < currentAuctions.size()) {
+                    displayAuctionDetails(currentAuctions.get(idx));
+                }
+            });
+        } else {
+            listViewAuctions.setItems(FXCollections.observableArrayList("Không có phiên đấu giá nào đang diễn ra"));
         }
     }
 

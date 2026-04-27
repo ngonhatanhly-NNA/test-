@@ -1,15 +1,16 @@
 package com.server.service.auction.processor;
 
-import com.server.model.Auction;
-import com.server.model.AutoBidTracker;
-import com.server.model.BidTransaction;
-import com.server.DAO.AutoBidRepository;
-import com.server.service.auction.logging.AuctionLogger;
-import com.shared.dto.BidRequestDTO;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Queue;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.server.DAO.AutoBidRepository;
+import com.server.model.Auction;
+import com.server.model.AutoBidTracker;
+import com.server.model.BidTransaction;
 
 /**
  * Xử lý tự động bid khi có bid mới hoặc khi phiên đấu giá mở cửa
@@ -19,6 +20,7 @@ import java.util.Queue;
  */
 public class AutoBidProcessor{
     private final AutoBidRepository autoBidRepository;
+    private static final Logger logger = LoggerFactory.getLogger(AutoBidProcessor.class);
 
     public AutoBidProcessor(AutoBidRepository autoBidRepository) {
         this.autoBidRepository = autoBidRepository;
@@ -45,10 +47,10 @@ public class AutoBidProcessor{
                 autoBidTx.setAutoBid(true);
                 bidQueue.offer(autoBidTx);
 
-                AuctionLogger.logBidPlaced(auction.getId(), autoBid.getBidderId(), autoBidAmount.toString(), true);
+                logger.debug("Auto-bid placed for auction {}: {}", auction.getId(), autoBid.getBidderId());
             } else {
                 autoBidRepository.deactivate(auction.getId(), autoBid.getBidderId());
-                AuctionLogger.logAutoBidDisabled(auction.getId(), autoBid.getBidderId(), "Hết ngân sách");
+                logger.debug("Auto-bid disabled for auction {}: {}", auction.getId(), autoBid.getBidderId());
             }
         }
     }

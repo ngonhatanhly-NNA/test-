@@ -1,26 +1,43 @@
 package com.server.service;
 
-import com.server.model.*;
-import com.server.DAO.*;
-import com.server.websocket.*;
-import com.server.exception.AuctionException;
-import com.server.service.auction.strategy.*;
-import com.server.service.auction.processor.*;
-import com.server.service.auction.antisnipe.*;
-import com.server.service.auction.logging.AuctionLogger;
-import com.shared.dto.*;
-
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.server.DAO.AuctionRepository;
+import com.server.DAO.AutoBidRepository;
+import com.server.DAO.BidTransactionRepository;
+import com.server.DAO.UserRepository;
+import com.server.exception.AuctionException;
+import com.server.model.Auction;
+import com.server.model.AutoBidTracker;
+import com.server.model.BidTransaction;
+import com.server.model.Item;
+import com.server.model.User;
+import com.server.service.auction.antisnipe.AntiSnipingStrategy;
+import com.server.service.auction.processor.AutoBidProcessor;
+import com.server.service.auction.processor.BidProcessor;
+import com.server.service.auction.strategy.BidValidationChain;
+import com.server.websocket.AuctionEventListener;
+import com.shared.dto.AuctionDetailDTO;
+import com.shared.dto.AuctionUpdateDTO;
+import com.shared.dto.BidHistoryDTO;
+import com.shared.dto.BidRequestDTO;
+import com.shared.dto.CreateAuctionDTO;
 
 /**
  * AuctionService: Quản lý toàn bộ logic đấu giá
@@ -43,11 +60,13 @@ public class AuctionService {
     private final BidTransactionRepository bidRepository;
     private AutoBidRepository autoBidRepository;
     private final ItemService itemService;
+    private final UserRepository userRepository;
 
     // ========== Concurrent Collections ==========
     private final ConcurrentHashMap<Long, Auction> auctionCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ReentrantLock> auctionLocks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, String> userDisplayNameCache = new ConcurrentHashMap<>();
 
     // ========== Queues & Executors ==========
     private final LinkedBlockingQueue<BidTransaction> bidQueue = new LinkedBlockingQueue<>();
@@ -67,6 +86,7 @@ public class AuctionService {
             BidTransactionRepository bidRepo,
             AutoBidRepository autoBidRepo,
             ItemService itemService,
+            UserRepository userRepository,
             BidValidationChain validationChain,
             AntiSnipingStrategy antiSnipingStrategy,
             BidProcessor bidProcessor,
@@ -76,6 +96,7 @@ public class AuctionService {
         this.bidRepository = bidRepo;
         this.autoBidRepository = autoBidRepo;
         this.itemService = itemService;
+        this.userRepository = userRepository;
 
         this.validationChain = validationChain;
         this.antiSnipingStrategy = antiSnipingStrategy;
@@ -98,10 +119,10 @@ public class AuctionService {
             activeAuctions.forEach(this::cacheAndScheduleAuction);
             startBidQueueProcessor();
 
-            AuctionLogger.logInfo("Đã khởi tạo " + activeAuctions.size() + " phiên đấu giá");
+            logger.info("Đã khởi tạo " + activeAuctions.size() + " phiên đấu giá");
         } catch (Exception e) {
             logger.error("Lỗi khi khởi tạo AuctionService", e);
-            AuctionLogger.logError("INIT", 0, e.getMessage());
+            logger.error("INIT", 0, e.getMessage());
         }
     }
 
@@ -160,13 +181,11 @@ public class AuctionService {
                 eventListener.onAuctionUpdate(update);
             }
 
-            AuctionLogger.logBidPlaced(auction.getId(), request.getBidderId(),
-                request.getBidAmount().toString(), false);
+            logger.debug("Bid placed for auction {}: {}", auction.getId(), request.getBidderId());
 
             return update;
 
         } catch (AuctionException e) {
-            AuctionLogger.logError("PLACE_BID", request.getAuctionId(), e.getMessage());
             logger.error("Lỗi khi đặt giá cho phiên đấu giá {}: {}", request.getAuctionId(), e.getMessage());
             throw e;
         } finally {
@@ -185,11 +204,11 @@ public class AuctionService {
                     try {
                         bidRepository.save(bid);
                     } catch (Exception e) {
-                        AuctionLogger.logError("SAVE_BID", bid.getAuctionId(), e.getMessage());
+                        logger.error("Lỗi khi lưu bid cho phiên đấu giá {}: {}", bid.getAuctionId(), e.getMessage());
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    AuctionLogger.logInfo("Bid processor thread đã dừng");
+                    logger.info("Bid processor thread đã dừng");
                     break;
                 }
             }
@@ -215,38 +234,78 @@ public class AuctionService {
 
     private AuctionDetailDTO toDetailDto(Auction auction) {
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
-        String bidderName = auction.getWinnerId() != null ? "User_" + auction.getWinnerId() : "No bids";
+        String bidderName = auction.getWinnerId() != null
+                ? resolveUserDisplayName(auction.getWinnerId(), "User")
+                : "No bids";
+        String sellerName = resolveUserDisplayName(auction.getSellerId(), "Seller");
         
         Item item = itemService.getItemById(auction.getItemId());
 
         String itemName = "Item #" + auction.getItemId();
+        String itemDescription = "(Không có mô tả)";
         String itemType = "GENERAL";
         Map<String, String> itemSpecifics = new HashMap<>();
+        List<String> itemImageUrls = new ArrayList<>();
 
         if (item != null) {
             itemName = item.getName() != null ? item.getName() : itemName;
+            itemDescription = item.getDescription() != null ? item.getDescription() : itemDescription;
             itemType = itemService.extractItemType(item);
             itemSpecifics = itemService.extractItemSpecifics(item);
+            itemImageUrls = item.getImageUrls();
         }
 
         return new AuctionDetailDTO(
                 auction.getId(),
                 auction.getItemId(),
                 itemName,
+                itemDescription,
                 auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
                 bidderName,
                 Math.max(0, remaining),
                 auction.getStepPrice(),
-                itemType,        // Truyền Type
-                itemSpecifics    // Truyền Map thuộc tính
+                itemType,
+                itemSpecifics,
+                itemImageUrls,
+                sellerName
         );
     }
 
     private AuctionUpdateDTO createUpdateDTO(Auction auction) {
-        String bidderName = auction.getWinnerId() != null ? "User_" + auction.getWinnerId() : "No bids";
+        String bidderName = auction.getWinnerId() != null
+                ? resolveUserDisplayName(auction.getWinnerId(), "User")
+                : "No bids";
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         return new AuctionUpdateDTO(auction.getId(), auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
             bidderName, Math.max(0, remaining));
+    }
+
+    private String resolveUserDisplayName(long userId, String fallbackPrefix) {
+        if (userId <= 0) {
+            return fallbackPrefix + "_UNKNOWN";
+        }
+
+        String cached = userDisplayNameCache.get(userId);
+        if (cached != null && !cached.isBlank()) {
+            return cached;
+        }
+
+        try {
+            User user = userRepository.getUserById(userId);
+            if (user != null) {
+                String fullName = user.getFullName();
+                String username = user.getUsername();
+                String displayName = (fullName != null && !fullName.isBlank())
+                        ? fullName
+                        : ((username != null && !username.isBlank()) ? username : fallbackPrefix + "_" + userId);
+                userDisplayNameCache.put(userId, displayName);
+                return displayName;
+            }
+        } catch (Exception e) {
+            logger.debug("Không lấy được user {} để hiển thị tên: {}", userId, e.getMessage());
+        }
+
+        return fallbackPrefix + "_" + userId;
     }
 
     /**
@@ -257,7 +316,7 @@ public class AuctionService {
             LocalDateTime newEndTime = auction.getEndTime().plusSeconds(antiSnipingStrategy.getExtensionMillis() / 1000);
             auction.setEndTime(newEndTime);
             scheduleAuctionEnd(auction);
-            AuctionLogger.logTimeExtended(auction.getId(), antiSnipingStrategy.getExtensionMillis() / 1000);
+            logger.debug("Auction time extended for auction {}: {} seconds", auction.getId(), antiSnipingStrategy.getExtensionMillis() / 1000);
         }
     }
 
@@ -315,9 +374,11 @@ public class AuctionService {
                     auctionLocks.remove(auctionId);
                     scheduledTasks.remove(auctionId);
 
-                    AuctionLogger.logAuctionFinished(auctionId,
-                            auction.getWinnerId() != null ? auction.getWinnerId() : 0,
-                            auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid().toString() : "0");
+                    if (eventListener != null) {
+                        eventListener.onAuctionFinished(auctionId);
+                    }
+
+                    logger.debug("Auction finished: {}", auctionId);
                 }
             } finally {
                 lock.unlock();
@@ -343,8 +404,7 @@ public class AuctionService {
                     request.getMaxAutoBidAmount()
             );
             autoBidRepository.saveOrUpdate(autoBid);
-            AuctionLogger.logAutoBidEnabled(request.getAuctionId(), request.getBidderId(),
-                    request.getMaxAutoBidAmount().toString());
+            logger.debug("Auto-bid enabled for auction {}: {}", request.getAuctionId(), request.getBidderId());
         }
     }
 
@@ -354,7 +414,7 @@ public class AuctionService {
     public void cancelAutoBid(long auctionId, long bidderId) throws AuctionException {
         try {
             autoBidRepository.deactivate(auctionId, bidderId);
-            AuctionLogger.logAutoBidDisabled(auctionId, bidderId, "Người dùng hủy");
+            logger.debug("Auto-bid disabled for auction {}: {}", auctionId, bidderId);
         } catch (Exception e) {
             throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, e.getMessage());
         }
@@ -373,7 +433,7 @@ public class AuctionService {
             if (autoBid != null) {
                 autoBid.setMaxBidAmount(newMaxAmount);
                 autoBidRepository.saveOrUpdate(autoBid);
-                AuctionLogger.logAutoBidEnabled(auctionId, bidderId, newMaxAmount.toString());
+                logger.debug("Auto-bid amount updated for auction {}: {}", auctionId, bidderId);
             } else {
                 throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, "Auto-bid không tồn tại");
             }
@@ -413,6 +473,15 @@ public class AuctionService {
                 throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Step price phải lớn hơn 0");
             }
 
+            Item item = itemService.getItemById(dto.getItemId());
+            if (item == null) {
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item không tồn tại hoặc không đúng subtype");
+            }
+
+            if (item.getSellerId() > 0 && item.getSellerId() != dto.getSellerId()) {
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item không thuộc về seller này");
+            }
+
             java.time.LocalDateTime startTime = java.time.LocalDateTime.parse(dto.getStartTime());
             java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(dto.getEndTime());
 
@@ -439,7 +508,12 @@ public class AuctionService {
 
             auction.setId(auctionId);
             cacheAndScheduleAuction(auction);
-            AuctionLogger.logInfo("Phiên đấu giá " + auctionId + " đã tạo thành công");
+
+            if (eventListener != null) {
+                eventListener.onAuctionCreated(toDetailDto(auction));
+            }
+
+            logger.info("Phiên đấu giá {} đã tạo thành công", auctionId);
 
             return auctionId;
         } catch (AuctionException e) {

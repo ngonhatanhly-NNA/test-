@@ -161,6 +161,7 @@ public class AuctionController {
         AuctionException.ErrorCode code = e.getErrorCode();
         int statusCode = switch (code) {
             case AUCTION_NOT_FOUND, AUCTION_NOT_ACTIVE -> 404;
+            case INVALID_REQUEST -> 400;
             case INVALID_BID_AMOUNT, BID_AMOUNT_TOO_LOW, INVALID_AUTO_BID_CONFIG -> 400;
             case AUCTION_ALREADY_FINISHED -> 410;
             default -> 500;

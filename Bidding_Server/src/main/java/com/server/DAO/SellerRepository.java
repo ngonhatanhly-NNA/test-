@@ -121,16 +121,9 @@ public class SellerRepository implements ISellerRepository {
         return null;
     }
 
-    /**
-     * Lấy danh sách items mà seller đã tạo phiên đấu giá.
-     * Vì bảng items không có seller_id, ta join qua bảng auctions.
-     */
     @Override
     public List<Item> getItemsBySellerId(long sellerId) {
-        // Lấy distinct items để tránh trùng nếu 1 item có nhiều phiên
-        String sql = "SELECT DISTINCT i.* FROM items i " +
-                "JOIN auctions a ON i.id = a.item_id " +
-                "WHERE a.seller_id = ?";
+        String sql = "SELECT * FROM items WHERE seller_id = ? ORDER BY id DESC";
 
         List<Item> itemList = new ArrayList<>();
         try (Connection conn = DBConnection.getInstance().getConnection();
@@ -170,6 +163,7 @@ public class SellerRepository implements ISellerRepository {
                 "FROM auctions WHERE seller_id = ? AND winner_id IS NOT NULL";
         // 5. Tổng số items
         String itemsSql = "SELECT COUNT(DISTINCT item_id) AS totalItems FROM auctions WHERE seller_id = ?";
+        String inventorySql = "SELECT COUNT(*) AS totalItems FROM items WHERE seller_id = ?";
 
         try (Connection conn = DBConnection.getInstance().getConnection()) {
             try (PreparedStatement ps = conn.prepareStatement(totalSql)) {
@@ -193,6 +187,11 @@ public class SellerRepository implements ISellerRepository {
                 if (rs.next()) stats.put("totalRevenue", rs.getBigDecimal("totalRevenue"));
             }
             try (PreparedStatement ps = conn.prepareStatement(itemsSql)) {
+                ps.setLong(1, sellerId);
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) stats.put("totalItems", rs.getInt("totalItems"));
+            }
+            try (PreparedStatement ps = conn.prepareStatement(inventorySql)) {
                 ps.setLong(1, sellerId);
                 ResultSet rs = ps.executeQuery();
                 if (rs.next()) stats.put("totalItems", rs.getInt("totalItems"));
