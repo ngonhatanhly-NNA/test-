@@ -11,6 +11,7 @@ public class ItemResponseDTO {
     private BigDecimal startingPrice;
     private String type; // "ELECTRONICS", "ART", "VEHICLE"
     private List<String> imageUrls; // Lấy cái ảnh đầu tiên ra làm avatar
+    private String status;
 
     public ItemResponseDTO() {}
 
@@ -30,6 +31,7 @@ public class ItemResponseDTO {
     public BigDecimal getStartingPrice() { return startingPrice; }
     public String getType() { return type; }
     public List<String> getImageUrls() { return imageUrls; }
+    public String getStatus() { return status; }
 
     // Lấy ảnh đầu tiên làm Thumbnail cho đẹp
     public String getThumbnailUrl() {
@@ -46,4 +48,5 @@ public class ItemResponseDTO {
     public void setStartingPrice(BigDecimal startingPrice) { this.startingPrice = startingPrice; }
     public void setType(String type) { this.type = type; }
     public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
+    public void setStatus(String status) { this.status = status; }
 }

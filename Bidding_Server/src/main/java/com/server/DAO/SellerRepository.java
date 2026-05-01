@@ -152,12 +152,12 @@ public class SellerRepository implements ISellerRepository {
 
         // 1. Tổng số phiên đấu giá của seller
         String totalSql = "SELECT COUNT(*) AS totalAuctions FROM auctions WHERE seller_id = ?";
-        // 2. Số phiên đã hoàn thành
+        // 2. Số phiên đã hoàn thành (SỬA: DB lưu FINISHED/CANCELED/PAID, không phải CLOSED/COMPLETED/ENDED)
         String completedSql = "SELECT COUNT(*) AS completedAuctions FROM auctions " +
-                "WHERE seller_id = ? AND status IN ('CLOSED', 'COMPLETED', 'ENDED')";
-        // 3. Số phiên đang hoạt động
+                "WHERE seller_id = ? AND status IN ('FINISHED', 'CANCELED', 'PAID')";
+        // 3. Số phiên đang hoạt động (SỬA LỖI 3: DB lưu OPEN/RUNNING, không phải ACTIVE)
         String activeSql = "SELECT COUNT(*) AS activeAuctions FROM auctions " +
-                "WHERE seller_id = ? AND status = 'ACTIVE'";
+                "WHERE seller_id = ? AND status IN ('OPEN', 'RUNNING')";
         // 4. Tổng doanh thu (tổng current_highest_bid của các phiên đã kết thúc có winner)
         String revenueSql = "SELECT COALESCE(SUM(current_highest_bid), 0) AS totalRevenue " +
                 "FROM auctions WHERE seller_id = ? AND winner_id IS NOT NULL";

@@ -57,13 +57,13 @@ public class ServerApp extends WebSocketServer {
             logger.error("Lỗi xử lý message từ client {}: {}", conn.getRemoteSocketAddress(), e.getMessage());
         }
     }
-    @Override public void onError(WebSocket conn, Exception ex) { 
+    @Override public void onError(WebSocket conn, Exception ex) {
         logger.error("Lỗi xảy ra với client {}: {}", conn.getRemoteSocketAddress(), ex.getMessage());
-        ex.printStackTrace(); 
+        ex.printStackTrace();
     }
-    @Override public void onStart() { 
+    @Override public void onStart() {
         logger.info("WebSocket server started on port {}", getPort());
-    }   
+    }
 
     /**
      * Xử lý WebSocket message từ client
@@ -140,7 +140,7 @@ public class ServerApp extends WebSocketServer {
 
         // 3. Khởi động REST API (CỔNG 7070)
         logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
-        
+
         // Khoi tao cac DI, update fix cho nay sau :)
         UserRepository userRepo = new UserRepository();
         ItemRepository itemRepo = new ItemRepository();
@@ -151,7 +151,7 @@ public class ServerApp extends WebSocketServer {
 
         // Khởi tạo Services
         BidValidationChain validator = new BidValidationChain();
-        ManualBidProcessor manualProc = new ManualBidProcessor();
+        ManualBidProcessor manualProc = new ManualBidProcessor(auctionRepo);
         AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo);
         Broadcaster broadcaster = new Broadcaster();
 

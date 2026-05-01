@@ -99,14 +99,19 @@ public class ApiRouter {
         app.get("/api/auctions/{auctionId}", new GetAuctionDetailCommand(auctionService));
         app.get("/api/auctions/{auctionId}/bids", new GetBidHistoryCommand(auctionService));
 
+        // [MỚI] Lấy phiên đấu giá đang hoạt động theo seller - dùng cho Live Auction Monitoring
+        app.get("/api/auctions/seller/{sellerId}/active",
+                ctx -> auctionController.getActiveAuctionsBySeller(ctx));
+
+        // [MỚI] Lấy phiên đấu giá đã thắng theo bidder - dùng cho Won Auctions ở My Inventory
+        app.get("/api/auctions/bidder/{bidderId}/won",
+                ctx -> auctionController.getWonAuctionsByBidder(ctx));
+
         // Auto-bid
         app.post("/api/auctions/{auctionId}/auto-bid/cancel", new CancelAutoBidCommand(auctionService));
         app.put("/api/auctions/{auctionId}/auto-bid/update", new UpdateAutoBidAmountCommand(auctionService));
 
-        // --- Nhóm API Seller (MỚI) ---
-        // GET /api/sellers/{sellerId}           -> thông tin seller
-        // GET /api/sellers/{sellerId}/items     -> danh sách items của seller
-        // GET /api/sellers/{sellerId}/statistics -> thống kê bán hàng
+        // --- Nhóm API Seller ---
         app.get("/api/sellers/{sellerId}", ctx -> sellerController.getSellerById(ctx));
         app.get("/api/sellers/{sellerId}/items", ctx -> sellerController.getSellerItems(ctx));
         app.get("/api/sellers/{sellerId}/statistics", ctx -> sellerController.getSellerStatistics(ctx));
@@ -119,6 +124,7 @@ public class ApiRouter {
         app.post("/api/admin/users/unban", ctx -> adminController.unbanUser(ctx));
         app.post("/api/admin/sellers/approve", ctx -> adminController.approveSeller(ctx));
         app.get("/api/admin/items/analytics", ctx -> adminController.getProductAnalytics(ctx));
+        app.delete("/api/admin/items/{itemId}", ctx -> adminController.deleteItem(ctx));
         app.get("/api/admin/finance/revenue-estimate", ctx -> adminController.getRevenueEstimate(ctx));
         app.get("/api/admin/users/{username}/activity", ctx -> adminController.getUserActivityLog(ctx));
         app.post("/api/admin/auctions/cancel", ctx -> adminController.cancelAuction(ctx));

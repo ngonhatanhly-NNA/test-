@@ -147,6 +147,17 @@ public class AdminNetwork {
                 .exceptionally(e -> new Response("ERROR", "Không thể lấy analytics", null));
     }
 
+    public static CompletableFuture<Response> deleteItem(long itemId) {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/items/" + itemId))
+                .header("Content-Type", "application/json")
+                .DELETE()
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> gson.fromJson(response.body(), Response.class))
+                .exceptionally(e -> new Response("ERROR", "Không thể xóa item", null));
+    }
+
     /**
      * Lấy dữ liệu ước tính doanh thu.
      */

@@ -88,6 +88,12 @@ public class AdminController {
         ctx.json(response);
     }
 
+    public void deleteItem(Context ctx) {
+        long itemId = Long.parseLong(ctx.pathParam("itemId"));
+        Response response = adminService.deleteItem(itemId);
+        ctx.json(response);
+    }
+
     public void getRevenueEstimate(Context ctx) {
         Response response = adminService.uocTinhDoanhThu();
         ctx.json(response);

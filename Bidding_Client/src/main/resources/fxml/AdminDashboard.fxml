@@ -82,35 +82,16 @@
                         <Label style="-fx-font-size: 22px; -fx-font-weight: bold;" text="📊 Product Performance Analytics" HBox.hgrow="ALWAYS" />
                         <Button onAction="#loadProductAnalytics" text="GENERATE REPORT" prefHeight="45.0" style="-fx-background-color: #10B981; -fx-text-fill: white; -fx-background-radius: 10; -fx-cursor: hand; -fx-font-weight: bold;"/>
                     </HBox>
-                    <GridPane hgap="20" vgap="20">
-                        <VBox spacing="10" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                            <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Thống kê theo loại"/>
-                            <TableView fx:id="tableCategoryAnalytics">
-                                <columns>
-                                    <TableColumn fx:id="colCategoryName" prefWidth="200" text="Loại sản phẩm"/>
-                                    <TableColumn fx:id="colCategoryCount" prefWidth="150" text="Số lượng"/>
-                                </columns>
-                            </TableView>
-                        </VBox>
-                        <VBox spacing="10" GridPane.columnIndex="1" GridPane.rowIndex="0">
-                            <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Thống kê theo tình trạng"/>
-                            <TableView fx:id="tableConditionAnalytics">
-                                <columns>
-                                    <TableColumn fx:id="colConditionName" prefWidth="200" text="Tình trạng"/>
-                                    <TableColumn fx:id="colConditionCount" prefWidth="150" text="Số lượng"/>
-                                </columns>
-                            </TableView>
-                        </VBox>
-                        <VBox spacing="10" GridPane.columnIndex="0" GridPane.rowIndex="1" GridPane.columnSpan="2">
-                            <Label style="-fx-font-size: 16px; -fx-font-weight: bold;" text="Thống kê giá"/>
-                            <TableView fx:id="tablePriceAnalytics">
-                                <columns>
-                                    <TableColumn fx:id="colPriceStatName" prefWidth="200" text="Thống kê"/>
-                                    <TableColumn fx:id="colPriceStatValue" prefWidth="250" text="Giá trị (VNĐ)"/>
-                                </columns>
-                            </TableView>
-                        </VBox>
-                    </GridPane>
+                    <TableView fx:id="tableItems" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn fx:id="colItemId" text="ID" />
+                            <TableColumn fx:id="colItemName" text="Name" />
+                            <TableColumn fx:id="colItemDescription" text="Description" />
+                            <TableColumn fx:id="colItemStartingPrice" text="Starting Price" />
+                            <TableColumn fx:id="colItemStatus" text="Status" />
+                            <TableColumn fx:id="colItemAction" text="Action" />
+                        </columns>
+                    </TableView>
                 </VBox>
             </Tab>
 

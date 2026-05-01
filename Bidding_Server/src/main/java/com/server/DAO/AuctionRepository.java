@@ -9,7 +9,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional; // <-- Lỗi của em do thiếu cái này
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,6 +167,30 @@ public class AuctionRepository implements IAuctionRepository {
             logger.error("Lỗi lấy lịch sử bid cho auction {}: {}", auctionId, e.getMessage(), e);
         }
         return bidHistory;
+    }
+
+    /**
+     * [MỚI] Lấy danh sách các phiên đấu giá đã kết thúc mà bidderId là người thắng.
+     * Query vào DB (không dùng cache) vì đây là dữ liệu đã kết thúc.
+     */
+    @Override
+    public List<Auction> findWonAuctionsByBidderId(long bidderId) {
+        List<Auction> wonAuctions = new ArrayList<>();
+        // Tìm các auction đã FINISHED mà winner_id = bidderId
+        String sql = "SELECT * FROM auctions WHERE winner_id = ? AND status = 'FINISHED' ORDER BY updated_at DESC";
+
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, bidderId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    wonAuctions.add(mapResultSetToAuction(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi lấy won auctions cho bidder {}: {}", bidderId, e.getMessage(), e);
+        }
+        return wonAuctions;
     }
 
     private Auction mapResultSetToAuction(ResultSet rs) throws SQLException {

@@ -8,14 +8,18 @@ import com.shared.network.Response;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * REST tới Bidding_Server (Javalin cổng 7070, HTTP — không dùng HTTPS trừ khi bạn cấu hình TLS).
+ * REST tới Bidding_Server (Javalin cổng 7070, HTTP).
+ *
+ * [ĐÃ THÊM]:
+ * - getActiveAuctionsBySeller(sellerId): Lấy auction đang hoạt động theo seller
+ * - getWonAuctions(bidderId): Lấy auction đã thắng theo bidder
  */
 public class AuctionNetwork {
 
@@ -42,12 +46,52 @@ public class AuctionNetwork {
         }
     }
 
+    /**
+     * Lấy TẤT CẢ phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chung).
+     */
     public static String getActiveAuctions() throws Exception {
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
                 .GET()
                 .build();
         HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
+    }
+
+    /**
+     * [MỚI] Lấy phiên đấu giá đang hoạt động lọc theo SELLER.
+     * Gọi: GET /api/auctions/seller/{sellerId}/active
+     * Dùng trong Live Auction Monitoring tab của Seller Portal.
+     */
+    public static String getActiveAuctionsBySeller(long sellerId) throws Exception {
+        HttpRequest request = NetworkClient.newRequestBuilder(
+                        URI.create(BASE_URL + "/seller/" + sellerId + "/active"))
+                .GET()
+                .build();
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        return response.body();
+    }
+
+    /**
+     * [MỚI] Lấy danh sách phiên đấu giá đã THẮNG của một bidder.
+     * Gọi: GET /api/auctions/bidder/{bidderId}/won
+     * Dùng trong Won Auctions ở My Inventory.
+     */
+    public static String getWonAuctions(long bidderId) throws Exception {
+        HttpRequest request = NetworkClient.newRequestBuilder(
+                        URI.create(BASE_URL + "/bidder/" + bidderId + "/won"))
+                .GET()
+                .build();
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        return response.body();
+    }
+
+    public static CompletableFuture<Response> getActiveAuctionsAsync() {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
+                .GET()
+                .build();
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> gson.fromJson(response.body(), Response.class))
+                .exceptionally(e -> new Response("ERROR", "Không thể lấy danh sách phiên đấu giá", null));
     }
 
     public static String getAuctionDetail(long auctionId) throws Exception {
@@ -95,14 +139,9 @@ public class AuctionNetwork {
         return response.body();
     }
 
-    // --- THÊM VÀO ĐỂ MỞ PHIÊN ĐẤU GIÁ ---
     public static Response createAuction(CreateAuctionDTO dto) throws Exception {
         String jsonResponse = postJson(BASE_URL, gson.toJson(dto));
-        // Đóng gói DTO thành JSON và bắn POST lên API tạo Auction
-        // Lưu ý: Tùy theo ApiRouter của Lead cấu hình là "/create" hay "/"
-        // Thường thì chuẩn REST sẽ là POST vào BASE_URL
         return gson.fromJson(jsonResponse, Response.class);
-        /*(Ghi chú: Nếu lúc chạy thực tế Server báo lỗi 404 Not Found ở đường dẫn này, em hãy check lại file ApiRouter.java xem bạn Lead định nghĩa endpoint tạo auction là /api/auctions hay /api/auctions/create để sửa lại url nhé).*/
     }
 
     private static String postJson(String uri, String jsonBody) throws Exception {

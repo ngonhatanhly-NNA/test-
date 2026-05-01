@@ -47,6 +47,10 @@ public class AuctionController {
         }
     }
 
+    /**
+     * GET /api/auctions/active
+     * Lấy tất cả phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chung).
+     */
     public void getActiveAuctions(Context ctx) {
         try {
             List<AuctionDetailDTO> auctions = auctionService.getActiveAuctions();
@@ -54,6 +58,42 @@ public class AuctionController {
         } catch (Exception e) {
             logger.error("Lỗi load danh sách phiên đấu giá: {}", e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Failed to load auctions: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * [MỚI] GET /api/auctions/seller/{sellerId}/active
+     * Lấy các phiên đấu giá đang hoạt động của MỘT seller cụ thể.
+     * Dùng cho tab "Live Auction Monitoring" trong Seller Portal.
+     */
+    public void getActiveAuctionsBySeller(Context ctx) {
+        try {
+            long sellerId = Long.parseLong(ctx.pathParam("sellerId"));
+            List<AuctionDetailDTO> auctions = auctionService.getActiveAuctionsBySeller(sellerId);
+            ctx.json(new Response("SUCCESS", "Seller active auctions loaded", auctions));
+        } catch (NumberFormatException e) {
+            ctx.status(400).json(new Response("ERROR", "Seller ID không hợp lệ", null));
+        } catch (Exception e) {
+            logger.error("Lỗi load phiên đấu giá của seller: {}", e.getMessage(), e);
+            ctx.status(500).json(new Response("ERROR", "Failed to load seller auctions: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * [MỚI] GET /api/auctions/bidder/{bidderId}/won
+     * Lấy danh sách phiên đấu giá đã kết thúc mà bidderId là người thắng.
+     * Dùng cho phần "Won Auctions" ở My Inventory.
+     */
+    public void getWonAuctionsByBidder(Context ctx) {
+        try {
+            long bidderId = Long.parseLong(ctx.pathParam("bidderId"));
+            List<AuctionDetailDTO> wonAuctions = auctionService.getWonAuctionsByBidder(bidderId);
+            ctx.json(new Response("SUCCESS", "Won auctions loaded", wonAuctions));
+        } catch (NumberFormatException e) {
+            ctx.status(400).json(new Response("ERROR", "Bidder ID không hợp lệ", null));
+        } catch (Exception e) {
+            logger.error("Lỗi load won auctions của bidder: {}", e.getMessage(), e);
+            ctx.status(500).json(new Response("ERROR", "Failed to load won auctions: " + e.getMessage(), null));
         }
     }
 
@@ -170,4 +210,3 @@ public class AuctionController {
         ctx.status(statusCode).json(new Response("ERROR", e.getMessage(), null));
     }
 }
-

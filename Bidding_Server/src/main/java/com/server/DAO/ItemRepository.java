@@ -312,6 +312,19 @@ public class ItemRepository {
         return null;
     }
 
+    public boolean delete(long itemId) {
+        String sql = "DELETE FROM items WHERE id = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, itemId);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            logger.error("Lỗi xóa sản phẩm với itemId {}: {}", itemId, e.getMessage(), e);
+            return false;
+        }
+    }
+
     private String normalizeItemType(String itemType) {
         if (itemType == null) {
             return "";

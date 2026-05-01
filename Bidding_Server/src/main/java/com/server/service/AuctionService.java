@@ -109,7 +109,8 @@ public class AuctionService {
     // ========== Init Methods ==========
 
     /**
-     * Khởi tạo service: Tải các phiên đấu giá đang hoạt động từ DB vào cache
+     * Khởi tạo service: Tải các phiên đấu giá đang hoạt động từ DB vào cache.
+     * Đảm bảo không bị mất dữ liệu khi server restart.
      */
     private void init() {
         try {
@@ -119,10 +120,9 @@ public class AuctionService {
             activeAuctions.forEach(this::cacheAndScheduleAuction);
             startBidQueueProcessor();
 
-            logger.info("Đã khởi tạo " + activeAuctions.size() + " phiên đấu giá");
+            logger.info("Đã khởi tạo {} phiên đấu giá từ DB vào cache", activeAuctions.size());
         } catch (Exception e) {
             logger.error("Lỗi khi khởi tạo AuctionService", e);
-            logger.error("INIT", 0, e.getMessage());
         }
     }
 
@@ -194,7 +194,7 @@ public class AuctionService {
     }
 
     /**
-     * Bắt đầu background thread để xử lý bid queue
+     * Bắt đầu background thread để xử lý bid queue và lưu vào DB
      */
     private void startBidQueueProcessor() {
         Thread processor = new Thread(() -> {
@@ -238,7 +238,7 @@ public class AuctionService {
                 ? resolveUserDisplayName(auction.getWinnerId(), "User")
                 : "No bids";
         String sellerName = resolveUserDisplayName(auction.getSellerId(), "Seller");
-        
+
         Item item = itemService.getItemById(auction.getItemId());
 
         String itemName = "Item #" + auction.getItemId();
@@ -277,7 +277,7 @@ public class AuctionService {
                 : "No bids";
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         return new AuctionUpdateDTO(auction.getId(), auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
-            bidderName, Math.max(0, remaining));
+                bidderName, Math.max(0, remaining));
     }
 
     private String resolveUserDisplayName(long userId, String fallbackPrefix) {
@@ -325,7 +325,7 @@ public class AuctionService {
      * Được gọi sau khi một đơn đặt giá thủ công thành công
      */
     private void processAutoBidsFromOtherUsers(Auction auction) {
-        autoBidProcessor.process( auction, this.bidQueue);
+        autoBidProcessor.process(auction, this.bidQueue);
     }
 
     // ========== Scheduling & Cleanup ==========
@@ -354,7 +354,8 @@ public class AuctionService {
     }
 
     /**
-     * Kết thúc phiên đấu giá
+     * Kết thúc phiên đấu giá và LƯU VÀO DATABASE.
+     * Đảm bảo winner_id và status=FINISHED được persist để không mất khi restart.
      */
     private void finishAuction(long auctionId) {
         ReentrantLock lock = auctionLocks.get(auctionId);
@@ -367,9 +368,14 @@ public class AuctionService {
                                 auction.getStatus() == Auction.AuctionStatus.OPEN)) {
 
                     auction.setStatus(Auction.AuctionStatus.FINISHED);
+                    // Lưu vào DB: winner_id và status=FINISHED được ghi ngay lập tức
                     auctionRepository.save(auction);
+                    logger.info("Phiên đấu giá {} đã kết thúc. Winner: {}, Giá: {}",
+                            auctionId,
+                            auction.getWinnerId() != null ? auction.getWinnerId() : "Không có",
+                            auction.getCurrentHighestBid());
 
-                    // Dọn dẹp resources
+                    // Dọn dẹp resources khỏi cache (đã lưu DB rồi)
                     auctionCache.remove(auctionId);
                     auctionLocks.remove(auctionId);
                     scheduledTasks.remove(auctionId);
@@ -377,8 +383,6 @@ public class AuctionService {
                     if (eventListener != null) {
                         eventListener.onAuctionFinished(auctionId);
                     }
-
-                    logger.debug("Auction finished: {}", auctionId);
                 }
             } finally {
                 lock.unlock();
@@ -387,7 +391,6 @@ public class AuctionService {
     }
 
     // ========== Public API Methods ==========
-
 
     public void setEventListener(AuctionEventListener listener) {
         this.eventListener = listener;
@@ -445,7 +448,8 @@ public class AuctionService {
     }
 
     /**
-     * Lấy danh sách các phiên đấu giá đang hoạt động
+     * Lấy danh sách TẤT CẢ các phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chung).
+     * Đọc từ cache (dữ liệu real-time nhất).
      */
     public List<AuctionDetailDTO> getActiveAuctions() {
         return auctionCache.values().stream()
@@ -455,8 +459,50 @@ public class AuctionService {
     }
 
     /**
-     * Tạo phiên đấu giá mới
+     * [MỚI] Lấy các phiên đấu giá đang hoạt động của MỘT SELLER CỤ THỂ.
+     * Dùng cho tab "Live Auction Monitoring" trong Seller Portal.
+     * Kết hợp cache (real-time) + DB (để đảm bảo đồng bộ).
      */
+    public List<AuctionDetailDTO> getActiveAuctionsBySeller(long sellerId) {
+        // Lấy từ cache trước (có giá real-time)
+        List<AuctionDetailDTO> fromCache = auctionCache.values().stream()
+                .filter(a -> a.getSellerId() == sellerId &&
+                        (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN))
+                .map(this::toDetailDto)
+                .toList();
+
+        // Nếu cache rỗng, thử load từ DB (phòng trường hợp server vừa restart)
+        if (fromCache.isEmpty()) {
+            List<Auction> dbAuctions = auctionRepository.findByStatusIn(
+                    List.of(Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING));
+            dbAuctions.stream()
+                    .filter(a -> a.getSellerId() == sellerId)
+                    .forEach(a -> {
+                        if (!auctionCache.containsKey(a.getId())) {
+                            cacheAndScheduleAuction(a);
+                        }
+                    });
+            return auctionCache.values().stream()
+                    .filter(a -> a.getSellerId() == sellerId &&
+                            (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN))
+                    .map(this::toDetailDto)
+                    .toList();
+        }
+        return fromCache;
+    }
+
+    /**
+     * [MỚI] Lấy danh sách các phiên đấu giá đã KẾT THÚC mà người dùng là NGƯỜI THẮNG.
+     * Dùng cho phần "Won Auctions" ở My Inventory.
+     * Đọc từ DB (không cache vì đã FINISHED).
+     */
+    public List<AuctionDetailDTO> getWonAuctionsByBidder(long bidderId) {
+        List<Auction> wonAuctions = auctionRepository.findWonAuctionsByBidderId(bidderId);
+        return wonAuctions.stream()
+                .map(this::toDetailDto)
+                .toList();
+    }
+
     /**
      * Tạo phiên đấu giá mới
      */
@@ -498,22 +544,22 @@ public class AuctionService {
             auction.setCurrentHighestBid(BigDecimal.ZERO);
             auction.setStatus(Auction.AuctionStatus.OPEN);
 
-            // GỌI XUỐNG REPOSITORY ĐỂ LƯU
+            // LƯU VÀO DATABASE
             long auctionId = auctionRepository.create(auction);
 
-            // NẾU DATABASE TRẢ VỀ -1, BẮT LẠI VÀ QUĂNG MÌN LÊN CHO COMMAND XỬ LÝ
             if (auctionId <= 0) {
                 throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Không thể lưu phiên đấu giá vào Database.");
             }
 
             auction.setId(auctionId);
+            // Đưa vào cache để tracking real-time
             cacheAndScheduleAuction(auction);
 
             if (eventListener != null) {
                 eventListener.onAuctionCreated(toDetailDto(auction));
             }
 
-            logger.info("Phiên đấu giá {} đã tạo thành công", auctionId);
+            logger.info("Phiên đấu giá {} đã tạo thành công và lưu vào DB", auctionId);
 
             return auctionId;
         } catch (AuctionException e) {
@@ -531,7 +577,7 @@ public class AuctionService {
         return bids.stream()
                 .map(bid -> new BidHistoryDTO(
                         bid.getBidderId(),
-                        "User_" + bid.getBidderId(),
+                        resolveUserDisplayName(bid.getBidderId(), "User"),
                         bid.getBidAmount(),
                         bid.getTimestamp(),
                         bid.isAutoBid()

@@ -26,4 +26,12 @@ public interface IAuctionRepository {
      * @return The name of the item.
      */
     String findItemNameByItemId(long itemId);
+
+    /**
+     * [MỚI] Lấy danh sách các phiên đấu giá đã kết thúc mà bidderId là người thắng.
+     * Dùng để hiển thị "Won Auctions" ở My Inventory phía client.
+     * @param bidderId ID của người dùng
+     * @return Danh sách Auction có status=FINISHED và winner_id = bidderId
+     */
+    List<Auction> findWonAuctionsByBidderId(long bidderId);
 }

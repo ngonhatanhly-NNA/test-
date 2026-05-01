@@ -215,9 +215,37 @@ public class ViewLiveAuctions {
         if (leaderLabel != null) {
             leaderLabel.setText("Người dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
         }
+        
+        // Update step hint with minimum bid amount
         if (stepHintLabel != null && a.getStepPrice() != null) {
-            stepHintLabel.setText("* Bước giá tối thiểu: " + formatMoney(a.getStepPrice()) + " VNĐ");
+            BigDecimal stepPrice = a.getStepPrice();
+            BigDecimal currentPrice = a.getCurrentPrice();
+            BigDecimal minimumBid;
+            
+            if (currentPrice == null || currentPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                minimumBid = stepPrice;
+            } else {
+                minimumBid = currentPrice.add(stepPrice);
+            }
+            
+            stepHintLabel.setText("* Bước giá tối thiểu: " + formatMoney(stepPrice) + 
+                                 " VNĐ | Giá tối thiểu để đặt: " + formatMoney(minimumBid) + " VNĐ");
         }
+        
+        // Pre-fill bid amount field with minimum bid
+        if (bidAmountField != null && a.getStepPrice() != null) {
+            BigDecimal currentPrice = a.getCurrentPrice();
+            BigDecimal minimumBid;
+            
+            if (currentPrice == null || currentPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                minimumBid = a.getStepPrice();
+            } else {
+                minimumBid = currentPrice.add(a.getStepPrice());
+            }
+            
+            bidAmountField.setText(formatMoney(minimumBid));
+        }
+        
         if (statusLabel != null) {
             statusLabel.setText("Tình trạng: ĐANG MỞ");
         }
@@ -401,6 +429,11 @@ public class ViewLiveAuctions {
                 }
             }
             }
+            
+            // Update bid amount field hint to show new minimum bid (current + step)
+            // Note: We need to fetch step price from somewhere - ideally from a cached auction detail
+            // For now, we'll just update the UI labels
+            
             if (auctionsContainer != null) {
 				boolean isFound = false;
 				
@@ -426,6 +459,11 @@ public class ViewLiveAuctions {
                                 // Lấy được "đống thông tin Item" rồi thì quay lại Thread UI để vẽ thẻ
                                 Platform.runLater(() -> {
                                     addOrUpdateAuctionRealtime(fullDetail);
+                                    
+                                    // If this is the current auction being viewed, update the bid field
+                                    if (fullDetail.getAuctionId() == currentAuctionId) {
+                                        applyAuctionDetail(fullDetail);
+                                    }
                                 });
                             }
                         } catch (Exception e) {

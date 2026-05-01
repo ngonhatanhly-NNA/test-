@@ -5,6 +5,7 @@ import com.server.DAO.UserRepository;
 import com.server.DAO.ItemRepository;
 import com.server.DAO.AdminRepository;
 import com.server.model.*;
+import com.shared.dto.ItemResponseDTO;
 import com.shared.network.Response;
 
 import java.math.BigDecimal;
@@ -45,10 +46,26 @@ public class AdminService {
 
     public Response phanTichSanPham() {
         List<Item> items = itemRepo.getAllItems();
-        Map<String, Object> analytics = Map.of(
-                "tongSanPham", items.size()
-        );
-        return new Response("SUCCESS", "Phan tich san pham", analytics);
+        List<ItemResponseDTO> itemDTOs = items.stream()
+                .map(item -> new ItemResponseDTO(
+                        item.getId(),
+                        item.getName(),
+                        item.getDescription(),
+                        item.getStartingPrice(),
+                        item.getCondition(), // Assuming type is condition for now
+                        item.getImageUrls()
+                ))
+                .collect(Collectors.toList());
+        return new Response("SUCCESS", "Phan tich san pham", itemDTOs);
+    }
+
+    public Response deleteItem(long itemId) {
+        boolean success = itemRepo.delete(itemId);
+        if (success) {
+            return new Response("SUCCESS", "Item deleted successfully", null);
+        } else {
+            return new Response("ERROR", "Failed to delete item", null);
+        }
     }
 
     public Response uocTinhDoanhThu() {
