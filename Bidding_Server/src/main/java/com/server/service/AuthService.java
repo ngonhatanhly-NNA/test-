@@ -162,7 +162,10 @@ public class AuthService {
         try {
             return BCrypt.checkpw(rawPassword, storedHash);
         } catch (IllegalArgumentException ex) {
-            return false;
+            // Legacy fallback: stored password may be plaintext
+            return storedHash.equals(rawPassword);
+        } catch (Exception ex) {
+            return storedHash.equals(rawPassword);
         }
     }
 

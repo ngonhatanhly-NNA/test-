@@ -1,5 +1,19 @@
 package com.client.controller.dashboard;
 
+import java.math.BigDecimal;
+import java.net.URL;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.client.network.AuctionNetwork;
 import com.client.session.ClientSession;
 import com.shared.dto.AuctionDetailDTO;
@@ -9,6 +23,8 @@ import com.shared.network.Response;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -17,22 +33,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.XYChart;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-
-import java.math.BigDecimal;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ViewLiveAuctions {
+
+    private static final Logger logger = Logger.getLogger(ViewLiveAuctions.class.getName());
 
     @FXML
     private Label currentPriceLabel;
@@ -402,77 +406,132 @@ public class ViewLiveAuctions {
     }
 
     public void updatePriceRealtime(AuctionUpdateDTO updateData) {
-        if (updateData == null ) {
+        if (updateData == null) {
             return;
         }
+
         Platform.runLater(() -> {
+            // 1. Update currently selected auction details panel
             if (updateData.getAuctionId() == currentAuctionId) {
-                if (currentPriceLabel != null && updateData.getCurrentPrice() != null) {
-                    currentPriceLabel.setText(formatMoney(updateData.getCurrentPrice()) + " VNĐ");
-                }
-
-                if (leaderLabel != null && updateData.getHighestBidderName() != null) {
-                    leaderLabel.setText("Người dẫn đầu: " + updateData.getHighestBidderName());
-                }
-
-                if (remainingLabel != null) {
-                    remainingLabel.setText("Còn lại: " + formatRemaining(updateData.getRemainingTime()));
-                }
-
-                if (priceSeries != null && updateData.getCurrentPrice() != null) {
-                String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-                priceSeries.getData().add(new XYChart.Data<>(timeNow, updateData.getCurrentPrice()));
-                
-                // Chỉ giữ lại 15 mức giá gần nhất để biểu đồ không bị dồn cục lại
-                if (priceSeries.getData().size() > 15) {
-                    priceSeries.getData().remove(0);
-                }
+                updateCurrentAuctionDisplay(updateData);
             }
+
+            // 2. Update auction card in the list
+            if (auctionsContainer != null && auctionsContainer.getChildren().size() > 0) {
+                updateAuctionCardInList(updateData);
             }
-            
-            // Update bid amount field hint to show new minimum bid (current + step)
-            // Note: We need to fetch step price from somewhere - ideally from a cached auction detail
-            // For now, we'll just update the UI labels
-            
-            if (auctionsContainer != null) {
-				boolean isFound = false;
-				
-                for (var node : auctionsContainer.getChildren()) {
-                    if (node.getUserData() instanceof Long id && id == updateData.getAuctionId()) {
-                        isFound = true;
-                        // Cập nhật thẻ đấu giá tương ứng trong danh sách
-                        if (node instanceof VBox card) {
-                            applyUpdateToCard(card, updateData);
+        });
+    }
+
+    private void updateCurrentAuctionDisplay(AuctionUpdateDTO updateData) {
+        // Update price label
+        if (currentPriceLabel != null && updateData.getCurrentPrice() != null) {
+            currentPriceLabel.setText(formatMoney(updateData.getCurrentPrice()) + " VNĐ");
+        }
+
+        // Update leader label
+        if (leaderLabel != null && updateData.getHighestBidderName() != null) {
+            leaderLabel.setText("Người dẫn đầu: " + updateData.getHighestBidderName());
+            leaderLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+        }
+
+        // Update remaining time
+        if (remainingLabel != null) {
+            String remaining = formatRemaining(updateData.getRemainingTime());
+            remainingLabel.setText("Còn lại: " + remaining);
+
+            // Change color to red if less than 1 minute
+            if (updateData.getRemainingTime() < 60000) {
+                remainingLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+            } else {
+                remainingLabel.setStyle("-fx-text-fill: #7f8c8d;");
+            }
+        }
+
+        // Update price chart
+        if (priceSeries != null && updateData.getCurrentPrice() != null) {
+            String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            priceSeries.getData().add(new XYChart.Data<>(timeNow, updateData.getCurrentPrice()));
+
+            // Keep only last 15 data points to avoid overcrowding
+            if (priceSeries.getData().size() > 15) {
+                priceSeries.getData().remove(0);
+            }
+        }
+
+        // Update bid amount field with new minimum bid
+        updateBidAmountFieldHint(updateData);
+    }
+
+    private void updateBidAmountFieldHint(AuctionUpdateDTO updateData) {
+        if (bidAmountField == null || updateData.getCurrentPrice() == null) {
+            return;
+        }
+
+        // Try to fetch full auction detail to get step price
+        ioPool.execute(() -> {
+            try {
+                String rawDetail = AuctionNetwork.getAuctionDetail(updateData.getAuctionId());
+                Response res = AuctionNetwork.parseResponse(rawDetail);
+                AuctionDetailDTO fullDetail = AuctionNetwork.parseAuctionDetail(res);
+
+                if (fullDetail != null && fullDetail.getStepPrice() != null) {
+                    BigDecimal stepPrice = fullDetail.getStepPrice();
+                    BigDecimal currentPrice = updateData.getCurrentPrice();
+                    BigDecimal minimumBid = currentPrice.add(stepPrice);
+
+                    Platform.runLater(() -> {
+                        if (bidAmountField != null) {
+                            bidAmountField.setText(formatMoney(minimumBid));
                         }
-                    }
-                }
-				
-				if (!isFound) {
-                    ioPool.execute(() -> {
-                        try {
-                            // Gọi API HTTP bằng file AuctionNetwork để lấy AuctionDetailDTO (chứa thông tin Item)
-                            String rawDetail = AuctionNetwork.getAuctionDetail(updateData.getAuctionId());
-                            Response res = AuctionNetwork.parseResponse(rawDetail);
-                            AuctionDetailDTO fullDetail = AuctionNetwork.parseAuctionDetail(res);
-
-                            if (fullDetail != null) {
-                                // Lấy được "đống thông tin Item" rồi thì quay lại Thread UI để vẽ thẻ
-                                Platform.runLater(() -> {
-                                    addOrUpdateAuctionRealtime(fullDetail);
-                                    
-                                    // If this is the current auction being viewed, update the bid field
-                                    if (fullDetail.getAuctionId() == currentAuctionId) {
-                                        applyAuctionDetail(fullDetail);
-                                    }
-                                });
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        if (stepHintLabel != null) {
+                            stepHintLabel.setText("* Bước giá: " + formatMoney(stepPrice) +
+                                                 " VNĐ | Giá tối thiểu: " + formatMoney(minimumBid) + " VNĐ");
                         }
                     });
                 }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to update bid hint: " + e.getMessage());
             }
         });
+    }
+
+    private void updateAuctionCardInList(AuctionUpdateDTO updateData) {
+        boolean foundAndUpdated = false;
+
+        for (var node : auctionsContainer.getChildren()) {
+            if (node.getUserData() instanceof Long id && id == updateData.getAuctionId()) {
+                if (node instanceof VBox card) {
+                    applyUpdateToCard(card, updateData);
+                    foundAndUpdated = true;
+                    break;
+                }
+            }
+        }
+
+        // If auction not found in list, fetch full details and add it
+        if (!foundAndUpdated) {
+            ioPool.execute(() -> {
+                try {
+                    String rawDetail = AuctionNetwork.getAuctionDetail(updateData.getAuctionId());
+                    Response res = AuctionNetwork.parseResponse(rawDetail);
+                    AuctionDetailDTO fullDetail = AuctionNetwork.parseAuctionDetail(res);
+
+                    if (fullDetail != null) {
+                        Platform.runLater(() -> {
+                            addOrUpdateAuctionRealtime(fullDetail);
+
+                            // If this is the currently viewed auction, update detail panel
+                            if (fullDetail.getAuctionId() == currentAuctionId) {
+                                applyAuctionDetail(fullDetail);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Failed to fetch auction detail: " + e.getMessage());
+                }
+            });
+        }
     }
 
     public void addOrUpdateAuctionRealtime(AuctionDetailDTO detail) {

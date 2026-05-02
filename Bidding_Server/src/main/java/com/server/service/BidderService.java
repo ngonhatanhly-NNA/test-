@@ -12,8 +12,18 @@ import org.slf4j.LoggerFactory;
 
 public class BidderService {
     private final Gson gson = new Gson();
-    private final IBidderRepository bidderRepo = new BidderRepository();
+    private final IBidderRepository bidderRepo;
     private static final Logger logger = LoggerFactory.getLogger(BidderService.class);
+
+    // Constructor mặc định (dùng trong production)
+    public BidderService() {
+        this.bidderRepo = new BidderRepository();
+    }
+
+    // Constructor để Dependency Injection (dùng trong testing với Mock)
+    public BidderService(IBidderRepository bidderRepo) {
+        this.bidderRepo = bidderRepo;
+    }
 
     /**
      * NẠP TIỀN VÀ LƯU DATABASE

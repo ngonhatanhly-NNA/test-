@@ -8,8 +8,8 @@ Một hệ thống đấu giá trực tuyến được xây dựng dựa trên k
 |:---:|:---|:---|:---|
 | 1 | Ngô Nhật Ánh | 25020030 | Main FrontEnd - Backend Auth, Auction, User - DTO net, DB set up and Net setup - Configuration |
 | 2 | Đinh Anh Vũ | 25020432 | Frontend - Backend Item, User - DTO net - DB setup| 
-| 3 | Hoàng Văn Tưởng | 25020383 | Admin FrontEnd - Backend Admin - Seller - Bidder |
-| 4 | Mai Thế Phong | 25020310 | Backend Admin - Seller - Bidder |
+| 3 | Hoàng Văn Tưởng | 25020383 | Backend Admin - Seller - Bidder |
+| 4 | Mai Thế Phong | 25020310 |Admin FrontEnd -  Backend Admin - Seller - Bidder |
 
 ---
 

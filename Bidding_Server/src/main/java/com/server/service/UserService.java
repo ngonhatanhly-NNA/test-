@@ -83,6 +83,11 @@ public class UserService {
         this.userRepository = new UserRepository();
     }
 
+    // Constructor để Dependency Injection (dùng trong testing với Mock)
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     public Role getUserRole(String username) {
         User user = userRepository.getUserByUsername(username);
         return (user != null) ? user.getRole() : null;
