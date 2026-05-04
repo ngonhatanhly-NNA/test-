@@ -3,6 +3,7 @@ package com.shared.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
+
 import com.google.gson.annotations.SerializedName;
 
 public class BidRequestDTO implements Serializable {
@@ -25,6 +26,9 @@ public class BidRequestDTO implements Serializable {
 
     @SerializedName("expectedCurrentBid")
     private BigDecimal expectedCurrentBid;
+
+    @SerializedName("customStepPrice")
+    private BigDecimal customStepPrice;
 
     // Constructors, getters, setters
     public BidRequestDTO() {}
@@ -52,6 +56,7 @@ public class BidRequestDTO implements Serializable {
     // Getter cho boolean thường dùng tiền tố "is"
     public boolean isEnableAutoBid() { return enableAutoBid; }
     public BigDecimal getExpectedCurrentBid() { return expectedCurrentBid; }
+    public BigDecimal getCustomStepPrice() { return customStepPrice; }
 
     // Setters (Nếu cần thiết cho việc deserialize JSON)
     public void setAuctionId(long auctionId) { this.auctionId = auctionId; }
@@ -60,6 +65,7 @@ public class BidRequestDTO implements Serializable {
     public void setEnableAutoBid(boolean enableAutoBid) { this.enableAutoBid = enableAutoBid; }
     public void setMaxAutoBidAmount(BigDecimal maxAutoBidAmount) { this.maxAutoBidAmount = maxAutoBidAmount; }
     public void setExpectedCurrentBid(BigDecimal expectedCurrentBid) { this.expectedCurrentBid = expectedCurrentBid; }
+    public void setCustomStepPrice(BigDecimal customStepPrice) { this.customStepPrice = customStepPrice; }
 
     @Override
     public boolean equals(Object o) {

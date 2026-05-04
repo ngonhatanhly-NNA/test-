@@ -1,10 +1,5 @@
 package com.client.network;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.shared.dto.*;
-import com.shared.network.Response;
-
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.net.URI;
@@ -13,6 +8,15 @@ import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.shared.dto.AuctionDetailDTO;
+import com.shared.dto.AutoBidCancelDTO;
+import com.shared.dto.AutoBidUpdateDTO;
+import com.shared.dto.BidRequestDTO;
+import com.shared.dto.CreateAuctionDTO;
+import com.shared.network.Response;
 
 /**
  * REST tới Bidding_Server (Javalin cổng 7070, HTTP).
@@ -49,26 +53,26 @@ public class AuctionNetwork {
     /**
      * Lấy TẤT CẢ phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chung).
      */
-    public static String getActiveAuctions() throws Exception {
+    public List<AuctionDetailDTO> getActiveAuctions() throws Exception {
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
                 .GET()
                 .build();
-        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+        HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        Response response = parseResponse(httpResponse.body());
+        return parseActiveAuctionList(response);
     }
 
     /**
-     * [MỚI] Lấy phiên đấu giá đang hoạt động lọc theo SELLER.
-     * Gọi: GET /api/auctions/seller/{sellerId}/active
-     * Dùng trong Live Auction Monitoring tab của Seller Portal.
+     * [MỚI] Lấy danh sách phiên đấu giá sắp diễn ra
+     * Gọi: GET /api/auctions/upcoming
      */
-    public static String getActiveAuctionsBySeller(long sellerId) throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(
-                        URI.create(BASE_URL + "/seller/" + sellerId + "/active"))
+    public List<AuctionDetailDTO> getUpcomingAuctions() throws Exception {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/upcoming"))
                 .GET()
                 .build();
-        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+        HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        Response response = parseResponse(httpResponse.body());
+        return parseActiveAuctionList(response);
     }
 
     /**
@@ -76,13 +80,29 @@ public class AuctionNetwork {
      * Gọi: GET /api/auctions/bidder/{bidderId}/won
      * Dùng trong Won Auctions ở My Inventory.
      */
-    public static String getWonAuctions(long bidderId) throws Exception {
+    public List<AuctionDetailDTO> getWonAuctions(long bidderId) throws Exception {
         HttpRequest request = NetworkClient.newRequestBuilder(
                         URI.create(BASE_URL + "/bidder/" + bidderId + "/won"))
                 .GET()
                 .build();
-        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        return response.body();
+        HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        Response response = parseResponse(httpResponse.body());
+        return parseActiveAuctionList(response);
+    }
+
+    /**
+     * [MỚI] Lấy phiên đấu giá đang hoạt động lọc theo SELLER.
+     * Gọi: GET /api/auctions/seller/{sellerId}/active
+     * Dùng trong Live Auction Monitoring tab của Seller Portal.
+     */
+    public List<AuctionDetailDTO> getActiveAuctionsBySeller(long sellerId) throws Exception {
+        HttpRequest request = NetworkClient.newRequestBuilder(
+                        URI.create(BASE_URL + "/seller/" + sellerId + "/active"))
+                .GET()
+                .build();
+        HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        Response response = parseResponse(httpResponse.body());
+        return parseActiveAuctionList(response);
     }
 
     public static CompletableFuture<Response> getActiveAuctionsAsync() {
@@ -142,6 +162,27 @@ public class AuctionNetwork {
     public static Response createAuction(CreateAuctionDTO dto) throws Exception {
         String jsonResponse = postJson(BASE_URL, gson.toJson(dto));
         return gson.fromJson(jsonResponse, Response.class);
+    }
+
+    // Static wrappers for backward compatibility
+    public static List<AuctionDetailDTO> getWonAuctionsStatic(long bidderId) throws Exception {
+        AuctionNetwork network = new AuctionNetwork();
+        return network.getWonAuctions(bidderId);
+    }
+
+    public static List<AuctionDetailDTO> getActiveAuctionsStatic() throws Exception {
+        AuctionNetwork network = new AuctionNetwork();
+        return network.getActiveAuctions();
+    }
+
+    public static List<AuctionDetailDTO> getActiveAuctionsBySellerStatic(long sellerId) throws Exception {
+        AuctionNetwork network = new AuctionNetwork();
+        return network.getActiveAuctionsBySeller(sellerId);
+    }
+
+    public static List<AuctionDetailDTO> getUpcomingAuctionsStatic() throws Exception {
+        AuctionNetwork network = new AuctionNetwork();
+        return network.getUpcomingAuctions();
     }
 
     private static String postJson(String uri, String jsonBody) throws Exception {

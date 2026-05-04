@@ -1,22 +1,29 @@
 package com.client.controller.dashboard;
 
+import com.client.network.AuctionNetwork;
 import com.client.network.ItemNetwork;
 import com.client.util.DashboardNavigation;
 import com.client.util.DashboardSearchBridge;
+import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.ItemResponseDTO;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,9 +32,12 @@ import java.util.stream.Collectors;
 
 /**
  * Dashboard: dữ liệu từ {@link ItemNetwork} → {@code GET /api/items} (ItemService / ItemResponseDTO).
+ * Cũng hiển thị các phiên đấu giá đang hoạt động và sắp diễn ra.
  */
 public class ViewDashboardController {
 
+    @FXML
+    private ScrollPane mainScrollPane;
     @FXML
     private FlowPane itemContainer;
     @FXML
@@ -42,6 +52,7 @@ public class ViewDashboardController {
     private CheckBox chkVehicle;
 
     private final ItemNetwork itemNetwork = new ItemNetwork();
+    private final AuctionNetwork auctionNetwork = new AuctionNetwork();
     private List<ItemResponseDTO> allItems = new ArrayList<>();
 
     private static ViewDashboardController instance;
@@ -53,6 +64,9 @@ public class ViewDashboardController {
     @FXML
     public void initialize() {
         instance = this;
+
+        // Load auctions first
+        loadAuctionsFromServer();
 
         DashboardSearchBridge.setOnSearch(q -> Platform.runLater(() -> {
             if (searchField != null) {
@@ -104,6 +118,138 @@ public class ViewDashboardController {
     @FXML
     public void handleRefreshItems() {
         loadItemsFromServer();
+    }
+
+    private void loadAuctionsFromServer() {
+        new Thread(() -> {
+            try {
+                List<AuctionDetailDTO> liveAuctions = auctionNetwork.getActiveAuctions();
+                List<AuctionDetailDTO> upcomingAuctions = auctionNetwork.getUpcomingAuctions();
+
+                Platform.runLater(() -> {
+                    if (mainScrollPane == null) return;
+                    
+                    VBox mainContent = new VBox();
+                    mainContent.setSpacing(30);
+                    mainContent.setPadding(new Insets(20));
+
+                    // Live Auctions Section
+                    if (liveAuctions != null && !liveAuctions.isEmpty()) {
+                        mainContent.getChildren().add(createAuctionSection("💎 Live Auctions", liveAuctions));
+                    }
+
+                    // Upcoming Auctions Section
+                    if (upcomingAuctions != null && !upcomingAuctions.isEmpty()) {
+                        mainContent.getChildren().add(createAuctionSection("⏰ Upcoming Auctions", upcomingAuctions));
+                    }
+
+                    mainScrollPane.setContent(mainContent);
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private VBox createAuctionSection(String title, List<AuctionDetailDTO> auctions) {
+        VBox section = new VBox();
+        section.setSpacing(15);
+
+        Label titleLabel = new Label(title);
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
+        titleLabel.setStyle("-fx-text-fill: #333333;");
+        section.getChildren().add(titleLabel);
+
+        HBox auctionContainer = new HBox();
+        auctionContainer.setSpacing(15);
+        auctionContainer.setPadding(new Insets(10));
+
+        for (AuctionDetailDTO auction : auctions) {
+            auctionContainer.getChildren().add(createAuctionCard(auction));
+        }
+
+        ScrollPane scrollPane = new ScrollPane(auctionContainer);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setPrefHeight(280);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
+
+        section.getChildren().add(scrollPane);
+        return section;
+    }
+
+    private VBox createAuctionCard(AuctionDetailDTO auction) {
+        VBox card = new VBox();
+        card.setSpacing(10);
+        card.setPadding(new Insets(12));
+        card.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-cursor: hand;");
+        card.setPrefWidth(220);
+
+        ImageView imageView = new ImageView();
+        imageView.setFitHeight(140);
+        imageView.setFitWidth(200);
+        imageView.setPreserveRatio(true);
+        if (auction.getItemImageUrls() != null && !auction.getItemImageUrls().isEmpty()) {
+            try {
+                imageView.setImage(new Image(auction.getItemImageUrls().get(0)));
+            } catch (Exception e) {
+                imageView.setImage(getDefaultImage());
+            }
+        } else {
+            imageView.setImage(getDefaultImage());
+        }
+
+        Label nameLabel = new Label(auction.getItemName());
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+        nameLabel.setWrapText(true);
+        nameLabel.setMaxWidth(200);
+
+        Label priceLabel = new Label(formatCurrency(auction.getCurrentPrice().doubleValue()));
+        priceLabel.setFont(Font.font("System", 12));
+        priceLabel.setStyle("-fx-text-fill: #ff6b6b;");
+
+        Label timeLabel = new Label(formatRemainingTime(auction.getRemainingTime()));
+        timeLabel.setFont(Font.font("System", FontWeight.BOLD, 11));
+        timeLabel.setStyle("-fx-text-fill: #d9534f;");
+
+        card.getChildren().addAll(imageView, nameLabel, priceLabel, timeLabel);
+        card.setOnMouseClicked(event -> {
+            DashboardNavigation.navigateToAuctionDetail(auction.getAuctionId());
+        });
+
+        return card;
+    }
+
+    private Image getDefaultImage() {
+        try {
+            return new Image(getClass().getResource("/images/placeholder.png").toExternalForm());
+        } catch (Exception e) {
+            return new Image("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+        }
+    }
+
+    private String formatCurrency(double amount) {
+        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+        return currencyFormatter.format(amount);
+    }
+
+    private String formatRemainingTime(long millis) {
+        if (millis <= 0) {
+            return "Ended";
+        }
+        Duration duration = Duration.ofMillis(millis);
+        long days = duration.toDays();
+        long hours = duration.toHoursPart();
+        long minutes = duration.toMinutesPart();
+
+        if (days > 0) {
+            return String.format("%d days %d h", days, hours);
+        } else if (hours > 0) {
+            return String.format("%d hours", hours);
+        } else {
+            return String.format("%d min", minutes);
+        }
     }
 
     private void loadItemsFromServer() {

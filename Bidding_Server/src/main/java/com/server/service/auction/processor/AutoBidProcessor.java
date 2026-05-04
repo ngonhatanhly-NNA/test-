@@ -55,16 +55,26 @@ public class AutoBidProcessor{
             }
 
             BigDecimal currentBid = auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO;
-            BigDecimal stepPrice = auction.getStepPrice();
             
-            if (stepPrice == null || stepPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                logger.warn("Invalid step price for auction {}: {}", auction.getId(), stepPrice);
-                autoBidRepository.deactivate(auction.getId(), autoBid.getBidderId());
+            // 1. Lấy bước giá mặc định của phiên
+            BigDecimal auctionStep = auction.getStepPrice();
+            if (auctionStep == null || auctionStep.compareTo(BigDecimal.ZERO) <= 0) {
+                logger.warn("Invalid step price for auction {}", auction.getId());
                 continue;
             }
 
-            // Tính giá tối thiểu cần đặt (current bid + step price)
-            BigDecimal minBid = calculateNextBidAmount(currentBid, stepPrice);
+            // 2. Lấy bước giá tùy chỉnh của người dùng
+            BigDecimal customStep = autoBid.getCustomStepPrice();
+            
+            // 3. Quyết định bước giá sẽ dùng: Dùng bước giá custom nếu nó tồn tại và LỚN HƠN HOẶC BẰNG bước giá của seller.
+            // (Nếu nhỏ hơn, phải ép dùng bước giá của seller để không vi phạm luật đấu giá)
+            BigDecimal actualStepPrice = auctionStep;
+            if (customStep != null && customStep.compareTo(auctionStep) > 0) {
+                actualStepPrice = customStep;
+            }
+
+            // 4. Tính giá tối thiểu cần đặt
+            BigDecimal minBid = calculateNextBidAmount(currentBid, actualStepPrice);
 
             // Kiểm tra xem auto-bidder có đủ budget không
             if (autoBid.getMaxBidAmount().compareTo(minBid) >= 0) {

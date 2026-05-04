@@ -460,6 +460,7 @@ public class AuctionService {
                     request.getBidderId(),
                     request.getMaxAutoBidAmount()
             );
+            autoBid.setCustomStepPrice(request.getCustomStepPrice()); // LƯU CUSTOM STEP PRICE
             autoBidRepository.saveOrUpdate(autoBid);
             logger.debug("Auto-bid enabled for auction {}: {}", request.getAuctionId(), request.getBidderId());
         }
@@ -478,26 +479,50 @@ public class AuctionService {
     }
 
     /**
-     * Cập nhật giá tối đa auto-bid
+     * Cập nhật giá tối đa auto-bid hoặc đăng ký mới auto-bid
      */
-    public void updateAutoBidAmount(long auctionId, long bidderId, BigDecimal newMaxAmount) throws AuctionException {
+    public void updateAutoBidAmount(long auctionId, long bidderId, BigDecimal newMaxAmount, BigDecimal customStepPrice) throws AuctionException {
         if (newMaxAmount == null || newMaxAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new AuctionException(AuctionException.ErrorCode.INVALID_AUTO_BID_CONFIG, "Giá tối đa phải lớn hơn 0");
         }
 
-        try {
-            AutoBidTracker autoBid = autoBidRepository.findByAuctionAndBidder(auctionId, bidderId);
-            if (autoBid != null) {
-                autoBid.setMaxBidAmount(newMaxAmount);
-                autoBidRepository.saveOrUpdate(autoBid);
-                logger.debug("Auto-bid amount updated for auction {}: {}", auctionId, bidderId);
+       try {
+            AutoBidTracker autoBid = new AutoBidTracker(auctionId, bidderId, newMaxAmount);
+            autoBid.setCustomStepPrice(customStepPrice); // LƯU CUSTOM STEP PRICE
+            autoBid.setActive(true);
+            
+            autoBidRepository.saveOrUpdate(autoBid);
+            logger.debug("Auto-bid amount set/updated for auction {}: {}", auctionId, bidderId);
+
+            // 2. Kích hoạt AutoBidProcessor ngay lập tức để xử lý nếu giá thỏa mãn điều kiện
+            ReentrantLock lock = auctionLocks.get(auctionId);
+            if (lock != null) {
+                lock.lock();
+                try {
+                    Auction auction = auctionCache.get(auctionId);
+                    if (auction != null && 
+                       (auction.getStatus() == Auction.AuctionStatus.RUNNING || auction.getStatus() == Auction.AuctionStatus.OPEN)) {
+                        
+                        processAutoBidsFromOtherUsers(auction);
+                        
+                        // Thông báo real-time qua websocket nếu có thay đổi giá
+                        AuctionUpdateDTO update = createUpdateDTO(auction);
+                        if (eventListener != null) {
+                            eventListener.onAuctionUpdate(update);
+                        }
+                    }
+                } finally {
+                    lock.unlock();
+                }
             } else {
-                throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, "Auto-bid không tồn tại");
+                throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, "Phiên đấu giá không hoạt động");
             }
+
         } catch (AuctionException e) {
             throw e;
         } catch (Exception e) {
-            throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, e.getMessage());
+            logger.error("Lỗi khi set auto-bid: ", e);
+            throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Lỗi khi cấu hình auto-bid: " + e.getMessage());
         }
     }
 
@@ -531,7 +556,7 @@ public class AuctionService {
                     List.of(Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING, Auction.AuctionStatus.SCHEDULED));
             dbAuctions.stream()
                     .filter(a -> a.getSellerId() == sellerId)
-                    .forEach(a -> {
+                    .forEach((var a) -> {
                         if (!auctionCache.containsKey(a.getId())) {
                             cacheAuction(a);
                             if (a.getStatus() == Auction.AuctionStatus.SCHEDULED) {

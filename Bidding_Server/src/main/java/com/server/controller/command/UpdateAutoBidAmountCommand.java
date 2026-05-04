@@ -30,7 +30,7 @@ public class UpdateAutoBidAmountCommand extends BaseApiCommand {
         }
 
         try {
-            auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
+            auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount(), updateRequest.getCustomStepPrice());
             String json = gson.toJson(ResponseUtils.success("Auto-bid updated successfully", null));
             ctx.status(200).result(json).contentType("application/json");
         } catch (AuctionException e) {

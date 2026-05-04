@@ -98,9 +98,7 @@ public class MyInventoryController {
         // Gọi API mới: GET /api/auctions/bidder/{bidderId}/won
         new Thread(() -> {
             try {
-                String responseBody = AuctionNetwork.getWonAuctions(bidderId);
-                com.shared.network.Response response = AuctionNetwork.parseResponse(responseBody);
-                List<AuctionDetailDTO> wonAuctions = AuctionNetwork.parseActiveAuctionList(response);
+                List<AuctionDetailDTO> wonAuctions = AuctionNetwork.getWonAuctionsStatic(bidderId);
 
                 Platform.runLater(() -> {
                     if (wonItemsContainer == null) return;

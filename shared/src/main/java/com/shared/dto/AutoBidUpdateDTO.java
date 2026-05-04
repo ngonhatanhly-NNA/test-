@@ -20,6 +20,9 @@ public class AutoBidUpdateDTO implements Serializable {
     @SerializedName("maxBidAmount")
     private BigDecimal maxBidAmount;
 
+    @SerializedName("customStepPrice")
+    private BigDecimal customStepPrice;
+
     public AutoBidUpdateDTO() {}
 
     public AutoBidUpdateDTO(long auctionId, long bidderId, BigDecimal maxBidAmount) {
@@ -37,6 +40,14 @@ public class AutoBidUpdateDTO implements Serializable {
     public BigDecimal getMaxBidAmount() { return maxBidAmount; }
     public void setMaxBidAmount(BigDecimal maxBidAmount) { this.maxBidAmount = maxBidAmount; }
 
+    public BigDecimal getCustomStepPrice() {
+        return customStepPrice;
+    }
+
+    public void setCustomStepPrice(BigDecimal customStepPrice) {
+        this.customStepPrice = customStepPrice;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

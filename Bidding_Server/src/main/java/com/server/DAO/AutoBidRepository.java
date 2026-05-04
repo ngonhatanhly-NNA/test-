@@ -18,17 +18,15 @@ public class AutoBidRepository {
 
     public AutoBidRepository() {}
 
-    // Lưu hoặc cập nhật auto-bid
     public void saveOrUpdate(AutoBidTracker autoBid) {
-        // Kiểm tra xem auto-bid đã tồn tại chưa
         String checkSql = "SELECT id FROM auto_bids WHERE auction_id = ? AND bidder_id = ?";
         String updateSql = """
-            UPDATE auto_bids SET max_bid_amount = ?, is_active = ?, updated_at = NOW()
+            UPDATE auto_bids SET max_bid_amount = ?, is_active = ?, custom_step_price = ?, updated_at = NOW()
             WHERE auction_id = ? AND bidder_id = ?
             """;
         String insertSql = """
-            INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount, is_active, created_at, updated_at)
-            VALUES (?, ?, ?, ?, NOW(), NOW())
+            INSERT INTO auto_bids (auction_id, bidder_id, max_bid_amount, is_active, custom_step_price, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, NOW(), NOW())
             """;
 
         try (Connection conn = DBConnection.getInstance().getConnection();
@@ -39,29 +37,30 @@ public class AutoBidRepository {
 
             try (ResultSet rs = checkStmt.executeQuery()) {
                 if (rs.next()) {
-                    // Cập nhật bản ghi hiện tại
                     try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
                         updateStmt.setBigDecimal(1, autoBid.getMaxBidAmount());
                         updateStmt.setBoolean(2, autoBid.isActive());
-                        updateStmt.setLong(3, autoBid.getAuctionId());
-                        updateStmt.setLong(4, autoBid.getBidderId());
+                        updateStmt.setBigDecimal(3, autoBid.getCustomStepPrice());
+                        updateStmt.setLong(4, autoBid.getAuctionId());
+                        updateStmt.setLong(5, autoBid.getBidderId());
                         updateStmt.executeUpdate();
                     }
                 } else {
-                    // Tạo bản ghi mới
                     try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
                         insertStmt.setLong(1, autoBid.getAuctionId());
                         insertStmt.setLong(2, autoBid.getBidderId());
                         insertStmt.setBigDecimal(3, autoBid.getMaxBidAmount());
                         insertStmt.setBoolean(4, autoBid.isActive());
+                        insertStmt.setBigDecimal(5, autoBid.getCustomStepPrice());
                         insertStmt.executeUpdate();
                     }
                 }
             }
         } catch (SQLException e) {
-            logger.error("Lỗi lưu auto-bid cho auction {} bidder {}: {}", autoBid.getAuctionId(), autoBid.getBidderId(), e.getMessage(), e);
+            logger.error("Lỗi lưu auto-bid: {}", e.getMessage(), e);
         }
     }
+
 
     // Lấy auto-bid của một ngườii dùng cho một phiên đấu giá
     public AutoBidTracker findByAuctionAndBidder(long auctionId, long bidderId) {
@@ -142,6 +141,10 @@ public class AutoBidRepository {
 
         String maxBidStr = rs.getString("max_bid_amount");
         autoBid.setMaxBidAmount(maxBidStr != null ? new BigDecimal(maxBidStr) : java.math.BigDecimal.ZERO);
+        
+        // Đọc custom_step_price
+        String customStepStr = rs.getString("custom_step_price");
+        autoBid.setCustomStepPrice(customStepStr != null ? new BigDecimal(customStepStr) : null);
 
         autoBid.setActive(rs.getBoolean("is_active"));
         return autoBid;

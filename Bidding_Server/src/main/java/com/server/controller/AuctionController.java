@@ -182,7 +182,7 @@ public class AuctionController {
                 return;
             }
 
-            auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
+            auctionService.updateAutoBidAmount(auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount(), updateRequest.getCustomStepPrice());
             logger.info("Cập nhật auto-bid thành công: auction={}, bidder={}, maxAmount={}",
                     auctionId, updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
             ctx.json(new Response("SUCCESS", "Auto-bid updated successfully", null));

@@ -11,6 +11,7 @@ public class AutoBidTracker {
     private long bidderId;
     private BigDecimal maxBidAmount; // Giá tối đa sẵn sàng trả
     private boolean active; // Trạng thái hoạt động
+    private BigDecimal customStepPrice; //
 
     public AutoBidTracker() {}
 
@@ -34,6 +35,14 @@ public class AutoBidTracker {
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
 
+    public BigDecimal getCustomStepPrice() {
+        return customStepPrice;
+    }
+
+    public void setCustomStepPrice(BigDecimal customStepPrice) {
+        this.customStepPrice = customStepPrice;
+    }
+    
     @Override
     public String toString() {
         return String.format("AutoBidTracker{auctionId=%d, bidderId=%d, maxBid=%s, active=%b}",
