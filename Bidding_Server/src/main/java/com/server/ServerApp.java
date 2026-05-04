@@ -176,6 +176,7 @@ public class ServerApp extends WebSocketServer {
         AdminController adminController = new AdminController(adminService);
         UserController userController = new UserController(userService);
         SellerController sellerController = new SellerController(sellerService);
+        ImageController imageController = new ImageController(); // [MỚI] Controller xử lý ảnh
 
         // Khởi động REST API (Cổng 7070)
         Javalin app = Javalin.create(config -> {
@@ -185,7 +186,7 @@ public class ServerApp extends WebSocketServer {
 
         // Truyền SellerController vào ApiRouter
         ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController,
-                sellerController, itemService, auctionService, jwtUtil, userController);
+                sellerController, itemService, auctionService, jwtUtil, userController, imageController);
         apiRouter.setupRoutes(app);
     }
 }

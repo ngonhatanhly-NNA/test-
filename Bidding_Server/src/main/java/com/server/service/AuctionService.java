@@ -114,24 +114,41 @@ public class AuctionService {
      */
     private void init() {
         try {
-            List<Auction> activeAuctions = auctionRepository.findByStatusIn(
-                    List.of(Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING));
+            List<Auction> auctions = auctionRepository.findByStatusIn(
+                    List.of(Auction.AuctionStatus.SCHEDULED, Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING));
 
-            activeAuctions.forEach(this::cacheAndScheduleAuction);
+            for (Auction auction : auctions) {
+                cacheAuction(auction); // Cache tất cả
+                if (auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
+                    scheduleAuctionStart(auction);
+                } else if (auction.getStatus() == Auction.AuctionStatus.OPEN || auction.getStatus() == Auction.AuctionStatus.RUNNING) {
+                    scheduleAuctionEnd(auction);
+                }
+            }
             startBidQueueProcessor();
 
-            logger.info("Đã khởi tạo {} phiên đấu giá từ DB vào cache", activeAuctions.size());
+            logger.info("Đã khởi tạo {} phiên đấu giá từ DB vào cache", auctions.size());
         } catch (Exception e) {
             logger.error("Lỗi khi khởi tạo AuctionService", e);
         }
     }
 
     /**
-     * Thêm phiên đấu giá vào cache và lên lịch kết thúc
+     * Thêm phiên đấu giá vào cache
+     */
+    private void cacheAuction(Auction auction) {
+        auctionCache.put(auction.getId(), auction);
+        // Chỉ add lock nếu có thể bid
+        if (auction.getStatus() == Auction.AuctionStatus.OPEN || auction.getStatus() == Auction.AuctionStatus.RUNNING) {
+            auctionLocks.putIfAbsent(auction.getId(), new ReentrantLock());
+        }
+    }
+
+    /**
+     * Thêm phiên đấu giá vào cache và lên lịch kết thúc (chỉ cho OPEN/RUNNING)
      */
     private void cacheAndScheduleAuction(Auction auction) {
-        auctionCache.put(auction.getId(), auction);
-        auctionLocks.putIfAbsent(auction.getId(), new ReentrantLock());
+        cacheAuction(auction);
         scheduleAuctionEnd(auction);
     }
 
@@ -234,40 +251,38 @@ public class AuctionService {
 
     private AuctionDetailDTO toDetailDto(Auction auction) {
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
+
+        // 1. Lấy Display Name
         String bidderName = auction.getWinnerId() != null
                 ? resolveUserDisplayName(auction.getWinnerId(), "User")
                 : "No bids";
         String sellerName = resolveUserDisplayName(auction.getSellerId(), "Seller");
 
+        // 2. Lấy thông tin Item
         Item item = itemService.getItemById(auction.getItemId());
+        String itemName = (item != null && item.getName() != null) ? item.getName() : "Item #" + auction.getItemId();
+        String itemDescription = (item != null && item.getDescription() != null) ? item.getDescription() : "(Không có mô tả)";
+        String itemType = (item != null) ? itemService.extractItemType(item) : "GENERAL";
+        Map<String, String> itemSpecifics = (item != null) ? itemService.extractItemSpecifics(item) : new HashMap<>();
+        List<String> itemImageUrls = (item != null) ? item.getImageUrls() : new ArrayList<>();
 
-        String itemName = "Item #" + auction.getItemId();
-        String itemDescription = "(Không có mô tả)";
-        String itemType = "GENERAL";
-        Map<String, String> itemSpecifics = new HashMap<>();
-        List<String> itemImageUrls = new ArrayList<>();
-
-        if (item != null) {
-            itemName = item.getName() != null ? item.getName() : itemName;
-            itemDescription = item.getDescription() != null ? item.getDescription() : itemDescription;
-            itemType = itemService.extractItemType(item);
-            itemSpecifics = itemService.extractItemSpecifics(item);
-            itemImageUrls = item.getImageUrls();
-        }
-
+        // 3. GỌI CONSTRUCTOR - KIỂM TRA KỸ THỨ TỰ (15 THAM SỐ)
         return new AuctionDetailDTO(
-                auction.getId(),
-                auction.getItemId(),
-                itemName,
-                itemDescription,
-                auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
-                bidderName,
-                Math.max(0, remaining),
-                auction.getStepPrice(),
-                itemType,
-                itemSpecifics,
-                itemImageUrls,
-                sellerName
+                auction.getId(),                                    // 1. auctionId (long)
+                auction.getItemId(),                                 // 2. itemId (long)
+                itemName,                                            // 3. itemName (String)
+                itemDescription,                                     // 4. itemDescription (String)
+                auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO, // 5. currentPrice (BigDecimal)
+                bidderName,                                          // 6. highestBidderName (String)
+                Math.max(0, remaining),                              // 7. remainingTime (long)
+                auction.getStepPrice(),                              // 8. stepPrice (BigDecimal)
+                itemType,                                            // 9. itemType (String)
+                itemSpecifics,                                       // 10. itemSpecifics (Map)
+                itemImageUrls,                                       // 11. itemImageUrls (List)
+                auction.getSellerId(),                               // 12. sellerId (long)
+                sellerName,                                          // 13. sellerName (String)
+                auction.getStartTime().toString(),                   // 14. startTime (String)
+                auction.getEndTime().toString()                      // 15. endTime (String)
         );
     }
 
@@ -350,6 +365,45 @@ public class AuctionService {
             scheduledTasks.put(auction.getId(), newTask);
         } else {
             finishAuction(auction.getId());
+        }
+    }
+
+    /**
+     * Lên lịch bắt đầu phiên đấu giá
+     */
+    private void scheduleAuctionStart(Auction auction) {
+        long delay = Duration.between(LocalDateTime.now(), auction.getStartTime()).toMillis();
+        if (delay > 0) {
+            ScheduledFuture<?> newTask = scheduler.schedule(
+                    () -> startAuction(auction.getId()),
+                    delay,
+                    TimeUnit.MILLISECONDS
+            );
+            scheduledTasks.put(auction.getId(), newTask);
+        } else {
+            startAuction(auction.getId());
+        }
+    }
+
+    /**
+     * Bắt đầu phiên đấu giá: chuyển status từ SCHEDULED sang OPEN và cache
+     */
+    private void startAuction(long auctionId) {
+        try {
+            Auction auction = auctionRepository.findById(auctionId).orElse(null);
+            if (auction != null && auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
+                auction.setStatus(Auction.AuctionStatus.OPEN);
+                auctionRepository.save(auction);
+                cacheAndScheduleAuction(auction);
+                logger.info("Phiên đấu giá {} đã bắt đầu", auctionId);
+
+                // Broadcast auction started - client will update the list
+                if (eventListener != null) {
+                    eventListener.onAuctionCreated(toDetailDto(auction));
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Lỗi khi bắt đầu phiên đấu giá {}: {}", auctionId, e.getMessage());
         }
     }
 
@@ -453,7 +507,7 @@ public class AuctionService {
      */
     public List<AuctionDetailDTO> getActiveAuctions() {
         return auctionCache.values().stream()
-                .filter(a -> a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN)
+                .filter(a -> a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.SCHEDULED)
                 .map(this::toDetailDto)
                 .toList();
     }
@@ -467,24 +521,29 @@ public class AuctionService {
         // Lấy từ cache trước (có giá real-time)
         List<AuctionDetailDTO> fromCache = auctionCache.values().stream()
                 .filter(a -> a.getSellerId() == sellerId &&
-                        (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN))
+                        (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.SCHEDULED))
                 .map(this::toDetailDto)
                 .toList();
 
         // Nếu cache rỗng, thử load từ DB (phòng trường hợp server vừa restart)
         if (fromCache.isEmpty()) {
             List<Auction> dbAuctions = auctionRepository.findByStatusIn(
-                    List.of(Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING));
+                    List.of(Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING, Auction.AuctionStatus.SCHEDULED));
             dbAuctions.stream()
                     .filter(a -> a.getSellerId() == sellerId)
                     .forEach(a -> {
                         if (!auctionCache.containsKey(a.getId())) {
-                            cacheAndScheduleAuction(a);
+                            cacheAuction(a);
+                            if (a.getStatus() == Auction.AuctionStatus.SCHEDULED) {
+                                scheduleAuctionStart(a);
+                            } else if (a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.RUNNING) {
+                                scheduleAuctionEnd(a);
+                            }
                         }
                     });
             return auctionCache.values().stream()
                     .filter(a -> a.getSellerId() == sellerId &&
-                            (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN))
+                            (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.SCHEDULED))
                     .map(this::toDetailDto)
                     .toList();
         }
@@ -542,7 +601,13 @@ public class AuctionService {
             auction.setEndTime(endTime);
             auction.setStepPrice(dto.getStepPrice());
             auction.setCurrentHighestBid(BigDecimal.ZERO);
-            auction.setStatus(Auction.AuctionStatus.OPEN);
+
+            // Set status dựa trên thời gian bắt đầu
+            if (startTime.isAfter(LocalDateTime.now())) {
+                auction.setStatus(Auction.AuctionStatus.SCHEDULED);
+            } else {
+                auction.setStatus(Auction.AuctionStatus.OPEN);
+            }
 
             // LƯU VÀO DATABASE
             long auctionId = auctionRepository.create(auction);
@@ -552,8 +617,14 @@ public class AuctionService {
             }
 
             auction.setId(auctionId);
-            // Đưa vào cache để tracking real-time
-            cacheAndScheduleAuction(auction);
+
+            // Xử lý dựa trên status
+            if (auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
+                cacheAuction(auction);  // Thêm vào cache ngay lập tức để hiển thị
+                scheduleAuctionStart(auction);
+            } else {
+                cacheAndScheduleAuction(auction);
+            }
 
             if (eventListener != null) {
                 eventListener.onAuctionCreated(toDetailDto(auction));

@@ -28,6 +28,8 @@ import io.javalin.http.HandlerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.server.controller.ImageController; // [MỚI] Thêm import này để xử lý ảnh
+
 public class ApiRouter {
     private static final Logger logger = LoggerFactory.getLogger(ApiRouter.class);
 
@@ -39,11 +41,13 @@ public class ApiRouter {
     private final AuctionService auctionService;
     private final JwtUtil jwtUtil;
     private final UserController userController;
+    private final ImageController imageController; // [MỚI] Thêm controller xử lý ảnh
 
     public ApiRouter(AuthController authController, AuctionController auctionController,
                      AdminController adminController, SellerController sellerController,
                      ItemService itemService, AuctionService auctionService,
-                     JwtUtil jwtUtil, UserController userController) {
+                     JwtUtil jwtUtil, UserController userController,
+                     ImageController imageController) { // [MỚI] Thêm ImageController vào constructor
         this.authController = authController;
         this.auctionController = auctionController;
         this.adminController = adminController;
@@ -52,6 +56,7 @@ public class ApiRouter {
         this.auctionService = auctionService;
         this.jwtUtil = jwtUtil;
         this.userController = userController;
+        this.imageController = imageController; // [MỚI]
     }
 
     public void setupRoutes(Javalin app) {
@@ -74,6 +79,12 @@ public class ApiRouter {
         });
         app.before("/api/auctions/bid", ctx -> authGuard.requireRole(ctx, Role.BIDDER, Role.SELLER));
         app.before("/api/auctions/*/auto-bid/*", ctx -> authGuard.requireRole(ctx, Role.BIDDER, Role.SELLER));
+
+        // [MỚI] ĐĂNG KÝ NHÓM API QUẢN LÝ ẢNH
+        // Upload ảnh (Cần role SELLER)
+        app.post("/api/images/upload", ctx -> imageController.uploadImage(ctx));
+        // Xem ảnh (Mở public cho tất cả mọi người cùng xem)
+        app.get("/api/images/{filename}", ctx -> imageController.serveImage(ctx));
 
         // --- Nhóm API Xác thực (Auth) ---
         app.post("/api/login", ctx -> authController.processLoginRest(ctx));

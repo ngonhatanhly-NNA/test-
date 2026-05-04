@@ -10,13 +10,16 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label; // [MỚI] Import Label
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser; // [MỚI] Import FileChooser
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File; // [MỚI] Import File
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +32,9 @@ public class CreateItemController {
     @FXML private ComboBox<String> cbCategory;
     @FXML private TextField txtStartPrice;
     @FXML private TextArea txtDescription;
+
+    // [MỚI] Bắt Label hiển thị tên ảnh từ FXML
+    @FXML private Label lblImageName;
 
     // --- BẮT CÁC THÀNH PHẦN DYNAMIC UI TỪ FXML ---
     @FXML private VBox vboxElectronics, vboxVehicle, vboxArt;
@@ -44,6 +50,9 @@ public class CreateItemController {
     private final ItemNetwork itemNetwork = new ItemNetwork();
     private final Gson gson = new Gson();
     private ItemResponseDTO createdItem;
+
+    // [MỚI] Biến lưu trữ file ảnh người dùng đã chọn
+    private File selectedImageFile;
 
     @FXML
     public void initialize() {
@@ -83,6 +92,32 @@ public class CreateItemController {
         vboxArt.setVisible(false); vboxArt.setManaged(false);
     }
 
+    // [MỚI] HÀM XỬ LÝ SỰ KIỆN CHỌN ẢNH
+    @FXML
+    void handleChooseImage(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Chọn ảnh sản phẩm");
+
+        // Chỉ cho phép chọn file ảnh
+        FileChooser.ExtensionFilter imageFilter = new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif");
+        fileChooser.getExtensionFilters().add(imageFilter);
+
+        // Mở cửa sổ chọn file
+        Stage stage = (Stage) txtItemName.getScene().getWindow();
+        selectedImageFile = fileChooser.showOpenDialog(stage);
+
+        // Nếu người dùng đã chọn một file
+        if (selectedImageFile != null) {
+            lblImageName.setText(selectedImageFile.getName());
+            lblImageName.setStyle("-fx-text-fill: #059669;"); // Đổi màu xanh lá cho đẹp
+            logger.info("Đã chọn file ảnh: {}", selectedImageFile.getAbsolutePath());
+        } else {
+            lblImageName.setText("No file selected");
+            lblImageName.setStyle("-fx-text-fill: #94A3B8;");
+            logger.info("Người dùng đã hủy chọn ảnh.");
+        }
+    }
+
     @FXML
     void handleCancel(ActionEvent event) {
         Stage stage = (Stage) txtItemName.getScene().getWindow();
@@ -106,7 +141,6 @@ public class CreateItemController {
             if ("ELECTRONICS".equals(type)) {
                 extraProperties.put("brand", txtElecBrand.getText());
                 extraProperties.put("model", txtElecModel.getText());
-                // Parse an toàn cho số
                 String warranty = txtElecWarranty.getText();
                 extraProperties.put("warrantyMonths", warranty.isEmpty() ? 0 : Integer.parseInt(warranty));
 
@@ -124,6 +158,15 @@ public class CreateItemController {
             }
             // =========================================================
 
+            // [MỚI] XỬ LÝ DANH SÁCH ẢNH
+            ArrayList<String> uploadedImageUrls = new ArrayList<>();
+            if (selectedImageFile != null) {
+                // TẠM THỜI: Gửi tên file thay vì URL thực tế vì chưa có API upload chuẩn
+                uploadedImageUrls.add(selectedImageFile.getAbsolutePath());
+            } else {
+                uploadedImageUrls.add("default-item.png"); // Gắn ảnh mặc định nếu không chọn
+            }
+
             // Dùng Builder Pattern
             CreateItemRequestDTO requestDTO = new CreateItemRequestDTO.Builder()
                     .name(name)
@@ -131,7 +174,7 @@ public class CreateItemController {
                     .startingPrice(price)
                     .description(desc)
                     .condition("NEW")
-                    .imageUrls(new ArrayList<>()) // Bọc chống đạn
+                    .imageUrls(uploadedImageUrls) // Đưa danh sách ảnh vào DTO
                     .sellerId((int) ClientSession.getUserId())
                     .extraProps(extraProperties)
                     .build();
@@ -160,6 +203,9 @@ public class CreateItemController {
 
         } catch (NumberFormatException e) {
             logger.error("Dữ liệu số nhập vào không hợp lệ: {}", e.getMessage());
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setContentText("Dữ liệu số nhập vào không hợp lệ!");
+            alert.showAndWait();
         }
     }
 

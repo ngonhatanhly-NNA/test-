@@ -50,12 +50,18 @@ public class AuctionDetailDTO implements Serializable {
     @SerializedName("sellerName")
     private String sellerName;
 
+    @SerializedName("startTime")
+    private String startTime;
+
+    @SerializedName("endTime")
+    private String endTime;
+
     public AuctionDetailDTO() {} // Bắt buộc phải có hàm rỗng cho Gson/Javalin
 
     public AuctionDetailDTO(long auctionId, long itemId, String itemName, String itemDescription,
                              BigDecimal currentPrice, String highestBidderName, long remainingTime,
                              BigDecimal stepPrice, String itemType, Map<String, String> itemSpecifics,
-                             List<String> itemImageUrls, String sellerName) {
+                             List<String> itemImageUrls, long sellerId,String sellerName, String startTime, String endTime) {
         this.auctionId = auctionId;
         this.itemId = itemId;
         this.itemName = itemName;
@@ -67,7 +73,10 @@ public class AuctionDetailDTO implements Serializable {
         this.itemType = itemType;
         this.itemSpecifics = itemSpecifics;
         this.itemImageUrls = itemImageUrls;
+        this.sellerId = sellerId;
         this.sellerName = sellerName;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
     // Getters
@@ -84,6 +93,8 @@ public class AuctionDetailDTO implements Serializable {
     public List<String> getItemImageUrls() { return itemImageUrls; }
     public long getSellerId() { return sellerId; }
     public String getSellerName() { return sellerName; }
+    public String getStartTime() { return startTime; }
+    public String getEndTime() { return endTime; }
 
     @Override
     public boolean equals(Object o) {
@@ -96,13 +107,14 @@ public class AuctionDetailDTO implements Serializable {
                 Objects.equals(highestBidderName, that.highestBidderName) && Objects.equals(stepPrice, that.stepPrice) &&
                 Objects.equals(itemType, that.itemType) && Objects.equals(itemSpecifics, that.itemSpecifics) &&
                 Objects.equals(itemImageUrls, that.itemImageUrls) && sellerId == that.sellerId &&
-                Objects.equals(sellerName, that.sellerName);
+                Objects.equals(sellerName, that.sellerName) && Objects.equals(startTime, that.startTime) &&
+                Objects.equals(endTime, that.endTime);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(auctionId, itemId, itemName, itemDescription, currentPrice, highestBidderName,
-                remainingTime, stepPrice, itemType, itemSpecifics, itemImageUrls, sellerId, sellerName);
+                remainingTime, stepPrice, itemType, itemSpecifics, itemImageUrls, sellerId, sellerName, startTime, endTime);
     }
 
     @Override
@@ -121,6 +133,8 @@ public class AuctionDetailDTO implements Serializable {
                 ", itemImageUrls=" + itemImageUrls +
                 ", sellerId=" + sellerId +
                 ", sellerName='" + sellerName + '\'' +
+                ", startTime='" + startTime + '\'' +
+                ", endTime='" + endTime + '\'' +
                 '}';
     }
 

@@ -2,6 +2,7 @@ package com.client.controller.dashboard;
 
 import java.math.BigDecimal;
 import java.net.URL;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -209,7 +210,8 @@ public class ViewLiveAuctions {
             String seller = (a.getSellerName() != null && !a.getSellerName().isBlank())
                     ? a.getSellerName()
                     : ("Seller_" + a.getSellerId());
-            sellerNameLabel.setText("Seller: " + seller);
+            sellerNameLabel.setText("Seller: " + seller + " | Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
+                                   " | Kết thúc: " + (a.getEndTime() != null ? a.getEndTime() : "—"));
         }
         renderItemSpecifics(a.getItemSpecifics());
         updateItemImage(a);
@@ -298,39 +300,64 @@ public class ViewLiveAuctions {
             showError("Vui lòng đăng nhập trước khi đặt giá.");
             return;
         }
+
+        // Check if auction has started (must be after startTime)
         ioPool.execute(() -> {
             try {
-                BigDecimal amount = new BigDecimal(bidAmountField.getText().trim());
-                long bidderId = ClientSession.getUserId();
-                String raw;
-                if (enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
-                    BigDecimal maxAutoBid = new BigDecimal(maxAutoBidField.getText().trim());
-                    if (maxAutoBid.compareTo(amount) < 0) {
-                        Platform.runLater(() -> showError("Giá tối đa auto-bid phải ≥ giá đặt hiện tại."));
-                        return;
-                    }
-                    raw = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, amount, maxAutoBid);
-                } else {
-                    raw = AuctionNetwork.placeBid(currentAuctionId, bidderId, amount);
-                }
+                String raw = AuctionNetwork.getAuctionDetail(currentAuctionId);
                 Response res = AuctionNetwork.parseResponse(raw);
+                AuctionDetailDTO detail = AuctionNetwork.parseAuctionDetail(res);
+
                 Platform.runLater(() -> {
-                    if ("SUCCESS".equals(res.getStatus())) {
-                        showInfo(res.getMessage());
-                        if (autoBidStatusLabel != null && enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
-                            autoBidStatusLabel.setVisible(true);
-                            autoBidStatusLabel.setText("✓ Auto-bid bật");
-                            autoBidStatusLabel.setStyle("-fx-text-fill: green;");
+                    if (detail != null && detail.getStartTime() != null) {
+                        try {
+                            LocalDateTime startTime = LocalDateTime.parse(detail.getStartTime());
+                            if (startTime.isAfter(LocalDateTime.now())) {
+                                showError("Phiên đấu giá chưa bắt đầu! Bắt đầu lúc: " + detail.getStartTime());
+                                return;
+                            }
+                        } catch (Exception e) {
+                            logger.log(Level.WARNING, "Error parsing start time", e);
                         }
-                    } else {
-                        showError(res.getMessage());
+                    }
+
+                    try {
+                        BigDecimal amount = new BigDecimal(bidAmountField.getText().trim());
+                        long bidderId = ClientSession.getUserId();
+                        String raw2;
+                        if (enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
+                            BigDecimal maxAutoBid = new BigDecimal(maxAutoBidField.getText().trim());
+                            if (maxAutoBid.compareTo(amount) < 0) {
+                                showError("Giá tối đa auto-bid phải ≥ giá đặt hiện tại.");
+                                return;
+                            }
+                            raw2 = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, amount, maxAutoBid);
+                        } else {
+                            raw2 = AuctionNetwork.placeBid(currentAuctionId, bidderId, amount);
+                        }
+                        Response res2 = AuctionNetwork.parseResponse(raw2);
+                        if ("SUCCESS".equals(res2.getStatus())) {
+                            showInfo(res2.getMessage());
+                            if (autoBidStatusLabel != null && enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
+                                autoBidStatusLabel.setVisible(true);
+                                autoBidStatusLabel.setText("✓ Auto-bid bật");
+                                autoBidStatusLabel.setStyle("-fx-text-fill: green;");
+                            }
+                        } else {
+                            showError(res2.getMessage());
+                        }
+                    } catch (NumberFormatException e) {
+                        showError("Vui lòng nhập số tiền hợp lệ.");
+                    } catch (Exception e) {
+                        showError("Lỗi khi đặt giá: " + e.getMessage());
+                        e.printStackTrace();
                     }
                 });
-            } catch (NumberFormatException e) {
-                Platform.runLater(() -> showError("Vui lòng nhập số tiền hợp lệ."));
             } catch (Exception e) {
-                Platform.runLater(() -> showError("Lỗi khi đặt giá: " + e.getMessage()));
-                e.printStackTrace();
+                Platform.runLater(() -> {
+                    showError("Lỗi kiểm tra phiên: " + e.getMessage());
+                    e.printStackTrace();
+                });
             }
         });
     }
@@ -604,24 +631,29 @@ public class ViewLiveAuctions {
         Label priceLbl = new Label("Giá: " + formatMoney(a.getCurrentPrice()) + " đ");
         priceLbl.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        // Người dẫn đầu & Thời gian
-        Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
-        Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
-        timeLbl.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+         // Người dẫn đầu & Thời gian
+         Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
+         Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
+         timeLbl.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
 
-        // Nút bấm để xem chi tiết / Đặt giá
-        Button btnSelect = new Button("Vào đấu giá");
-        btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
-        btnSelect.setMaxWidth(Double.MAX_VALUE);
+         Label scheduleInfoLbl = new Label("Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
+                                          " | Kết thúc: " + (a.getEndTime() != null ? a.getEndTime() : "—"));
+         scheduleInfoLbl.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 12px; -fx-font-weight: bold;");
+         scheduleInfoLbl.setWrapText(true);
 
-        // LUỒNG QUAN TRỌNG: Khi bấm nút, bơm dữ liệu của thẻ này vào Form Detail hiện tại
-        btnSelect.setOnAction(e -> {
-            applyAuctionDetail(a);
-            showInfo("Đã chọn: " + a.getItemName() + ". Bạn có thể đặt giá ngay bên cạnh!");
-        });
+         // Nút bấm để xem chi tiết / Đặt giá
+         Button btnSelect = new Button("Vào đấu giá");
+         btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
+         btnSelect.setMaxWidth(Double.MAX_VALUE);
 
-        // Gắn tất cả vào Thẻ
-        card.getChildren().addAll(nameLbl, typeLbl, sellerLbl, specificsLbl, priceLbl, leaderLbl, timeLbl, btnSelect);
+         // LUỒNG QUAN TRỌNG: Khi bấm nút, bơm dữ liệu của thẻ này vào Form Detail hiện tại
+         btnSelect.setOnAction(e -> {
+             applyAuctionDetail(a);
+             showInfo("Đã chọn: " + a.getItemName() + ". Bạn có thể đặt giá ngay bên cạnh!");
+         });
+
+         // Gắn tất cả vào Thẻ
+         card.getChildren().addAll(nameLbl, typeLbl, sellerLbl, specificsLbl, priceLbl, leaderLbl, timeLbl, scheduleInfoLbl, btnSelect);
         card.setUserData(a.getAuctionId()); // Lưu ID đấu giá vào userData để dễ truy xuất sau này nếu cần
         return card;
     }
@@ -685,38 +717,45 @@ public class ViewLiveAuctions {
             return;
         }
 
-        String itemName = a.getItemName();
+        // Lấy danh sách tên file ảnh từ DTO
         List<String> candidates = new ArrayList<>();
-        if (a.getItemImageUrls() != null) {
+        if (a.getItemImageUrls() != null && !a.getItemImageUrls().isEmpty()) {
             candidates.addAll(a.getItemImageUrls());
         }
-        if (itemName != null && !itemName.isBlank()) {
-            String trimmed = itemName.trim();
-            candidates.add(trimmed + ".png");
-            candidates.add(trimmed.replaceAll("\\s+", "") + ".png");
-            candidates.add(trimmed.toUpperCase(Locale.ROOT) + ".png");
-            candidates.add(capitalizeFirst(trimmed) + ".png");
-        }
-        if (a.getItemId() > 0) {
-            candidates.add("item-" + a.getItemId() + ".png");
-        }
-        candidates.add("Gardevoir.png");
 
-        URL chosen = null;
-        for (String file : candidates) {
-            if (file == null || file.isBlank()) {
+        Image imageToDisplay = null;
+
+        for (String fileStr : candidates) {
+            if (fileStr == null || fileStr.isBlank()) {
                 continue;
             }
-            String normalized = file.startsWith("/") ? file.substring(1) : file;
-            URL url = getClass().getResource(normalized.startsWith("images/") ? "/" + normalized : "/images/" + normalized);
-            if (url != null) {
-                chosen = url;
+
+            // 1. Dành cho Test Local: Thử tìm trực tiếp file tuyệt đối trên ổ cứng (C:, D:...)
+            java.io.File localFile = new java.io.File(fileStr);
+            if (localFile.exists()) {
+                imageToDisplay = new Image(localFile.toURI().toString(), true);
+                break;
+            }
+
+            // 2. Dành cho dữ liệu gốc: Thử tìm trong thư mục resources/images của dự án
+            String resourcePath = fileStr.startsWith("/") ? fileStr : "/images/" + fileStr;
+            URL resourceUrl = getClass().getResource(resourcePath);
+            if (resourceUrl != null) {
+                imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
                 break;
             }
         }
 
-        if (chosen != null) {
-            itemImageView.setImage(new Image(Objects.requireNonNull(chosen).toExternalForm(), true));
+        // 3. Nếu mọi nỗ lực tìm kiếm đều thất bại, mới triệu hồi con Gardevoir
+        if (imageToDisplay == null) {
+            URL fallbackUrl = getClass().getResource("/images/Gardevoir.png");
+            if (fallbackUrl != null) {
+                imageToDisplay = new Image(fallbackUrl.toExternalForm(), true);
+            }
+        }
+
+        if (imageToDisplay != null) {
+            itemImageView.setImage(imageToDisplay);
         }
     }
 

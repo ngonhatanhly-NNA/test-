@@ -62,13 +62,27 @@
             <TextField fx:id="txtArtMaterial" prefHeight="45.0" promptText="Art material" style="-fx-background-color: #F8FAFC; -fx-background-radius: 8; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-padding: 0 10;"/>
         </VBox>
 
-        <HBox spacing="20.0">
+        <!-- GỘP STARTING PRICE VÀ UPLOAD ẢNH VÀO CÙNG 1 HÀNG -->
+        <HBox spacing="20.0" alignment="CENTER_LEFT">
             <children>
                 <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                     <Label text="Starting Price ($)" textFill="#475569">
                         <font><Font name="System Bold" size="13.0" /></font>
                     </Label>
                     <TextField fx:id="txtStartPrice" prefHeight="48.0" promptText="0.00" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-size: 14px; -fx-font-weight: bold; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.05), 6, 0, 0, 2);" />
+                </VBox>
+
+                <!-- KHU VỰC THÊM ẢNH -->
+                <VBox spacing="8.0" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+                    <Label text="Item Image" textFill="#475569">
+                        <font><Font name="System Bold" size="13.0" /></font>
+                    </Label>
+                    <HBox spacing="10.0" alignment="CENTER_LEFT">
+                        <Button mnemonicParsing="false" onAction="#handleChooseImage" prefHeight="48.0" style="-fx-background-color: #E2E8F0; -fx-text-fill: #0F172A; -fx-background-radius: 10; -fx-cursor: hand;" text="Choose Image...">
+                            <font><Font name="System Bold" size="13.0" /></font>
+                        </Button>
+                        <Label fx:id="lblImageName" text="No file selected" textFill="#94A3B8" />
+                    </HBox>
                 </VBox>
             </children>
         </HBox>
