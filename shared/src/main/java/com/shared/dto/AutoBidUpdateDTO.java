@@ -20,15 +20,18 @@ public class AutoBidUpdateDTO implements Serializable {
     @SerializedName("maxBidAmount")
     private BigDecimal maxBidAmount;
 
+    // THÊM MỚI: Bước giá tự chỉnh của người dùng
     @SerializedName("customStepPrice")
     private BigDecimal customStepPrice;
 
     public AutoBidUpdateDTO() {}
 
-    public AutoBidUpdateDTO(long auctionId, long bidderId, BigDecimal maxBidAmount) {
+    // Constructor đã được cập nhật
+    public AutoBidUpdateDTO(long auctionId, long bidderId, BigDecimal maxBidAmount, BigDecimal customStepPrice) {
         this.auctionId = auctionId;
         this.bidderId = bidderId;
         this.maxBidAmount = maxBidAmount;
+        this.customStepPrice = customStepPrice;
     }
 
     public long getAuctionId() { return auctionId; }
@@ -40,25 +43,24 @@ public class AutoBidUpdateDTO implements Serializable {
     public BigDecimal getMaxBidAmount() { return maxBidAmount; }
     public void setMaxBidAmount(BigDecimal maxBidAmount) { this.maxBidAmount = maxBidAmount; }
 
-    public BigDecimal getCustomStepPrice() {
-        return customStepPrice;
-    }
+    // Getters / Setters mới
+    public BigDecimal getCustomStepPrice() { return customStepPrice; }
+    public void setCustomStepPrice(BigDecimal customStepPrice) { this.customStepPrice = customStepPrice; }
 
-    public void setCustomStepPrice(BigDecimal customStepPrice) {
-        this.customStepPrice = customStepPrice;
-    }
-    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         AutoBidUpdateDTO that = (AutoBidUpdateDTO) o;
-        return auctionId == that.auctionId && bidderId == that.bidderId && Objects.equals(maxBidAmount, that.maxBidAmount);
+        return auctionId == that.auctionId && 
+               bidderId == that.bidderId && 
+               Objects.equals(maxBidAmount, that.maxBidAmount) &&
+               Objects.equals(customStepPrice, that.customStepPrice); // Thêm vào equals
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(auctionId, bidderId, maxBidAmount);
+        return Objects.hash(auctionId, bidderId, maxBidAmount, customStepPrice); // Thêm vào hashCode
     }
 
     @Override
@@ -67,6 +69,7 @@ public class AutoBidUpdateDTO implements Serializable {
                 "auctionId=" + auctionId +
                 ", bidderId=" + bidderId +
                 ", maxBidAmount=" + maxBidAmount +
+                ", customStepPrice=" + customStepPrice +
                 '}';
     }
 }
