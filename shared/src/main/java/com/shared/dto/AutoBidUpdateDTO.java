@@ -25,10 +25,11 @@ public class AutoBidUpdateDTO implements Serializable {
 
     public AutoBidUpdateDTO() {}
 
-    public AutoBidUpdateDTO(long auctionId, long bidderId, BigDecimal maxBidAmount) {
+    public AutoBidUpdateDTO(long auctionId, long bidderId, BigDecimal maxBidAmount, BigDecimal customStepPrice) {
         this.auctionId = auctionId;
         this.bidderId = bidderId;
         this.maxBidAmount = maxBidAmount;
+        this.customStepPrice = customStepPrice;
     }
 
     public long getAuctionId() { return auctionId; }

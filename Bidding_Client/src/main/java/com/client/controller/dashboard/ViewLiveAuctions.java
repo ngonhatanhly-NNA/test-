@@ -326,21 +326,20 @@ public class ViewLiveAuctions {
                         String raw2;
                         if (enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
                             BigDecimal maxAutoBid = new BigDecimal(maxAutoBidField.getText().trim());
-                            if (maxAutoBid.compareTo(amount) < 0) {
-                                Platform.runLater(() -> showError("Giá tối đa auto-bid phải ≥ giá đặt hiện tại."));
-                                return;
-                            }
                             BigDecimal customStep = null;
+							
 							if (customStepPriceField != null && !customStepPriceField.getText().trim().isEmpty()) {
 								customStep = new BigDecimal(customStepPriceField.getText().trim());
 							}
-							// Gọi hàm mới có truyền customStep
+							
 							raw2 = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, amount, maxAutoBid, customStep);
 							} else {
 								raw2 = AuctionNetwork.placeBid(currentAuctionId, bidderId, amount);
 							}
-                        Response res2 = AuctionNetwork.parseResponse(raw2);
-                        if ("SUCCESS".equals(res2.getStatus())) {
+                        
+						Response res2 = AuctionNetwork.parseResponse(raw2);
+                        
+						if ("SUCCESS".equals(res2.getStatus())) {
                             showInfo(res2.getMessage());
                             if (autoBidStatusLabel != null && enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
                                 autoBidStatusLabel.setVisible(true);

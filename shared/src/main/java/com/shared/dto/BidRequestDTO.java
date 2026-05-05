@@ -32,11 +32,14 @@ public class BidRequestDTO implements Serializable {
 
     // Constructors, getters, setters
     public BidRequestDTO() {}
-    public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount) {
+    
+    public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount, boolean enableAutoBid, BigDecimal maxAutoBidAmount, BigDecimal customStepPrice) {
         this.auctionId = auctionId;
         this.bidderId = bidderId;
         this.bidAmount = bidAmount;
-        this.enableAutoBid = false;
+        this.enableAutoBid = enableAutoBid;
+        this.maxAutoBidAmount = maxAutoBidAmount;
+        this.customStepPrice = customStepPrice;
     }
 
     // Constructor riêng cho ato-bid
@@ -46,6 +49,16 @@ public class BidRequestDTO implements Serializable {
         this.bidAmount = bidAmount;
         this.enableAutoBid = enableAutoBid;
         this.maxAutoBidAmount = maxAutoBidAmount;
+    }
+	
+	// Constructor 3 tham số dùng cho đặt giá thủ công (không auto-bid)
+	public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount) {
+        this.auctionId = auctionId;
+        this.bidderId = bidderId;
+        this.bidAmount = bidAmount;
+        this.enableAutoBid = false; // Mặc định không bật auto-bid
+        this.maxAutoBidAmount = null;
+        this.customStepPrice = null;
     }
 
     // Getters
