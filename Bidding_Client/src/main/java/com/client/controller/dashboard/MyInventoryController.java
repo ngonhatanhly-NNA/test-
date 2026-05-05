@@ -1,10 +1,20 @@
 package com.client.controller.dashboard;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.client.network.AuctionNetwork;
 import com.client.network.ItemNetwork;
 import com.client.session.ClientSession;
 import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.ItemResponseDTO;
+
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -20,14 +30,6 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
 
 public class MyInventoryController {
 
@@ -42,7 +44,7 @@ public class MyInventoryController {
     @FXML private FlowPane wonItemsContainer;
 
     private final ItemNetwork itemNetwork = new ItemNetwork();
-    private final NumberFormat currencyFormat = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
+    private final NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.of("vi", "VN"));
 
     @FXML
     public void initialize() {
@@ -98,7 +100,7 @@ public class MyInventoryController {
         // Gọi API mới: GET /api/auctions/bidder/{bidderId}/won
         new Thread(() -> {
             try {
-                List<AuctionDetailDTO> wonAuctions = AuctionNetwork.getWonAuctionsStatic(bidderId);
+                List<AuctionDetailDTO> wonAuctions = AuctionNetwork.getWonAuctions(bidderId);
 
                 Platform.runLater(() -> {
                     if (wonItemsContainer == null) return;

@@ -1,5 +1,13 @@
 package com.client.controller.dashboard;
 
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import com.client.network.AuctionNetwork;
 import com.client.network.SellerNetwork;
 import com.client.session.ClientSession;
@@ -9,23 +17,20 @@ import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.ItemResponseDTO;
-import com.shared.network.Response;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
-
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 
 /**
  * SellerDashboardController - Giao diện quản trị cho Seller.
@@ -69,7 +74,7 @@ public class SellerDashboardController {
 
     private final SellerNetwork sellerNetwork = new SellerNetwork();
     private final Gson gson = new Gson();
-    private final NumberFormat currencyFormat = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
+    private final NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.of("vi", "VN"));
 
     private final ExecutorService executorService = Executors.newCachedThreadPool(r -> {
         Thread t = new Thread(r, "seller-thread");
@@ -381,10 +386,8 @@ public class SellerDashboardController {
 
         executorService.submit(() -> {
             try {
-                // [ĐÃ SỬA] Gọi API lọc theo seller
-                String responseBody = AuctionNetwork.getActiveAuctionsBySeller(sellerId);
-                Response response = AuctionNetwork.parseResponse(responseBody);
-                currentAuctions = AuctionNetwork.parseActiveAuctionList(response);
+                // Gọi API lọc theo seller
+                currentAuctions = AuctionNetwork.getActiveAuctionsBySeller(sellerId);
 
                 Platform.runLater(() -> {
                     renderLiveAuctions();

@@ -3,6 +3,7 @@ package com.shared.dto;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Objects;
+
 import com.google.gson.annotations.SerializedName;
 
 public class BidRequestDTO implements Serializable {
@@ -26,13 +27,11 @@ public class BidRequestDTO implements Serializable {
     @SerializedName("expectedCurrentBid")
     private BigDecimal expectedCurrentBid;
 
-    // THÊM MỚI: Bước giá tự chỉnh của người dùng
     @SerializedName("customStepPrice")
     private BigDecimal customStepPrice;
 
-    // Constructors
+    // Constructors, getters, setters
     public BidRequestDTO() {}
-    
     public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount) {
         this.auctionId = auctionId;
         this.bidderId = bidderId;
@@ -40,14 +39,13 @@ public class BidRequestDTO implements Serializable {
         this.enableAutoBid = false;
     }
 
-    // Constructor riêng cho auto-bid (đã thêm tham số customStepPrice)
-    public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount, boolean enableAutoBid, BigDecimal maxAutoBidAmount, BigDecimal customStepPrice) {
+    // Constructor riêng cho ato-bid
+    public BidRequestDTO(long auctionId, long bidderId, BigDecimal bidAmount, boolean enableAutoBid, BigDecimal maxAutoBidAmount) {
         this.auctionId = auctionId;
         this.bidderId = bidderId;
         this.bidAmount = bidAmount;
         this.enableAutoBid = enableAutoBid;
         this.maxAutoBidAmount = maxAutoBidAmount;
-        this.customStepPrice = customStepPrice;
     }
 
     // Getters
@@ -55,35 +53,32 @@ public class BidRequestDTO implements Serializable {
     public long getBidderId() { return bidderId; }
     public BigDecimal getBidAmount() { return bidAmount; }
     public BigDecimal getMaxAutoBidAmount() { return maxAutoBidAmount; }
+    // Getter cho boolean thường dùng tiền tố "is"
     public boolean isEnableAutoBid() { return enableAutoBid; }
     public BigDecimal getExpectedCurrentBid() { return expectedCurrentBid; }
-    public BigDecimal getCustomStepPrice() { return customStepPrice; } // Getter mới
+    public BigDecimal getCustomStepPrice() { return customStepPrice; }
 
-    // Setters
+    // Setters (Nếu cần thiết cho việc deserialize JSON)
     public void setAuctionId(long auctionId) { this.auctionId = auctionId; }
     public void setBidderId(long bidderId) { this.bidderId = bidderId; }
     public void setBidAmount(BigDecimal bidAmount) { this.bidAmount = bidAmount; }
     public void setEnableAutoBid(boolean enableAutoBid) { this.enableAutoBid = enableAutoBid; }
     public void setMaxAutoBidAmount(BigDecimal maxAutoBidAmount) { this.maxAutoBidAmount = maxAutoBidAmount; }
     public void setExpectedCurrentBid(BigDecimal expectedCurrentBid) { this.expectedCurrentBid = expectedCurrentBid; }
-    public void setCustomStepPrice(BigDecimal customStepPrice) { this.customStepPrice = customStepPrice; } // Setter mới
+    public void setCustomStepPrice(BigDecimal customStepPrice) { this.customStepPrice = customStepPrice; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         BidRequestDTO that = (BidRequestDTO) o;
-        return auctionId == that.auctionId && 
-               bidderId == that.bidderId && 
-               enableAutoBid == that.enableAutoBid &&
-               Objects.equals(bidAmount, that.bidAmount) && 
-               Objects.equals(maxAutoBidAmount, that.maxAutoBidAmount) &&
-               Objects.equals(customStepPrice, that.customStepPrice); // Thêm vào equals
+        return auctionId == that.auctionId && bidderId == that.bidderId && enableAutoBid == that.enableAutoBid &&
+                Objects.equals(bidAmount, that.bidAmount) && Objects.equals(maxAutoBidAmount, that.maxAutoBidAmount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(auctionId, bidderId, bidAmount, enableAutoBid, maxAutoBidAmount, customStepPrice); // Thêm vào hashCode
+        return Objects.hash(auctionId, bidderId, bidAmount, enableAutoBid, maxAutoBidAmount);
     }
 
     @Override
@@ -94,7 +89,6 @@ public class BidRequestDTO implements Serializable {
                 ", bidAmount=" + bidAmount +
                 ", enableAutoBid=" + enableAutoBid +
                 ", maxAutoBidAmount=" + maxAutoBidAmount +
-                ", customStepPrice=" + customStepPrice +
                 '}';
     }
 }

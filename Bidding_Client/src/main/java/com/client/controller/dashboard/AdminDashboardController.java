@@ -58,7 +58,7 @@ public class AdminDashboardController {
     private final Gson gson = new Gson();
     private boolean usersLoaded = false;
     private boolean itemAnalyticsLoaded = false;
-    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
+    private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.of("vi", "VN"));
 
     @FXML
     public void initialize() {

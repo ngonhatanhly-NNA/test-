@@ -118,7 +118,7 @@ public class ServerApp extends WebSocketServer {
     private void handleUpdateAutoBid(String payload) throws Exception {
         com.shared.dto.AutoBidUpdateDTO updateRequest = gson.fromJson(payload, com.shared.dto.AutoBidUpdateDTO.class);
         if (updateRequest != null) {
-            auctionService.updateAutoBidAmount(updateRequest.getAuctionId(), updateRequest.getBidderId(), updateRequest.getMaxBidAmount());
+            auctionService.updateAutoBidAmount(updateRequest.getAuctionId(), updateRequest.getBidderId(), updateRequest.getMaxBidAmount(), updateRequest.getCustomStepPrice());
         }
     }
 

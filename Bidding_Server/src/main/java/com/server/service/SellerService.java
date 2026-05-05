@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Lớp Service xử lý các nghiệp vụ liên quan đến Seller,
  * giao tiếp với tầng Database thông qua Repository.
@@ -22,7 +19,6 @@ import org.slf4j.LoggerFactory;
 public class SellerService {
 
     private final ISellerRepository sellerRepository;
-    private static final Logger logger = LoggerFactory.getLogger(SellerService.class);
 
     public SellerService(ISellerRepository sellerRepository) {
         this.sellerRepository = sellerRepository;

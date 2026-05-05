@@ -36,9 +36,15 @@
 		
 		<!-- Thư viện Logging (SLF4J + Logback) -->
 		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.4.14</version>
+			<version>${logback.version}</version>
 		</dependency>
 
 		<!-- Thư viện JUnit 5 cho Testing -->
@@ -63,12 +69,6 @@
             <groupId>org.java-websocket</groupId>
             <artifactId>Java-WebSocket</artifactId>
             <version>1.5.7</version>
-        </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.5.3</version>
         </dependency>
 
     </dependencies>

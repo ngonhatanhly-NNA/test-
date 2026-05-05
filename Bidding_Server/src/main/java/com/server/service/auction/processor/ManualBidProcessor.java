@@ -35,10 +35,12 @@ public class ManualBidProcessor implements BidProcessor {
         if (auction.getStatus() == Auction.AuctionStatus.OPEN) {
             auction.setStatus(Auction.AuctionStatus.RUNNING);
         }
-
-        // FIX: Dùng thẳng bidAmount làm giá mới, KHÔNG cộng dồn
-        BigDecimal newHighestBid = request.getBidAmount();
-        auction.setCurrentHighestBid(newHighestBid);
+		
+		
+		BigDecimal currentBid = auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO;
+        BigDecimal newHighestPrice = currentBid.add(request.getBidAmount());
+		
+		auction.setCurrentHighestBid(newHighestPrice);
         auction.setWinnerId(request.getBidderId());
 
         // FIX: Lưu ngay vào DB để giá không bị mất khi restart
@@ -53,7 +55,7 @@ public class ManualBidProcessor implements BidProcessor {
         BidTransaction transaction = new BidTransaction(
                 request.getAuctionId(),
                 request.getBidderId(),
-                newHighestBid
+                newHighestPrice
         );
         transaction.setAutoBid(false);
         bidQueue.offer(transaction);

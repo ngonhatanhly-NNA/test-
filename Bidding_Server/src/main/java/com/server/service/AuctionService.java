@@ -462,6 +462,7 @@ public class AuctionService {
             );
             autoBid.setCustomStepPrice(request.getCustomStepPrice()); // LƯU CUSTOM STEP PRICE
             autoBidRepository.saveOrUpdate(autoBid);
+			autoBid.setActive(true);
             logger.debug("Auto-bid enabled for auction {}: {}", request.getAuctionId(), request.getBidderId());
         }
     }

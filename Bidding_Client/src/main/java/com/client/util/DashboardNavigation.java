@@ -7,6 +7,7 @@ package com.client.util;
 public final class DashboardNavigation {
 
     private static Runnable openLiveAuctions;
+    private static java.util.function.Consumer<Long> navigateToAuctionDetail;
 
     private DashboardNavigation() {
     }
@@ -18,6 +19,16 @@ public final class DashboardNavigation {
     public static void openLiveAuctions() {
         if (openLiveAuctions != null) {
             openLiveAuctions.run();
+        }
+    }
+
+    public static void setNavigateToAuctionDetail(java.util.function.Consumer<Long> action) {
+        navigateToAuctionDetail = action;
+    }
+
+    public static void navigateToAuctionDetail(long auctionId) {
+        if (navigateToAuctionDetail != null) {
+            navigateToAuctionDetail.accept(auctionId);
         }
     }
 }

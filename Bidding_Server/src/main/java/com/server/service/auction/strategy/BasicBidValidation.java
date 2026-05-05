@@ -20,8 +20,12 @@ public class BasicBidValidation implements BidValidationStrategy {
         }
 
         // Kiểm tra giá đặt lớn hơn 0
-        if (request.getBidAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Giá đặt phải lớn hơn 0");
+        BigDecimal addedAmount = request.getBidAmount();
+        BigDecimal stepPrice = auction.getStepPrice();
+        
+        if (addedAmount == null || addedAmount.compareTo(stepPrice) < 0) {
+            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, 
+                "Số tiền cộng thêm (" + addedAmount + ") không được nhỏ hơn bước giá tối thiểu (" + stepPrice + ")");
         }
 
         // Kiểm tra auction tồn tại

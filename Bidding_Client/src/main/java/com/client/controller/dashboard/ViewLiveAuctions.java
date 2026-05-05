@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -49,6 +48,8 @@ public class ViewLiveAuctions {
     private TextField maxAutoBidField;
     @FXML
     private Label autoBidStatusLabel;
+	@FXML
+    private TextField customStepPriceField;
     @FXML
     private Label itemNameLabel;
     @FXML
@@ -117,6 +118,9 @@ public class ViewLiveAuctions {
                 if (maxAutoBidField != null) {
                     maxAutoBidField.setVisible(newVal);
                 }
+				if (customStepPriceField != null) {
+                    customStepPriceField.setVisible(newVal);
+                }
             });
         }
 
@@ -138,23 +142,18 @@ public class ViewLiveAuctions {
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                String body = AuctionNetwork.getActiveAuctions();
-                Response res = AuctionNetwork.parseResponse(body);
-                List<AuctionDetailDTO> list = AuctionNetwork.parseActiveAuctionList(res);
+                List<AuctionDetailDTO> list = AuctionNetwork.getActiveAuctions();
                 Platform.runLater(() -> {
                     if (refreshButton != null) {
                         refreshButton.setDisable(false);
                     }
-                    if (!"SUCCESS".equals(res.getStatus())) {
-                        showError(res != null ? res.getMessage() : "Không tải được danh sách đấu giá.");
-                        return;
-                    }
-                    if (auctionsContainer != null) {
-                        auctionsContainer.getChildren().clear();// Xóa thẻ mỗi lần refresh
-                    }
-                    if (list.isEmpty()) {
+                    if (list == null || list.isEmpty()) {
                         showError("Chưa có phiên đấu giá đang mở trên server (hoặc DB/cache trống).");
                         return;
+                    }
+
+                    if (auctionsContainer != null) {
+                        auctionsContainer.getChildren().clear();// Xóa thẻ mỗi lần refresh
                     }
 
                     for (AuctionDetailDTO a : list) {
@@ -328,13 +327,18 @@ public class ViewLiveAuctions {
                         if (enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
                             BigDecimal maxAutoBid = new BigDecimal(maxAutoBidField.getText().trim());
                             if (maxAutoBid.compareTo(amount) < 0) {
-                                showError("Giá tối đa auto-bid phải ≥ giá đặt hiện tại.");
+                                Platform.runLater(() -> showError("Giá tối đa auto-bid phải ≥ giá đặt hiện tại."));
                                 return;
                             }
-                            raw2 = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, amount, maxAutoBid);
-                        } else {
-                            raw2 = AuctionNetwork.placeBid(currentAuctionId, bidderId, amount);
-                        }
+                            BigDecimal customStep = null;
+							if (customStepPriceField != null && !customStepPriceField.getText().trim().isEmpty()) {
+								customStep = new BigDecimal(customStepPriceField.getText().trim());
+							}
+							// Gọi hàm mới có truyền customStep
+							raw2 = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, amount, maxAutoBid, customStep);
+							} else {
+								raw2 = AuctionNetwork.placeBid(currentAuctionId, bidderId, amount);
+							}
                         Response res2 = AuctionNetwork.parseResponse(raw2);
                         if ("SUCCESS".equals(res2.getStatus())) {
                             showInfo(res2.getMessage());
@@ -411,7 +415,11 @@ public class ViewLiveAuctions {
         ioPool.execute(() -> {
             try {
                 BigDecimal newMaxBid = new BigDecimal(maxAutoBidField.getText().trim());
-                String raw = AuctionNetwork.updateAutoBid(currentAuctionId, ClientSession.getUserId(), newMaxBid);
+				BigDecimal customStep = null;
+                if (customStepPriceField != null && !customStepPriceField.getText().trim().isEmpty()) {
+                    customStep = new BigDecimal(customStepPriceField.getText().trim());
+                }
+                String raw = AuctionNetwork.updateAutoBid(currentAuctionId, ClientSession.getUserId(), newMaxBid, customStep);
                 Response res = AuctionNetwork.parseResponse(raw);
                 Platform.runLater(() -> {
                     if ("SUCCESS".equals(res.getStatus())) {
