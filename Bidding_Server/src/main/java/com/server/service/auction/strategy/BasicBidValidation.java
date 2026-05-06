@@ -3,12 +3,9 @@ package com.server.service.auction.strategy;
 import com.server.exception.AuctionException;
 import com.server.model.Auction;
 import com.shared.dto.BidRequestDTO;
-import java.math.BigDecimal;
 
 /**
- * Implementation: Kiểm tra giá cơ bản
- * @param request: Thông tin bid từ client
- * @param auction: Phiên đấu giá hiện tại
+ * Implementation: Kiểm tra tính hợp lệ cơ bản của request và phiên đấu giá
  */
 public class BasicBidValidation implements BidValidationStrategy {
 
@@ -17,15 +14,6 @@ public class BasicBidValidation implements BidValidationStrategy {
         // Kiểm tra giá đặt không null
         if (request.getBidAmount() == null) {
             throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Giá đặt không được để trống");
-        }
-
-        // Kiểm tra giá đặt lớn hơn 0
-        BigDecimal addedAmount = request.getBidAmount();
-        BigDecimal stepPrice = auction.getStepPrice();
-        
-        if (addedAmount == null || addedAmount.compareTo(stepPrice) < 0) {
-            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, 
-                "Số tiền cộng thêm (" + addedAmount + ") không được nhỏ hơn bước giá tối thiểu (" + stepPrice + ")");
         }
 
         // Kiểm tra auction tồn tại
@@ -40,4 +28,3 @@ public class BasicBidValidation implements BidValidationStrategy {
         }
     }
 }
-

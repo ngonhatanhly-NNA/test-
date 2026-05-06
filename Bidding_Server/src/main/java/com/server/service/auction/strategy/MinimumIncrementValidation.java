@@ -6,36 +6,34 @@ import com.shared.dto.BidRequestDTO;
 import java.math.BigDecimal;
 
 /**
- * Implementation: Kiểm tra giá tối thiểu (minimum increment)
- * - Nếu chưa có ai đặt giá: giá đặt phải >= step price (giá khởi điểm)
- * - Nếu đã có giá: giá đặt phải >= current_highest_bid + step price
+ * Implementation: Kiểm tra giá tối thiểu (Minimum Increment)
+ * Đối với hệ thống Delta Bidding: Số tiền gửi lên (Tiền cộng thêm) phải >= Bước giá quy định
  */
 public class MinimumIncrementValidation implements BidValidationStrategy {
 
     @Override
     public void validate(BidRequestDTO request, Auction auction) throws AuctionException {
-        BigDecimal bidAmount = request.getBidAmount();
+        BigDecimal addedAmount = request.getBidAmount(); // Đây chính là số tiền cộng thêm
         BigDecimal stepPrice = auction.getStepPrice();
-        BigDecimal currentHighestBid = auction.getCurrentHighestBid();
 
-        // Xác định giá tối thiểu cần đặt
-        BigDecimal minimumBid;
-
-        if (currentHighestBid == null || currentHighestBid.compareTo(BigDecimal.ZERO) <= 0) {
-            // Chưa có ai đặt giá: bắt đầu từ step price (giá khởi điểm)
-            minimumBid = stepPrice;
-        } else {
-            // Đã có giá: phải >= current_highest_bid + step price
-            minimumBid = currentHighestBid.add(stepPrice);
-        }
-
-        // Kiểm tra giá đặt có đủ tối thiểu không
-        if (bidAmount.compareTo(minimumBid) < 0) {
-            throw new AuctionException(
-                AuctionException.ErrorCode.BID_AMOUNT_TOO_LOW,
-                "Giá tối thiểu là " + minimumBid.toPlainString() + " VNĐ, bạn đặt " + bidAmount.toPlainString()
-            );
+        // 1. Nếu phiên đấu giá có quy định bước giá
+        if (stepPrice != null && stepPrice.compareTo(BigDecimal.ZERO) > 0) {
+            if (addedAmount.compareTo(stepPrice) < 0) {
+                throw new AuctionException(
+                    AuctionException.ErrorCode.BID_AMOUNT_TOO_LOW,
+                    "Số tiền tăng thêm (" + addedAmount.toPlainString() + 
+                    " VNĐ) không được nhỏ hơn bước giá tối thiểu (" + stepPrice.toPlainString() + " VNĐ)"
+                );
+            }
+        } 
+        // 2. Nếu không quy định bước giá, ít nhất cũng phải cộng thêm một số tiền > 0
+        else {
+            if (addedAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new AuctionException(
+                    AuctionException.ErrorCode.BID_AMOUNT_TOO_LOW,
+                    "Số tiền tăng thêm phải lớn hơn 0"
+                );
+            }
         }
     }
 }
-

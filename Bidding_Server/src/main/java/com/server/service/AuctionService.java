@@ -462,7 +462,7 @@ public class AuctionService {
             );
             autoBid.setCustomStepPrice(request.getCustomStepPrice()); // LƯU CUSTOM STEP PRICE
             autoBidRepository.saveOrUpdate(autoBid);
-			autoBid.setActive(true);
+            autoBid.setActive(true);
             logger.debug("Auto-bid enabled for auction {}: {}", request.getAuctionId(), request.getBidderId());
         }
     }
@@ -487,11 +487,11 @@ public class AuctionService {
             throw new AuctionException(AuctionException.ErrorCode.INVALID_AUTO_BID_CONFIG, "Giá tối đa phải lớn hơn 0");
         }
 
-       try {
+        try {
             AutoBidTracker autoBid = new AutoBidTracker(auctionId, bidderId, newMaxAmount);
             autoBid.setCustomStepPrice(customStepPrice); // LƯU CUSTOM STEP PRICE
             autoBid.setActive(true);
-            
+
             autoBidRepository.saveOrUpdate(autoBid);
             logger.debug("Auto-bid amount set/updated for auction {}: {}", auctionId, bidderId);
 
@@ -501,11 +501,11 @@ public class AuctionService {
                 lock.lock();
                 try {
                     Auction auction = auctionCache.get(auctionId);
-                    if (auction != null && 
-                       (auction.getStatus() == Auction.AuctionStatus.RUNNING || auction.getStatus() == Auction.AuctionStatus.OPEN)) {
-                        
+                    if (auction != null &&
+                            (auction.getStatus() == Auction.AuctionStatus.RUNNING || auction.getStatus() == Auction.AuctionStatus.OPEN)) {
+
                         processAutoBidsFromOtherUsers(auction);
-                        
+
                         // Thông báo real-time qua websocket nếu có thay đổi giá
                         AuctionUpdateDTO update = createUpdateDTO(auction);
                         if (eventListener != null) {
@@ -589,6 +589,37 @@ public class AuctionService {
     }
 
     /**
+     * [FIX BUG 2] Kiểm tra trạng thái đấu giá của một item theo itemId.
+     * Trả về status string: "ACTIVE" | "FINISHED" | "NONE"
+     * - ACTIVE:   item đang có phiên SCHEDULED / OPEN / RUNNING  → không cho tạo mới
+     * - FINISHED: item đã đấu giá xong (FINISHED)                → hiển thị badge
+     * - NONE:     chưa có phiên nào                              → cho phép tạo
+     */
+    public String getAuctionStatusByItemId(long itemId) {
+        // Ưu tiên kiểm tra trong cache (real-time)
+        boolean activeInCache = auctionCache.values().stream()
+                .anyMatch(a -> a.getItemId() == itemId &&
+                        (a.getStatus() == Auction.AuctionStatus.SCHEDULED
+                                || a.getStatus() == Auction.AuctionStatus.OPEN
+                                || a.getStatus() == Auction.AuctionStatus.RUNNING));
+        if (activeInCache) return "ACTIVE";
+
+        // Kiểm tra trong DB (phòng trường hợp cache chưa load)
+        List<Auction> dbAuctions = auctionRepository.findByItemId(itemId);
+        for (Auction a : dbAuctions) {
+            Auction.AuctionStatus s = a.getStatus();
+            if (s == Auction.AuctionStatus.SCHEDULED || s == Auction.AuctionStatus.OPEN || s == Auction.AuctionStatus.RUNNING) {
+                return "ACTIVE";
+            }
+        }
+        // Kiểm tra xem đã từng có phiên đấu giá FINISHED chưa
+        boolean hasFinished = dbAuctions.stream().anyMatch(a -> a.getStatus() == Auction.AuctionStatus.FINISHED);
+        if (hasFinished) return "FINISHED";
+
+        return "NONE";
+    }
+
+    /**
      * Tạo phiên đấu giá mới
      */
     public long createAuction(CreateAuctionDTO dto) throws AuctionException {
@@ -626,7 +657,11 @@ public class AuctionService {
             auction.setStartTime(startTime);
             auction.setEndTime(endTime);
             auction.setStepPrice(dto.getStepPrice());
-            auction.setCurrentHighestBid(BigDecimal.ZERO);
+            // FIX BUG 1: Giá khởi điểm phải bằng startingPrice của item, KHÔNG phải ZERO.
+            // Khi bidder đặt giá, server cộng thêm bidAmount vào currentHighestBid,
+            // nên bid đầu tiên sẽ = startingPrice + stepPrice (đúng nghiệp vụ đấu giá).
+            BigDecimal startingBid = (item.getStartingPrice() != null) ? item.getStartingPrice() : BigDecimal.ZERO;
+            auction.setCurrentHighestBid(startingBid);
 
             // Set status dựa trên thời gian bắt đầu
             if (startTime.isAfter(LocalDateTime.now())) {

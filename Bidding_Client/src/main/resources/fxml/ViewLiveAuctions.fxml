@@ -211,7 +211,7 @@
                         </CheckBox>
                         
                         <TextField fx:id="maxAutoBidField" prefHeight="42.0" promptText="Enter maximum auto-bid price..." style="-fx-background-color: #FFFFFF; -fx-background-radius: 8; -fx-border-color: #94A3B8; -fx-border-radius: 8; -fx-padding: 0 12; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.06), 6, 0, 0, 2);" />
-                        
+                        <TextField fx:id="customStepPriceField" prefHeight="42.0" promptText="Enter custom step price (Optional)..." style="-fx-background-color: #FFFFFF; -fx-background-radius: 8; -fx-border-color: #94A3B8; -fx-border-radius: 8; -fx-padding: 0 12; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.06), 6, 0, 0, 2);" />
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                             <Button onAction="#handleUpdateAutoBid" prefHeight="40.0" style="-fx-background-color: linear-gradient(to right, #1E293B, #334155); -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 25; -fx-effect: dropshadow(gaussian, rgba(30,41,59,0.4), 12, 0, 0, 4);" text="Save">
                                 <font>

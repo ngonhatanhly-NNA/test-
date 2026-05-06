@@ -20,6 +20,9 @@ import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.AuctionUpdateDTO;
 import com.shared.network.Response;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -33,6 +36,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 public class ViewLiveAuctions {
 
@@ -48,7 +52,7 @@ public class ViewLiveAuctions {
     private TextField maxAutoBidField;
     @FXML
     private Label autoBidStatusLabel;
-	@FXML
+    @FXML
     private TextField customStepPriceField;
     @FXML
     private Label itemNameLabel;
@@ -82,6 +86,10 @@ public class ViewLiveAuctions {
     @FXML
     private long currentAuctionId;
 
+    // Biến lưu trữ đồng hồ đếm ngược
+    private long currentAuctionEndTimeMillis = 0;
+    private Timeline countdownTimeline;
+
     private final ExecutorService ioPool = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "auction-http");
         t.setDaemon(true);
@@ -109,6 +117,11 @@ public class ViewLiveAuctions {
     public void initialize() {
         if (maxAutoBidField != null) {
             maxAutoBidField.setVisible(false);
+            maxAutoBidField.setManaged(false);
+        }
+        if (customStepPriceField != null) {
+            customStepPriceField.setVisible(false);
+            customStepPriceField.setManaged(false);
         }
         if (autoBidStatusLabel != null) {
             autoBidStatusLabel.setVisible(false);
@@ -117,9 +130,11 @@ public class ViewLiveAuctions {
             enableAutoBidCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
                 if (maxAutoBidField != null) {
                     maxAutoBidField.setVisible(newVal);
+                    maxAutoBidField.setManaged(newVal);
                 }
-				if (customStepPriceField != null) {
+                if (customStepPriceField != null) {
                     customStepPriceField.setVisible(newVal);
+                    customStepPriceField.setManaged(newVal);
                 }
             });
         }
@@ -131,7 +146,49 @@ public class ViewLiveAuctions {
             priceChart.setAnimated(false);
         }
 
+        // Khởi tạo đồng hồ đếm ngược chạy ngầm mỗi 1 giây
+        countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateCountdownRealtime()));
+        countdownTimeline.setCycleCount(Animation.INDEFINITE);
+        countdownTimeline.play();
+
         handleRefreshAuctions();
+    }
+
+    private void updateCountdownRealtime() {
+        long now = System.currentTimeMillis();
+
+        // 1. Cập nhật đếm ngược cho sản phẩm đang xem chi tiết
+        if (currentAuctionId > 0 && remainingLabel != null) {
+            long remaining = currentAuctionEndTimeMillis - now;
+            if (remaining < 0) remaining = 0;
+            
+            remainingLabel.setText("Còn lại: " + formatRemaining(remaining));
+            
+            if (remaining > 0 && remaining < 60000) {
+                remainingLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;"); // Chữ đỏ nếu dưới 1 phút
+            } else {
+                remainingLabel.setStyle("-fx-text-fill: #7f8c8d;");
+            }
+        }
+
+        // 2. Cập nhật đếm ngược cho các thẻ sản phẩm trong danh sách
+        if (auctionsContainer != null) {
+            for (var node : auctionsContainer.getChildren()) {
+                if (node instanceof VBox card) {
+                    Object endTimeObj = card.getProperties().get("endTime");
+                    Object timeLblObj = card.getProperties().get("timeLabel");
+
+                    if (endTimeObj instanceof Long && timeLblObj instanceof Label) {
+                        long endTime = (Long) endTimeObj;
+                        Label timeLbl = (Label) timeLblObj;
+                        
+                        long remaining = endTime - now;
+                        if (remaining < 0) remaining = 0;
+                        timeLbl.setText("Còn lại: " + formatRemaining(remaining));
+                    }
+                }
+            }
+        }
     }
 
     @FXML
@@ -153,7 +210,7 @@ public class ViewLiveAuctions {
                     }
 
                     if (auctionsContainer != null) {
-                        auctionsContainer.getChildren().clear();// Xóa thẻ mỗi lần refresh
+                        auctionsContainer.getChildren().clear();
                     }
 
                     for (AuctionDetailDTO a : list) {
@@ -161,7 +218,7 @@ public class ViewLiveAuctions {
                             auctionsContainer.getChildren().add(createAuctionCard(a));
                         }
                     }
-                    // Auto load sản phẩm đầu tiên
+                    
                     applyAuctionDetail(list.get(0));
                 });
                 return null;
@@ -171,12 +228,9 @@ public class ViewLiveAuctions {
             if (refreshButton != null) {
                 refreshButton.setDisable(false);
             }
-
             Throwable ex = task.getException();
             showError("Lỗi mạng: " + (ex != null ? ex.getMessage() : "unknown"));
-            if (ex != null) {
-                ex.printStackTrace();
-            }
+            if (ex != null) ex.printStackTrace();
         }));
         ioPool.execute(task);
     }
@@ -196,24 +250,21 @@ public class ViewLiveAuctions {
 
     private void applyAuctionDetail(AuctionDetailDTO a) {
         currentAuctionId = a.getAuctionId();
-        if (itemNameLabel != null) {
-            itemNameLabel.setText(a.getItemName() != null ? a.getItemName() : ("Item #" + a.getItemId()));
-        }
-        if (itemTypeLabel != null) {
-            itemTypeLabel.setText("Type: " + (a.getItemType() != null ? a.getItemType() : "GENERAL"));
-        }
-        if (itemDescriptionLabel != null) {
-            itemDescriptionLabel.setText(a.getItemDescription() != null ? a.getItemDescription() : "(Không có mô tả)");
-        }
+        
+        // Chốt mốc thời gian kết thúc
+        currentAuctionEndTimeMillis = System.currentTimeMillis() + a.getRemainingTime();
+
+        if (itemNameLabel != null) itemNameLabel.setText(a.getItemName() != null ? a.getItemName() : ("Item #" + a.getItemId()));
+        if (itemTypeLabel != null) itemTypeLabel.setText("Type: " + (a.getItemType() != null ? a.getItemType() : "GENERAL"));
+        if (itemDescriptionLabel != null) itemDescriptionLabel.setText(a.getItemDescription() != null ? a.getItemDescription() : "(Không có mô tả)");
         if (sellerNameLabel != null) {
-            String seller = (a.getSellerName() != null && !a.getSellerName().isBlank())
-                    ? a.getSellerName()
-                    : ("Seller_" + a.getSellerId());
+            String seller = (a.getSellerName() != null && !a.getSellerName().isBlank()) ? a.getSellerName() : ("Seller_" + a.getSellerId());
             sellerNameLabel.setText("Seller: " + seller + " | Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
                                    " | Kết thúc: " + (a.getEndTime() != null ? a.getEndTime() : "—"));
         }
         renderItemSpecifics(a.getItemSpecifics());
         updateItemImage(a);
+        
         if (currentPriceLabel != null && a.getCurrentPrice() != null) {
             currentPriceLabel.setText(formatMoney(a.getCurrentPrice()) + " VNĐ");
         }
@@ -221,50 +272,26 @@ public class ViewLiveAuctions {
             leaderLabel.setText("Người dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
         }
         
-        // Update step hint with minimum bid amount
+        // Cập nhật gợi ý: Nhập số tiền TĂNG THÊM
         if (stepHintLabel != null && a.getStepPrice() != null) {
-            BigDecimal stepPrice = a.getStepPrice();
-            BigDecimal currentPrice = a.getCurrentPrice();
-            BigDecimal minimumBid;
-            
-            if (currentPrice == null || currentPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                minimumBid = stepPrice;
-            } else {
-                minimumBid = currentPrice.add(stepPrice);
-            }
-            
-            stepHintLabel.setText("* Bước giá tối thiểu: " + formatMoney(stepPrice) + 
-                                 " VNĐ | Giá tối thiểu để đặt: " + formatMoney(minimumBid) + " VNĐ");
+            stepHintLabel.setText("* Bước giá: " + formatMoney(a.getStepPrice()) + " VNĐ (Nhập số tiền muốn CỘNG THÊM)");
         }
         
-        // Pre-fill bid amount field with minimum bid
+        // CHỈ ĐIỀN BƯỚC GIÁ NẾU Ô TEXTFIELD ĐANG TRỐNG
         if (bidAmountField != null && a.getStepPrice() != null) {
-            BigDecimal currentPrice = a.getCurrentPrice();
-            BigDecimal minimumBid;
-            
-            if (currentPrice == null || currentPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                minimumBid = a.getStepPrice();
-            } else {
-                minimumBid = currentPrice.add(a.getStepPrice());
+            if (bidAmountField.getText().trim().isEmpty()) {
+                bidAmountField.setText(formatMoney(a.getStepPrice()));
             }
-            
-            bidAmountField.setText(formatMoney(minimumBid));
         }
         
-        if (statusLabel != null) {
-            statusLabel.setText("Tình trạng: ĐANG MỞ");
-        }
-        if (remainingLabel != null) {
-            remainingLabel.setText("Còn lại: " + formatRemaining(a.getRemainingTime()));
-        }
+        if (statusLabel != null) statusLabel.setText("Tình trạng: ĐANG MỞ");
+        
+        updateCountdownRealtime();
+
         if (priceSeries != null) {
             priceSeries.getData().clear();
-            if (priceSeries != null) {
-                priceSeries.getData().clear();
-                String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-               
-                priceSeries.getData().add(new XYChart.Data<>(timeNow, a.getCurrentPrice() != null ? a.getCurrentPrice() : BigDecimal.ZERO));
-            }
+            String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            priceSeries.getData().add(new XYChart.Data<>(timeNow, a.getCurrentPrice() != null ? a.getCurrentPrice() : BigDecimal.ZERO));
         }
     }
 
@@ -273,24 +300,18 @@ public class ViewLiveAuctions {
     }
 
     private static String formatRemaining(long millis) {
-        if (millis <= 0) {
-            return "Hết giờ đấu giá";
-        }
+        if (millis <= 0) return "Hết giờ đấu giá";
         long sec = millis / 1000;
         long h = sec / 3600;
         long m = (sec % 3600) / 60;
         long s = sec % 60;
-        if (h > 0) {
-            return h + " giờ " + m + " phút";
-        }
-        if (m > 0) {
-            return m + " phút " + s + " giây";
-        }
+        if (h > 0) return h + " giờ " + m + " phút " + s + " giây";
+        if (m > 0) return m + " phút " + s + " giây";
         return s + " giây";
     }
 
     @FXML
-    public void handlePlaceBid() {
+    private void handlePlaceBid() {
         if (currentAuctionId <= 0) {
             showError("Chưa có phiên đấu giá. Bấm \"Refresh\" sau khi server đã chạy.");
             return;
@@ -300,11 +321,10 @@ public class ViewLiveAuctions {
             return;
         }
 
-        // Check if auction has started (must be after startTime)
         ioPool.execute(() -> {
             try {
-                String raw = AuctionNetwork.getAuctionDetail(currentAuctionId);
-                Response res = AuctionNetwork.parseResponse(raw);
+                String rawDetail = AuctionNetwork.getAuctionDetail(currentAuctionId);
+                Response res = AuctionNetwork.parseResponse(rawDetail);
                 AuctionDetailDTO detail = AuctionNetwork.parseAuctionDetail(res);
 
                 Platform.runLater(() -> {
@@ -321,26 +341,36 @@ public class ViewLiveAuctions {
                     }
 
                     try {
-                        BigDecimal amount = new BigDecimal(bidAmountField.getText().trim());
+                        // Giá trị này là TIỀN CỘNG THÊM
+                        BigDecimal addedAmount = new BigDecimal(bidAmountField.getText().trim());
+                        BigDecimal stepPrice = (detail != null && detail.getStepPrice() != null) ? detail.getStepPrice() : BigDecimal.ZERO;
+                        
+                        // Kiểm tra nếu tiền cộng thêm < bước giá tối thiểu
+                        if (addedAmount.compareTo(stepPrice) < 0) {
+                            showError("Số tiền tăng thêm phải lớn hơn hoặc bằng bước giá: " + formatMoney(stepPrice) + " đ");
+                            return;
+                        }
+
                         long bidderId = ClientSession.getUserId();
                         String raw2;
+
                         if (enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
                             BigDecimal maxAutoBid = new BigDecimal(maxAutoBidField.getText().trim());
                             BigDecimal customStep = null;
-							
-							if (customStepPriceField != null && !customStepPriceField.getText().trim().isEmpty()) {
-								customStep = new BigDecimal(customStepPriceField.getText().trim());
-							}
-							
-							raw2 = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, amount, maxAutoBid, customStep);
-							} else {
-								raw2 = AuctionNetwork.placeBid(currentAuctionId, bidderId, amount);
-							}
+                            
+                            if (customStepPriceField != null && !customStepPriceField.getText().trim().isEmpty()) {
+                                customStep = new BigDecimal(customStepPriceField.getText().trim());
+                            }
+                            
+                            raw2 = AuctionNetwork.placeBidWithAutoBid(currentAuctionId, bidderId, addedAmount, maxAutoBid, customStep);
+                        } else {
+                            raw2 = AuctionNetwork.placeBid(currentAuctionId, bidderId, addedAmount);
+                        }
                         
-						Response res2 = AuctionNetwork.parseResponse(raw2);
+                        Response res2 = AuctionNetwork.parseResponse(raw2);
                         
-						if ("SUCCESS".equals(res2.getStatus())) {
-                            showInfo(res2.getMessage());
+                        if ("SUCCESS".equals(res2.getStatus())) {
+                            showInfo("Đặt giá thành công!");
                             if (autoBidStatusLabel != null && enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
                                 autoBidStatusLabel.setVisible(true);
                                 autoBidStatusLabel.setText("✓ Auto-bid bật");
@@ -396,7 +426,6 @@ public class ViewLiveAuctions {
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> showError("Lỗi khi hủy auto-bid: " + e.getMessage()));
-                e.printStackTrace();
             }
         });
     }
@@ -414,7 +443,7 @@ public class ViewLiveAuctions {
         ioPool.execute(() -> {
             try {
                 BigDecimal newMaxBid = new BigDecimal(maxAutoBidField.getText().trim());
-				BigDecimal customStep = null;
+                BigDecimal customStep = null;
                 if (customStepPriceField != null && !customStepPriceField.getText().trim().isEmpty()) {
                     customStep = new BigDecimal(customStepPriceField.getText().trim());
                 }
@@ -434,23 +463,17 @@ public class ViewLiveAuctions {
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> showError("Lỗi cập nhật auto-bid: " + e.getMessage()));
-                e.printStackTrace();
             }
         });
     }
 
     public void updatePriceRealtime(AuctionUpdateDTO updateData) {
-        if (updateData == null) {
-            return;
-        }
+        if (updateData == null) return;
 
         Platform.runLater(() -> {
-            // 1. Update currently selected auction details panel
             if (updateData.getAuctionId() == currentAuctionId) {
                 updateCurrentAuctionDisplay(updateData);
             }
-
-            // 2. Update auction card in the list
             if (auctionsContainer != null && auctionsContainer.getChildren().size() > 0) {
                 updateAuctionCardInList(updateData);
             }
@@ -458,51 +481,31 @@ public class ViewLiveAuctions {
     }
 
     private void updateCurrentAuctionDisplay(AuctionUpdateDTO updateData) {
-        // Update price label
         if (currentPriceLabel != null && updateData.getCurrentPrice() != null) {
             currentPriceLabel.setText(formatMoney(updateData.getCurrentPrice()) + " VNĐ");
         }
-
-        // Update leader label
         if (leaderLabel != null && updateData.getHighestBidderName() != null) {
             leaderLabel.setText("Người dẫn đầu: " + updateData.getHighestBidderName());
             leaderLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
         }
 
-        // Update remaining time
-        if (remainingLabel != null) {
-            String remaining = formatRemaining(updateData.getRemainingTime());
-            remainingLabel.setText("Còn lại: " + remaining);
+        // Cập nhật lại mốc thời gian dựa trên Real-time Sync
+        currentAuctionEndTimeMillis = System.currentTimeMillis() + updateData.getRemainingTime();
+        updateCountdownRealtime();
 
-            // Change color to red if less than 1 minute
-            if (updateData.getRemainingTime() < 60000) {
-                remainingLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
-            } else {
-                remainingLabel.setStyle("-fx-text-fill: #7f8c8d;");
-            }
-        }
-
-        // Update price chart
         if (priceSeries != null && updateData.getCurrentPrice() != null) {
             String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             priceSeries.getData().add(new XYChart.Data<>(timeNow, updateData.getCurrentPrice()));
-
-            // Keep only last 15 data points to avoid overcrowding
             if (priceSeries.getData().size() > 15) {
                 priceSeries.getData().remove(0);
             }
         }
-
-        // Update bid amount field with new minimum bid
         updateBidAmountFieldHint(updateData);
     }
 
     private void updateBidAmountFieldHint(AuctionUpdateDTO updateData) {
-        if (bidAmountField == null || updateData.getCurrentPrice() == null) {
-            return;
-        }
+        if (bidAmountField == null || updateData.getCurrentPrice() == null) return;
 
-        // Try to fetch full auction detail to get step price
         ioPool.execute(() -> {
             try {
                 String rawDetail = AuctionNetwork.getAuctionDetail(updateData.getAuctionId());
@@ -511,17 +514,11 @@ public class ViewLiveAuctions {
 
                 if (fullDetail != null && fullDetail.getStepPrice() != null) {
                     BigDecimal stepPrice = fullDetail.getStepPrice();
-                    BigDecimal currentPrice = updateData.getCurrentPrice();
-                    BigDecimal minimumBid = currentPrice.add(stepPrice);
-
                     Platform.runLater(() -> {
-                        if (bidAmountField != null) {
-                            bidAmountField.setText(formatMoney(minimumBid));
-                        }
                         if (stepHintLabel != null) {
-                            stepHintLabel.setText("* Bước giá: " + formatMoney(stepPrice) +
-                                                 " VNĐ | Giá tối thiểu: " + formatMoney(minimumBid) + " VNĐ");
+                            stepHintLabel.setText("* Bước giá: " + formatMoney(stepPrice) + " VNĐ (Nhập số tiền muốn CỘNG THÊM)");
                         }
+                        // KIÊN QUYẾT KHÔNG GHI ĐÈ bidAmountField Ở ĐÂY ĐỂ TRÁNH LỖI NHẢY GIÁ
                     });
                 }
             } catch (Exception e) {
@@ -532,7 +529,6 @@ public class ViewLiveAuctions {
 
     private void updateAuctionCardInList(AuctionUpdateDTO updateData) {
         boolean foundAndUpdated = false;
-
         for (var node : auctionsContainer.getChildren()) {
             if (node.getUserData() instanceof Long id && id == updateData.getAuctionId()) {
                 if (node instanceof VBox card) {
@@ -543,7 +539,6 @@ public class ViewLiveAuctions {
             }
         }
 
-        // If auction not found in list, fetch full details and add it
         if (!foundAndUpdated) {
             ioPool.execute(() -> {
                 try {
@@ -554,8 +549,6 @@ public class ViewLiveAuctions {
                     if (fullDetail != null) {
                         Platform.runLater(() -> {
                             addOrUpdateAuctionRealtime(fullDetail);
-
-                            // If this is the currently viewed auction, update detail panel
                             if (fullDetail.getAuctionId() == currentAuctionId) {
                                 applyAuctionDetail(fullDetail);
                             }
@@ -569,18 +562,14 @@ public class ViewLiveAuctions {
     }
 
     public void addOrUpdateAuctionRealtime(AuctionDetailDTO detail) {
-        if (detail == null || auctionsContainer == null) {
-            return;
-        }
+        if (detail == null || auctionsContainer == null) return;
 
         for (var node : auctionsContainer.getChildren()) {
             if (node.getUserData() instanceof Long id && id == detail.getAuctionId()) {
                 if (node instanceof VBox card) {
                     AuctionUpdateDTO updateDTO = new AuctionUpdateDTO(
-                            detail.getAuctionId(),
-                            detail.getCurrentPrice(),
-                            detail.getHighestBidderName(),
-                            detail.getRemainingTime());
+                            detail.getAuctionId(), detail.getCurrentPrice(),
+                            detail.getHighestBidderName(), detail.getRemainingTime());
                     applyUpdateToCard(card, updateDTO);
                 }
                 return;
@@ -595,19 +584,12 @@ public class ViewLiveAuctions {
     }
 
     public void removeAuctionRealtime(long auctionId) {
-        if (auctionsContainer == null) {
-            return;
-        }
-
+        if (auctionsContainer == null) return;
         auctionsContainer.getChildren().removeIf(node -> node.getUserData() instanceof Long id && id == auctionId);
         if (auctionId == currentAuctionId) {
             currentAuctionId = 0;
-            if (statusLabel != null) {
-                statusLabel.setText("Tình trạng: ĐÃ KẾT THÚC");
-            }
-            if (remainingLabel != null) {
-                remainingLabel.setText("Còn lại: Hết giờ đấu giá");
-            }
+            if (statusLabel != null) statusLabel.setText("Tình trạng: ĐÃ KẾT THÚC");
+            if (remainingLabel != null) remainingLabel.setText("Còn lại: Hết giờ đấu giá");
         }
     }
 
@@ -616,7 +598,6 @@ public class ViewLiveAuctions {
         card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
         card.setMaxWidth(Double.MAX_VALUE);
 
-        // Tên sản phẩm
         Label nameLbl = new Label(a.getItemName() != null ? a.getItemName() : "Item #" + a.getItemId());
         nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2c3e50;");
         nameLbl.setWrapText(true);
@@ -628,40 +609,38 @@ public class ViewLiveAuctions {
         specificsLbl.setStyle("-fx-text-fill: #475569; -fx-font-size: 12px;");
         specificsLbl.setWrapText(true);
 
-        String sellerName = (a.getSellerName() != null && !a.getSellerName().isBlank())
-                ? a.getSellerName()
-                : ("Seller_" + a.getSellerId());
+        String sellerName = (a.getSellerName() != null && !a.getSellerName().isBlank()) ? a.getSellerName() : ("Seller_" + a.getSellerId());
         Label sellerLbl = new Label("Người bán: " + sellerName);
         sellerLbl.setStyle("-fx-text-fill: #475569; -fx-font-size: 12px;");
 
-        // Giá hiện tại
         Label priceLbl = new Label("Giá: " + formatMoney(a.getCurrentPrice()) + " đ");
         priceLbl.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-         // Người dẫn đầu & Thời gian
-         Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
-         Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
-         timeLbl.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+        Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
+        Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
+        timeLbl.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
 
-         Label scheduleInfoLbl = new Label("Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
+        Label scheduleInfoLbl = new Label("Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
                                           " | Kết thúc: " + (a.getEndTime() != null ? a.getEndTime() : "—"));
-         scheduleInfoLbl.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 12px; -fx-font-weight: bold;");
-         scheduleInfoLbl.setWrapText(true);
+        scheduleInfoLbl.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 12px; -fx-font-weight: bold;");
+        scheduleInfoLbl.setWrapText(true);
 
-         // Nút bấm để xem chi tiết / Đặt giá
-         Button btnSelect = new Button("Vào đấu giá");
-         btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
-         btnSelect.setMaxWidth(Double.MAX_VALUE);
+        Button btnSelect = new Button("Vào đấu giá");
+        btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
+        btnSelect.setMaxWidth(Double.MAX_VALUE);
 
-         // LUỒNG QUAN TRỌNG: Khi bấm nút, bơm dữ liệu của thẻ này vào Form Detail hiện tại
-         btnSelect.setOnAction(e -> {
-             applyAuctionDetail(a);
-             showInfo("Đã chọn: " + a.getItemName() + ". Bạn có thể đặt giá ngay bên cạnh!");
-         });
+        btnSelect.setOnAction(e -> {
+            applyAuctionDetail(a);
+            showInfo("Đã chọn: " + a.getItemName() + ". Bạn có thể đặt giá ngay bên cạnh!");
+        });
 
-         // Gắn tất cả vào Thẻ
-         card.getChildren().addAll(nameLbl, typeLbl, sellerLbl, specificsLbl, priceLbl, leaderLbl, timeLbl, scheduleInfoLbl, btnSelect);
-        card.setUserData(a.getAuctionId()); // Lưu ID đấu giá vào userData để dễ truy xuất sau này nếu cần
+        card.getChildren().addAll(nameLbl, typeLbl, sellerLbl, specificsLbl, priceLbl, leaderLbl, timeLbl, scheduleInfoLbl, btnSelect);
+        card.setUserData(a.getAuctionId()); 
+        
+        // Gắn dữ liệu cho thẻ phục vụ đồng hồ chạy ngầm
+        card.getProperties().put("endTime", System.currentTimeMillis() + a.getRemainingTime());
+        card.getProperties().put("timeLabel", timeLbl);
+
         return card;
     }
 
@@ -673,17 +652,14 @@ public class ViewLiveAuctions {
                     lbl.setText("Giá: " + formatMoney(updateData.getCurrentPrice()) + " đ");
                 } else if (text.startsWith("Dẫn đầu:")) {
                     lbl.setText("Dẫn đầu: " + (updateData.getHighestBidderName() != null ? updateData.getHighestBidderName() : "—"));
-                } else if (text.startsWith("Còn lại:")) {
-                    lbl.setText("Còn lại: " + formatRemaining(updateData.getRemainingTime()));
                 }
             }
         }
+        card.getProperties().put("endTime", System.currentTimeMillis() + updateData.getRemainingTime());
     }
 
     private void renderItemSpecifics(Map<String, String> specifics) {
-        if (itemSpecificsBox == null) {
-            return;
-        }
+        if (itemSpecificsBox == null) return;
         itemSpecificsBox.getChildren().clear();
         if (specifics == null || specifics.isEmpty()) {
             Label empty = new Label("Thuộc tính: -");
@@ -700,51 +676,33 @@ public class ViewLiveAuctions {
     }
 
     private String formatSpecificsPreview(Map<String, String> specifics) {
-        if (specifics == null || specifics.isEmpty()) {
-            return "Thuộc tính: -";
-        }
-
+        if (specifics == null || specifics.isEmpty()) return "Thuộc tính: -";
         StringBuilder sb = new StringBuilder("Thuộc tính: ");
         int count = 0;
         for (Map.Entry<String, String> entry : specifics.entrySet()) {
-            if (count > 0) {
-                sb.append(" • ");
-            }
+            if (count > 0) sb.append(" • ");
             sb.append(entry.getKey()).append("=").append(entry.getValue() != null ? entry.getValue() : "-");
             count++;
-            if (count >= 2) {
-                break;
-            }
+            if (count >= 2) break;
         }
         return sb.toString();
     }
 
     private void updateItemImage(AuctionDetailDTO a) {
-        if (itemImageView == null || a == null) {
-            return;
-        }
-
-        // Lấy danh sách tên file ảnh từ DTO
+        if (itemImageView == null || a == null) return;
         List<String> candidates = new ArrayList<>();
         if (a.getItemImageUrls() != null && !a.getItemImageUrls().isEmpty()) {
             candidates.addAll(a.getItemImageUrls());
         }
 
         Image imageToDisplay = null;
-
         for (String fileStr : candidates) {
-            if (fileStr == null || fileStr.isBlank()) {
-                continue;
-            }
-
-            // 1. Dành cho Test Local: Thử tìm trực tiếp file tuyệt đối trên ổ cứng (C:, D:...)
+            if (fileStr == null || fileStr.isBlank()) continue;
             java.io.File localFile = new java.io.File(fileStr);
             if (localFile.exists()) {
                 imageToDisplay = new Image(localFile.toURI().toString(), true);
                 break;
             }
-
-            // 2. Dành cho dữ liệu gốc: Thử tìm trong thư mục resources/images của dự án
             String resourcePath = fileStr.startsWith("/") ? fileStr : "/images/" + fileStr;
             URL resourceUrl = getClass().getResource(resourcePath);
             if (resourceUrl != null) {
@@ -752,34 +710,14 @@ public class ViewLiveAuctions {
                 break;
             }
         }
-
-        // 3. Nếu mọi nỗ lực tìm kiếm đều thất bại, mới triệu hồi con Gardevoir
         if (imageToDisplay == null) {
             URL fallbackUrl = getClass().getResource("/images/Gardevoir.png");
-            if (fallbackUrl != null) {
-                imageToDisplay = new Image(fallbackUrl.toExternalForm(), true);
-            }
+            if (fallbackUrl != null) imageToDisplay = new Image(fallbackUrl.toExternalForm(), true);
         }
-
         if (imageToDisplay != null) {
             itemImageView.setImage(imageToDisplay);
         }
     }
-
-    private static String capitalizeFirst(String s) {
-        if (s == null) {
-            return "";
-        }
-        String t = s.trim();
-        if (t.isEmpty()) {
-            return "";
-        }
-        if (t.length() == 1) {
-            return t.toUpperCase(Locale.ROOT);
-        }
-        return t.substring(0, 1).toUpperCase(Locale.ROOT) + t.substring(1);
-    }
-
 
     private void showError(String message) {
         Alert a = new Alert(Alert.AlertType.ERROR);

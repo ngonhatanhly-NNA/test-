@@ -118,6 +118,10 @@ public class ApiRouter {
         app.get("/api/auctions/bidder/{bidderId}/won",
                 ctx -> auctionController.getWonAuctionsByBidder(ctx));
 
+        // [FIX BUG 2] Kiểm tra trạng thái đấu giá của một item - dùng cho nút Open Auction
+        app.get("/api/auctions/item/{itemId}/status",
+                ctx -> auctionController.getAuctionStatusByItemId(ctx));
+
         // Auto-bid
         app.post("/api/auctions/{auctionId}/auto-bid/cancel", new CancelAutoBidCommand(auctionService));
         app.put("/api/auctions/{auctionId}/auto-bid/update", new UpdateAutoBidAmountCommand(auctionService));

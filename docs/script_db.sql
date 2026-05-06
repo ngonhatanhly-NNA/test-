@@ -133,3 +133,5 @@ CREATE TABLE auto_bids (
     FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
     FOREIGN KEY (bidder_id) REFERENCES users(id) ON DELETE CASCADE
 );
+ALTER TABLE bidders ADD COLUMN reserved_amount DECIMAL(19, 2) DEFAULT 0.00;
+-- Tiền đang "giữ lại" do các bid hiện tại (chưa thanh toán)

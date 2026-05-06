@@ -34,4 +34,10 @@ public interface IAuctionRepository {
      * @return Danh sách Auction có status=FINISHED và winner_id = bidderId
      */
     List<Auction> findWonAuctionsByBidderId(long bidderId);
+
+    /**
+     * [FIX BUG 2] Tìm tất cả phiên đấu giá theo itemId (mọi status).
+     * Dùng để kiểm tra trạng thái item trước khi cho phép mở phiên mới.
+     */
+    List<Auction> findByItemId(long itemId);
 }

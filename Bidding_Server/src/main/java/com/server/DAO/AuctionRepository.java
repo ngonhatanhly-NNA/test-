@@ -170,6 +170,27 @@ public class AuctionRepository implements IAuctionRepository {
     }
 
     /**
+     * [FIX BUG 2] Tìm tất cả phiên đấu giá theo itemId (bao gồm mọi status).
+     * Dùng để kiểm tra xem item có đang/đã được đấu giá chưa.
+     */
+    public List<Auction> findByItemId(long itemId) {
+        List<Auction> auctions = new ArrayList<>();
+        String sql = "SELECT * FROM auctions WHERE item_id = ? ORDER BY created_at DESC";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, itemId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    auctions.add(mapResultSetToAuction(rs));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi tìm auction theo itemId {}: {}", itemId, e.getMessage(), e);
+        }
+        return auctions;
+    }
+
+    /**
      * [MỚI] Lấy danh sách các phiên đấu giá đã kết thúc mà bidderId là người thắng.
      * Query vào DB (không dùng cache) vì đây là dữ liệu đã kết thúc.
      */

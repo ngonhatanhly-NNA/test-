@@ -152,13 +152,51 @@ public class MyInventoryController {
         lblPrice.setFont(Font.font("System", FontWeight.BOLD, 14));
         lblPrice.setStyle("-fx-text-fill: #D4AF37;");
 
+        // [FIX BUG 2] Label trạng thái đấu giá - ẩn ban đầu, sẽ hiện sau khi check API
+        Label lblAuctionStatus = new Label();
+        lblAuctionStatus.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 3 10;");
+        lblAuctionStatus.setVisible(false);
+        lblAuctionStatus.setManaged(false);
+
         Button btnOpenAuction = new Button("Open Auction");
         btnOpenAuction.setStyle("-fx-background-color: #059669; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;");
         btnOpenAuction.setMaxWidth(Double.MAX_VALUE);
-        btnOpenAuction.setOnAction(e -> openCreateAuctionPopup(item.getId()));
 
-        card.getChildren().addAll(lblName, lblType, lblPrice, btnOpenAuction);
+        card.getChildren().addAll(lblName, lblType, lblPrice, lblAuctionStatus, btnOpenAuction);
         card.setUserData(item.getId());
+
+        // [FIX BUG 2] Kiểm tra trạng thái đấu giá bất đồng bộ rồi cập nhật UI
+        new Thread(() -> {
+            try {
+                String auctionStatus = AuctionNetwork.getAuctionStatusByItemId(item.getId());
+                Platform.runLater(() -> {
+                    if ("ACTIVE".equals(auctionStatus)) {
+                        // Item đang được đấu giá: disable nút, hiện badge đỏ
+                        btnOpenAuction.setDisable(true);
+                        btnOpenAuction.setStyle("-fx-background-color: #94A3B8; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6;");
+                        btnOpenAuction.setText("Đang đấu giá...");
+                        lblAuctionStatus.setText("🔴 ĐANG ĐẤU GIÁ");
+                        lblAuctionStatus.setStyle("-fx-background-color: #FEF2F2; -fx-text-fill: #DC2626; -fx-border-color: #FECACA; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
+                        lblAuctionStatus.setVisible(true);
+                        lblAuctionStatus.setManaged(true);
+                    } else if ("FINISHED".equals(auctionStatus)) {
+                        // Đã đấu giá xong: disable nút, hiện badge xanh
+                        btnOpenAuction.setDisable(true);
+                        btnOpenAuction.setStyle("-fx-background-color: #94A3B8; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6;");
+                        btnOpenAuction.setText("Đã kết thúc");
+                        lblAuctionStatus.setText("✅ ĐÃ ĐẤU GIÁ XONG");
+                        lblAuctionStatus.setStyle("-fx-background-color: #F0FDF4; -fx-text-fill: #16A34A; -fx-border-color: #BBF7D0; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
+                        lblAuctionStatus.setVisible(true);
+                        lblAuctionStatus.setManaged(true);
+                    }
+                    // NONE: giữ nút xanh, cho phép tạo phiên mới bình thường
+                });
+            } catch (Exception e) {
+                logger.warn("Không thể kiểm tra auction status cho item {}: {}", item.getId(), e.getMessage());
+            }
+        }, "check-auction-status-" + item.getId()).start();
+
+        btnOpenAuction.setOnAction(e -> openCreateAuctionPopup(item.getId()));
         return card;
     }
 

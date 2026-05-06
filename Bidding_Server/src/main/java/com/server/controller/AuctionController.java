@@ -97,6 +97,24 @@ public class AuctionController {
         }
     }
 
+    /**
+     * [FIX BUG 2] GET /api/auctions/item/{itemId}/status
+     * Trả về trạng thái đấu giá của item: ACTIVE | FINISHED | NONE
+     * Client dùng để disable nút "Open Auction" khi item đang/đã đấu giá.
+     */
+    public void getAuctionStatusByItemId(Context ctx) {
+        try {
+            long itemId = Long.parseLong(ctx.pathParam("itemId"));
+            String status = auctionService.getAuctionStatusByItemId(itemId);
+            ctx.json(new Response("SUCCESS", "Auction status for item", status));
+        } catch (NumberFormatException e) {
+            ctx.status(400).json(new Response("ERROR", "Item ID không hợp lệ", null));
+        } catch (Exception e) {
+            logger.error("Lỗi lấy auction status cho item: {}", e.getMessage(), e);
+            ctx.status(500).json(new Response("ERROR", "Failed: " + e.getMessage(), null));
+        }
+    }
+
     public void placeBid(Context ctx) {
         try {
             BidRequestDTO bidRequest = gson.fromJson(ctx.body(), BidRequestDTO.class);

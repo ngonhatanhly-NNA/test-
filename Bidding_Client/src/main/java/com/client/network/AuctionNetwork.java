@@ -163,6 +163,24 @@ public class AuctionNetwork {
         return response.body();
     }
 
+    /**
+     * [FIX BUG 2] Kiểm tra trạng thái đấu giá của item trước khi cho phép mở phiên mới.
+     * Gọi: GET /api/auctions/item/{itemId}/status
+     * @return "ACTIVE" | "FINISHED" | "NONE"
+     */
+    public static String getAuctionStatusByItemId(long itemId) throws Exception {
+        HttpRequest request = NetworkClient.newRequestBuilder(
+                        URI.create(BASE_URL + "/item/" + itemId + "/status"))
+                .GET()
+                .build();
+        HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
+        Response response = parseResponse(httpResponse.body());
+        if ("SUCCESS".equals(response.getStatus()) && response.getData() != null) {
+            return response.getData().toString();
+        }
+        return "NONE";
+    }
+
     public static Response createAuction(CreateAuctionDTO dto) throws Exception {
         String jsonResponse = postJson(BASE_URL, gson.toJson(dto));
         return gson.fromJson(jsonResponse, Response.class);
