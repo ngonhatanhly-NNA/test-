@@ -128,32 +128,56 @@ public class ViewDashboardController {
 
     private void loadAuctionsFromServer() {
         new Thread(() -> {
+            // Khởi tạo list rỗng để hứng dữ liệu, chống sập luồng
+            List<AuctionDetailDTO> tempLive = new ArrayList<>();
+            List<AuctionDetailDTO> tempUp = new ArrayList<>();
             try {
-                List<AuctionDetailDTO> liveAuctions = AuctionNetwork.getActiveAuctions();
-                List<AuctionDetailDTO> upcomingAuctions = AuctionNetwork.getUpcomingAuctions();
-
-                Platform.runLater(() -> {
-                    if (mainScrollPane == null) return;
-                    
-                    VBox mainContent = new VBox();
-                    mainContent.setSpacing(30);
-                    mainContent.setPadding(new Insets(20));
-
-                    // Live Auctions Section
-                    if (liveAuctions != null && !liveAuctions.isEmpty()) {
-                        mainContent.getChildren().add(createAuctionSection("💎 Live Auctions", liveAuctions));
-                    }
-
-                    // Upcoming Auctions Section
-                    if (upcomingAuctions != null && !upcomingAuctions.isEmpty()) {
-                        mainContent.getChildren().add(createAuctionSection("⏰ Upcoming Auctions", upcomingAuctions));
-                    }
-
-                    mainScrollPane.setContent(mainContent);
-                });
+                // Gọi API lấy dữ liệu. Nếu Server chưa mở cổng /upcoming, nó sẽ nhảy xuống Catch
+                tempLive = AuctionNetwork.getActiveAuctions();
+                tempUp = AuctionNetwork.getUpcomingAuctions();
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("Cảnh báo: Không thể tải phiên đấu giá: " + e.getMessage());
             }
+
+            final List<AuctionDetailDTO> liveAuctions = tempLive;
+            final List<AuctionDetailDTO> upcomingAuctions = tempUp;
+
+            Platform.runLater(() -> {
+                // Kiểm tra an toàn: Nếu FXML chưa có id mainScrollPane thì không làm gì cả
+                if (mainScrollPane == null) {
+                    System.out.println("CẢNH BÁO: Không tìm thấy mainScrollPane! Hãy thêm fx:id vào file FXML.");
+                    return;
+                }
+
+                VBox mainContent = new VBox();
+                mainContent.setSpacing(30);
+                mainContent.setPadding(new Insets(20));
+
+                // 1. Dải băng "Live Auctions"
+                if (!liveAuctions.isEmpty()) {
+                    mainContent.getChildren().add(createAuctionSection("🔥 Đang Diễn Ra (Live)", liveAuctions));
+                }
+
+                // 2. Dải băng "Upcoming Auctions"
+                if (!upcomingAuctions.isEmpty()) {
+                    mainContent.getChildren().add(createAuctionSection("⏰ Sắp Diễn Ra", upcomingAuctions));
+                }
+
+                // 3. Phần "Khám Phá Sản Phẩm" nguyên gốc
+                if (itemContainer != null) {
+                    VBox itemSection = new VBox();
+                    itemSection.setSpacing(15);
+                    Label titleLabel = new Label("📦 Khám Phá Sản Phẩm");
+                    titleLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
+                    titleLabel.setStyle("-fx-text-fill: #333333;");
+
+                    itemSection.getChildren().addAll(titleLabel, itemContainer);
+                    mainContent.getChildren().add(itemSection);
+                }
+
+                // 4. Nhét lại vào khung tranh chính
+                mainScrollPane.setContent(mainContent);
+            });
         }).start();
     }
 

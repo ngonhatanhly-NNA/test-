@@ -52,7 +52,7 @@ public class ServerApp extends WebSocketServer {
     @Override public void onMessage(WebSocket conn, String message) {
         logger.info("Received auction message from {}: {}", conn.getRemoteSocketAddress(), message);
         try {
-            handleAuctionMessage(message);
+            handleAuctionMessage(conn, message);
         } catch (Exception e) {
             logger.error("Lỗi xử lý message từ client {}: {}", conn.getRemoteSocketAddress(), e.getMessage());
         }
@@ -68,7 +68,7 @@ public class ServerApp extends WebSocketServer {
     /**
      * Xử lý WebSocket message từ client
      */
-    private void handleAuctionMessage(String message) {
+    private void handleAuctionMessage(WebSocket conn, String message) {
         if (message == null || message.isEmpty() || auctionService == null) {
             return;
         }
@@ -85,6 +85,14 @@ public class ServerApp extends WebSocketServer {
                 case "PLACE_BID": handlePlaceBid(payload); break;
                 case "CANCEL_AUTO_BID": handleCancelAutoBid(payload); break;
                 case "UPDATE_AUTO_BID": handleUpdateAutoBid(payload); break;
+				case "JOIN_ROOM": 
+					try {
+						long roomId = Long.parseLong(payload.trim());
+						Broadcaster.joinRoom(roomId, conn);
+					} catch (NumberFormatException e) {
+						logger.error("Lỗi ID phòng không hợp lệ: {}", payload);
+					}
+					break; 
                 default: logger.warn("Loại message không hợp lệ: {}", type);
             }
         } catch (Exception e) {
@@ -159,6 +167,7 @@ public class ServerApp extends WebSocketServer {
         ItemService itemService = new ItemService(itemRepo);
         AdminService adminService = new AdminService();
         UserService userService = new UserService(); // <-- KHỞI TẠO USER SERVICE
+        BidderService bidderService = new BidderService(); // <-- THÊM MỚI: BIDDER SERVICE
         SellerService sellerService = new SellerService(sellerRepo);
         AuctionService auctionService = new AuctionService(
                 auctionRepo, bidRepo, autoBidRepo, itemService, userRepo,
@@ -175,6 +184,7 @@ public class ServerApp extends WebSocketServer {
         AuctionController auctionController = new AuctionController(auctionService);
         AdminController adminController = new AdminController(adminService);
         UserController userController = new UserController(userService);
+        BidderController bidderController = new BidderController(bidderService); // <-- THÊM MỚI
         SellerController sellerController = new SellerController(sellerService);
         ImageController imageController = new ImageController(); // [MỚI] Controller xử lý ảnh
 
@@ -186,7 +196,7 @@ public class ServerApp extends WebSocketServer {
 
         // Truyền SellerController vào ApiRouter
         ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController,
-                sellerController, itemService, auctionService, jwtUtil, userController, imageController);
+                bidderController, sellerController, itemService, auctionService, jwtUtil, userController, imageController);
         apiRouter.setupRoutes(app);
     }
 }

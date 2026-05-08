@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+
+<VBox alignment="TOP_CENTER" prefHeight="500.0" prefWidth="600.0" spacing="20.0"
+      style="-fx-background-color: linear-gradient(to bottom, #E8EEF2, #F8FAFC); -fx-padding: 30;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.DepositController">
+
+    <!-- TIÊU ĐỀ -->
+    <VBox alignment="CENTER" spacing="10.0">
+        <Label text="💰 NẠP TIỀN VÀO VÍ" textFill="#1E293B">
+            <font>
+                <Font name="System Bold" size="28.0" />
+            </font>
+        </Label>
+        <Label text="Nạp tiền để có thể tham gia đấu giá" textFill="#64748B">
+            <font>
+                <Font name="System Italic" size="14.0" />
+            </font>
+        </Label>
+    </VBox>
+
+    <!-- FORM NẠP TIỀN -->
+    <VBox maxWidth="450.0" spacing="20.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 15; -fx-padding: 30; -fx-effect: dropshadow(gaussian, rgba(17,24,39,0.1), 20, 0, 2, 5);">
+
+        <!-- PHẦN SỐ DƯ HIỆN TẠI -->
+        <VBox spacing="8.0" style="-fx-background-color: #F0F9FF; -fx-border-color: #0EA5E9; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15;">
+            <Label text="Số dư ví hiện tại:" textFill="#0C4A6E">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
+            <Label fx:id="lblCurrentBalance" text="0 VNĐ" textFill="#0EA5E9">
+                <font>
+                    <Font name="System Bold" size="20.0" />
+                </font>
+            </Label>
+        </VBox>
+
+        <!-- PHẦN CHỌN HỖ TRỢ THANH TOÁN -->
+        <VBox spacing="8.0">
+            <Label text="Hình thức thanh toán:" textFill="#475569">
+                <font>
+                    <Font name="System Bold" size="13.0" />
+                </font>
+            </Label>
+            <ComboBox fx:id="cmbPaymentMethod" prefHeight="45.0" promptText="Chọn hình thức thanh toán..."
+                      style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-padding: 10;">
+            </ComboBox>
+        </VBox>
+
+        <!-- PHẦN NHẬP SỐ TIỀN -->
+        <VBox spacing="8.0">
+            <Label text="Số tiền nạp (VNĐ):" textFill="#475569">
+                <font>
+                    <Font name="System Bold" size="13.0" />
+                </font>
+            </Label>
+            <TextField fx:id="txtDepositAmount" prefHeight="45.0" promptText="VD: 100000"
+                       style="-fx-background-color: #F8FAFC; -fx-border-color: #CBD5E1; -fx-border-radius: 8; -fx-padding: 0 12; -fx-font-size: 14;">
+            </TextField>
+            <Label fx:id="lblAmountError" text="" textFill="#DC2626">
+                <font>
+                    <Font name="System Italic" size="12.0" />
+                </font>
+            </Label>
+        </VBox>
+
+        <!-- GỢI Ý MỨC NẠP NHANH -->
+        <VBox spacing="10.0">
+            <Label text="Mức nạp nhanh:" textFill="#64748B">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
+            <HBox spacing="10.0" alignment="CENTER">
+                <Button text="100K" onAction="#handleQuickDeposit100k" prefWidth="90.0" prefHeight="35.0"
+                        style="-fx-background-color: #FBBF24; -fx-text-fill: #78350F; -fx-border-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;">
+                </Button>
+                <Button text="500K" onAction="#handleQuickDeposit500k" prefWidth="90.0" prefHeight="35.0"
+                        style="-fx-background-color: #60A5FA; -fx-text-fill: #FFFFFF; -fx-border-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;">
+                </Button>
+                <Button text="1M" onAction="#handleQuickDeposit1m" prefWidth="90.0" prefHeight="35.0"
+                        style="-fx-background-color: #34D399; -fx-text-fill: #FFFFFF; -fx-border-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;">
+                </Button>
+                <Button text="5M" onAction="#handleQuickDeposit5m" prefWidth="90.0" prefHeight="35.0"
+                        style="-fx-background-color: #F87171; -fx-text-fill: #FFFFFF; -fx-border-radius: 6; -fx-cursor: hand; -fx-font-weight: bold;">
+                </Button>
+            </HBox>
+        </VBox>
+
+        <!-- CHI TIẾT NGƯỜI NHẬN -->
+        <VBox spacing="8.0" style="-fx-border-color: #E2E8F0; -fx-border-radius: 8; -fx-padding: 12; -fx-border-width: 1;">
+            <Label text="Người nhận (Tên cửa hàng):" textFill="#64748B">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
+            <TextField fx:id="txtRecipient" disable="true" prefHeight="40.0"
+                       style="-fx-background-color: #F1F5F9; -fx-border-color: #E2E8F0; -fx-border-radius: 6; -fx-padding: 0 12; -fx-text-fill: #94A3B8;">
+            </TextField>
+            <Label text="Số tài khoản (TK):" textFill="#64748B" style="-fx-padding: 8 0 0 0;">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
+            <TextField fx:id="txtAccountNumber" disable="true" prefHeight="40.0"
+                       style="-fx-background-color: #F1F5F9; -fx-border-color: #E2E8F0; -fx-border-radius: 6; -fx-padding: 0 12; -fx-text-fill: #94A3B8;">
+            </TextField>
+        </VBox>
+
+        <!-- NÚT XÁC NHẬN -->
+        <VBox spacing="15.0" alignment="CENTER">
+            <Button fx:id="btnDeposit" onAction="#handleDeposit" prefHeight="50.0" prefWidth="200.0" text="TIẾN HÀNH NẠP TIỀN"
+                    style="-fx-background-color: linear-gradient(to right, #D4AF37, #FDE047); -fx-text-fill: #664A00; -fx-background-radius: 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-font-size: 14; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 5);">
+            </Button>
+
+            <!-- LOADING INDICATOR -->
+            <ProgressIndicator fx:id="progressIndicator" prefWidth="40.0" prefHeight="40.0" visible="false" />
+
+            <!-- STATUS MESSAGE -->
+            <Label fx:id="lblStatus" text="" textFill="#059669">
+                <font>
+                    <Font name="System Bold" size="13.0" />
+                </font>
+            </Label>
+        </VBox>
+
+    </VBox>
+
+    <!-- HƯỚNG DẪN -->
+    <VBox maxWidth="450.0" spacing="8.0" style="-fx-background-color: #FEF3C7; -fx-border-color: #FBBF24; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;">
+        <Label text="⚠️ HƯỚNG DẪN:" textFill="#B45309">
+            <font>
+                <Font name="System Bold" size="12.0" />
+            </font>
+        </Label>
+        <Label text="• Nhập số tiền muốn nạp (tối thiểu: 10.000 VNĐ)" textFill="#92400E" wrapText="true">
+            <font>
+                <Font size="11.0" />
+            </font>
+        </Label>
+        <Label text="• Chọn hình thức thanh toán" textFill="#92400E" wrapText="true">
+            <font>
+                <Font size="11.0" />
+            </font>
+        </Label>
+        <Label text="• Xác nhận và hoàn tất giao dịch" textFill="#92400E" wrapText="true">
+            <font>
+                <Font size="11.0" />
+            </font>
+        </Label>
+    </VBox>
+
+</VBox>
+

@@ -3,6 +3,7 @@ package com.server.service.auction.processor;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Queue;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,16 +46,16 @@ public class AutoBidProcessor{
      * - Nếu hợp lệ, đặt auto-bid, nếu không thì tắt auto-bid
      */
     public void process(Auction auction, Queue<BidTransaction> bidQueue) {
+        // 1. LẤY DATA TỪ DB ĐÚNG 1 LẦN
+        List<AutoBidTracker> activeBids = autoBidRepository.findAllActiveByAuction(auction.getId());
+        List<AutoBidTracker> deactivatedBids = new ArrayList<>();
+
         boolean priceChanged = true; // Cờ theo dõi xem trong một lượt quét có ai nâng giá không
 
-        // Vòng lặp "Đấu trường": Sẽ chạy liên tục cho đến khi các Auto-bidder chém nhau xong 
-        // và không ai có thể/muốn nâng giá thêm nữa.
+        // Vòng lặp "Đấu trường": Chạy trên RAM cho đến khi phân thắng bại
         while (priceChanged) {
             priceChanged = false; // Reset cờ ở đầu mỗi hiệp đấu
             
-            // Lấy lại danh sách vì có thể một số người đã bị de-active ở hiệp trước
-            List<AutoBidTracker> activeBids = autoBidRepository.findAllActiveByAuction(auction.getId());
-
             for (AutoBidTracker autoBid : activeBids) {
                 // Bỏ qua nếu auto-bidder hiện tại đang là người dẫn đầu
                 if (auction.getWinnerId() != null && autoBid.getBidderId() == auction.getWinnerId()) {
@@ -63,22 +64,18 @@ public class AutoBidProcessor{
 
                 BigDecimal currentBid = auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO;
                 
-                // 1. Lấy bước giá mặc định của phiên
+                // Lấy bước giá
                 BigDecimal auctionStep = auction.getStepPrice();
                 if (auctionStep == null || auctionStep.compareTo(BigDecimal.ZERO) <= 0) {
                     continue;
                 }
 
-                // 2. Lấy bước giá tùy chỉnh của người dùng
                 BigDecimal customStep = autoBid.getCustomStepPrice();
-                
-                // 3. Quyết định bước giá sẽ dùng
                 BigDecimal actualStepPrice = auctionStep;
                 if (customStep != null && customStep.compareTo(auctionStep) > 0) {
                     actualStepPrice = customStep;
                 }
 
-                // 4. Tính giá tối thiểu cần đặt
                 BigDecimal minBid = calculateNextBidAmount(currentBid, actualStepPrice);
 
                 // Kiểm tra xem auto-bidder có đủ budget không
@@ -95,19 +92,29 @@ public class AutoBidProcessor{
                         autoBidTx.setAutoBid(true);
                         bidQueue.offer(autoBidTx);
 
+                        // Ghi log đặt giá thành công ở đây
                         logger.info("Auto-bid placed for auction {} bidder {}: amount={}, maxAmount={}", 
                             auction.getId(), autoBid.getBidderId(), autoBidAmount, autoBid.getMaxBidAmount());
-                            
-                        // CÓ NGƯỜI NÂNG GIÁ! Đánh dấu cờ true để bắt đầu hiệp đấu mới (while sẽ chạy lại)
+
+                        // CÓ NGƯỜI NÂNG GIÁ! Đánh dấu cờ true để bắt đầu hiệp đấu mới
                         priceChanged = true; 
                     }
                 } else {
-                    // Tắt auto-bid nếu max amount < required minimum bid
-                    autoBidRepository.deactivate(auction.getId(), autoBid.getBidderId());
-                    logger.info("Auto-bid disabled for auction {} bidder {}: maxAmount={} < minBid={}", 
-                        auction.getId(), autoBid.getBidderId(), autoBid.getMaxBidAmount(), minBid);
+                    // KHÔNG ĐỦ TIỀN -> Đánh dấu bị loại (Chưa gọi DB vội)
+                    autoBid.setActive(false);
+                    deactivatedBids.add(autoBid);
                 }
             }
+            
+            // Xóa những người đã hết tiền khỏi danh sách đấu trên RAM để hiệp sau không phải quét lại
+            activeBids.removeIf(bid -> !bid.isActive());
+        }
+            
+        // KẾT THÚC ĐẤU TRƯỜNG -> CẬP NHẬT DB NHỮNG NGƯỜI BỊ LOẠI 1 LẦN DUY NHẤT
+        for (AutoBidTracker deactivated : deactivatedBids) {
+            autoBidRepository.deactivate(auction.getId(), deactivated.getBidderId());
+            logger.info("Auto-bid disabled for auction {} bidder {} due to insufficient max amount.", 
+                        auction.getId(), deactivated.getBidderId());
         }
     }
 

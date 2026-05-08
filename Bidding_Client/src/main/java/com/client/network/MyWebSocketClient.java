@@ -43,6 +43,16 @@ public class MyWebSocketClient extends WebSocketClient {
         return instance;
     }
 
+    // Gửi lệnh xin vào phòng đấu giá để nhận cập nhật giá
+    public void joinRoom(long auctionId) {
+        if (this.isOpen()) {
+            this.send("JOIN_ROOM:" + auctionId);
+            logger.info("Đã gửi yêu cầu tham gia phòng đấu giá: {}", auctionId);
+        } else {
+            logger.error("WebSocket chưa kết nối, không thể tham gia phòng!");
+        }
+    }
+
     @Override
     public void onOpen(ServerHandshake handshakedata) {
         logger.info("Đã kết nối thành công tới Server!");
@@ -57,64 +67,92 @@ public class MyWebSocketClient extends WebSocketClient {
         logger.info("Server trả lời: {}", message);
         Gson gson = new Gson();
         String[] parts = message != null ? message.split(":", 2) : new String[0];
+        
         if (parts.length == 2) {
             String type = parts[0].trim();
             String payload = parts[1].trim();
 
-            if ("AUCTION_UPDATE".equals(type)) {
-                AuctionUpdateDTO updateData = gson.fromJson(payload, AuctionUpdateDTO.class);
-                Platform.runLater(() -> {
-                    ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
-                    if (view != null) {
-                        view.updatePriceRealtime(updateData);
-                    }
-                });
-                return;
-            }
-
-            if ("AUCTION_CREATED".equals(type)) {
-                AuctionDetailDTO detail = gson.fromJson(payload, AuctionDetailDTO.class);
-                Platform.runLater(() -> {
-                    ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
-                    if (view != null) {
-                        view.addOrUpdateAuctionRealtime(detail);
-                    }
-                    com.client.controller.dashboard.SellerDashboardController sellerView =
-                            com.client.controller.dashboard.SellerDashboardController.getExistingInstance();
-                    if (sellerView != null) {
-                        sellerView.addOrUpdateAuctionRealtime(detail);
-                    }
-                });
-                return;
-            }
-
-            if ("AUCTION_FINISHED".equals(type)) {
-                try {
-                    long auctionId = Long.parseLong(payload);
+            switch (type) {
+                case "AUCTION_UPDATE":
+                    AuctionUpdateDTO updateData = gson.fromJson(payload, AuctionUpdateDTO.class);
                     Platform.runLater(() -> {
                         ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
                         if (view != null) {
-                            view.removeAuctionRealtime(auctionId);
+                            view.updatePriceRealtime(updateData);
+                        }
+                    });
+                    break;
+
+                case "AUCTION_CREATED":
+                    AuctionDetailDTO detail = gson.fromJson(payload, AuctionDetailDTO.class);
+                    Platform.runLater(() -> {
+                        ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+                        if (view != null) {
+                            view.addOrUpdateAuctionRealtime(detail);
                         }
                         com.client.controller.dashboard.SellerDashboardController sellerView =
                                 com.client.controller.dashboard.SellerDashboardController.getExistingInstance();
                         if (sellerView != null) {
-                            sellerView.removeAuctionRealtime(auctionId);
+                            sellerView.addOrUpdateAuctionRealtime(detail);
                         }
                     });
-                } catch (NumberFormatException e) {
-                    logger.warn("Không parse được AUCTION_FINISHED payload: {}", payload);
-                }
-                return;
+                    break;
+
+                case "AUCTION_FINISHED": // Xử lý khi đóng phiên (Trường hợp ế hàng)
+                    try {
+                        long auctionId = Long.parseLong(payload);
+                        Platform.runLater(() -> {
+                            // Gọi hàm báo ế bên ViewLiveAuctions
+                            ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+                            if (view != null) {
+                                view.handleAuctionFinishedNoWinner(auctionId);
+                            }
+                            // Gỡ thẻ bài bên SellerDashboard
+                            com.client.controller.dashboard.SellerDashboardController sellerView =
+                                    com.client.controller.dashboard.SellerDashboardController.getExistingInstance();
+                            if (sellerView != null) {
+                                sellerView.removeAuctionRealtime(auctionId);
+                            }
+                        });
+                    } catch (NumberFormatException e) {
+                        logger.warn("Không parse được AUCTION_FINISHED payload: {}", payload);
+                    }
+                    break;
+
+                case "AUCTION_WON": // Xử lý khi có người chiến thắng
+                    try {
+                        com.shared.dto.AuctionWinnerDTO winnerData = gson.fromJson(payload, com.shared.dto.AuctionWinnerDTO.class);
+                        Platform.runLater(() -> {
+                            // Bật Popup chúc mừng
+                            ViewLiveAuctions view = ViewLiveAuctions.getExistingInstance();
+                            if (view != null) {
+                                view.showWinnerNotification(winnerData);
+                            }
+                            // Gỡ thẻ bài bên SellerDashboard
+                            com.client.controller.dashboard.SellerDashboardController sellerView =
+                                    com.client.controller.dashboard.SellerDashboardController.getExistingInstance();
+                            if (sellerView != null) {
+                                sellerView.removeAuctionRealtime(winnerData.getAuctionId());
+                            }
+                        });
+                    } catch (Exception e) {
+                        logger.warn("Không parse được AUCTION_WON payload: {}", payload);
+                    }
+                    break;
+
+                default:
+                    logger.debug("Loại tin nhắn WebSocket không được hỗ trợ: {}", type);
+                    break;
             }
+            return; // Đã xử lý xong các luồng Socket có Type
         }
 
-        //NẾU LÀ CÁC THÔNG BÁO KHÁC (ví dụ: đăng nhập, đăng ký)
+        //NẾU LÀ CÁC THÔNG BÁO KHÁC (ví dụ: đăng ký cũ)
         try {
             Response res = gson.fromJson(message, Response.class);
             if ("SUCCESS".equals(res.getStatus())) {
                 Platform.runLater(() -> {
-                    logger.info("Giao diện: Đăng ký thành công!");
+                    logger.info("Giao diện: Xử lý Response thường thành công!");
                 });
             }
         } catch (Exception e) {
@@ -147,5 +185,5 @@ public class MyWebSocketClient extends WebSocketClient {
         if (view != null) {
             view.updateConnectionStatus(false, "🔴 Lỗi đường truyền!");
         }
-     }
+    }
 }

@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,8 +17,11 @@ import com.client.network.AuctionNetwork;
 import com.client.session.ClientSession;
 import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.AuctionUpdateDTO;
+import com.shared.dto.AuctionWinnerDTO;
 import com.shared.network.Response;
-
+import com.client.network.MyWebSocketClient;
+import com.client.util.ToastUtil; 
+import com.client.util.WinnerBoardUtil;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -28,7 +30,6 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -205,7 +206,7 @@ public class ViewLiveAuctions {
                         refreshButton.setDisable(false);
                     }
                     if (list == null || list.isEmpty()) {
-                        showError("Chưa có phiên đấu giá đang mở trên server (hoặc DB/cache trống).");
+                        showError("Auction is not open");
                         return;
                     }
 
@@ -251,6 +252,14 @@ public class ViewLiveAuctions {
     private void applyAuctionDetail(AuctionDetailDTO a) {
         currentAuctionId = a.getAuctionId();
         
+        try {
+            if (MyWebSocketClient.getInstance() != null) {
+                MyWebSocketClient.getInstance().joinRoom(currentAuctionId);
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Không thể kết nối WebSocket Room", e);
+        }
+        
         // Chốt mốc thời gian kết thúc
         currentAuctionEndTimeMillis = System.currentTimeMillis() + a.getRemainingTime();
 
@@ -272,7 +281,6 @@ public class ViewLiveAuctions {
             leaderLabel.setText("Người dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
         }
         
-        // Cập nhật gợi ý: Nhập số tiền TĂNG THÊM
         if (stepHintLabel != null && a.getStepPrice() != null) {
             stepHintLabel.setText("* Bước giá: " + formatMoney(a.getStepPrice()) + " VNĐ (Nhập số tiền muốn CỘNG THÊM)");
         }
@@ -313,11 +321,11 @@ public class ViewLiveAuctions {
     @FXML
     private void handlePlaceBid() {
         if (currentAuctionId <= 0) {
-            showError("Chưa có phiên đấu giá. Bấm \"Refresh\" sau khi server đã chạy.");
+            showError("There isn't any auction. Enter /Refresh/");
             return;
         }
         if (!ClientSession.isLoggedIn()) {
-            showError("Vui lòng đăng nhập trước khi đặt giá.");
+            showError("Please log in before place bid");
             return;
         }
 
@@ -332,7 +340,7 @@ public class ViewLiveAuctions {
                         try {
                             LocalDateTime startTime = LocalDateTime.parse(detail.getStartTime());
                             if (startTime.isAfter(LocalDateTime.now())) {
-                                showError("Phiên đấu giá chưa bắt đầu! Bắt đầu lúc: " + detail.getStartTime());
+                                showError("Auction is not open: Time starts at " + detail.getStartTime());
                                 return;
                             }
                         } catch (Exception e) {
@@ -347,7 +355,7 @@ public class ViewLiveAuctions {
                         
                         // Kiểm tra nếu tiền cộng thêm < bước giá tối thiểu
                         if (addedAmount.compareTo(stepPrice) < 0) {
-                            showError("Số tiền tăng thêm phải lớn hơn hoặc bằng bước giá: " + formatMoney(stepPrice) + " đ");
+                            showError("Adding bid must be greater than: " + formatMoney(stepPrice) + " đ");
                             return;
                         }
 
@@ -370,25 +378,25 @@ public class ViewLiveAuctions {
                         Response res2 = AuctionNetwork.parseResponse(raw2);
                         
                         if ("SUCCESS".equals(res2.getStatus())) {
-                            showInfo("Đặt giá thành công!");
+                            showInfo("Đặt giá thành công!"); // <--- HIỂN THỊ TOAST ĐẸP
                             if (autoBidStatusLabel != null && enableAutoBidCheckBox != null && enableAutoBidCheckBox.isSelected()) {
                                 autoBidStatusLabel.setVisible(true);
-                                autoBidStatusLabel.setText("✓ Auto-bid bật");
+                                autoBidStatusLabel.setText("✓ Auto-bid enter");
                                 autoBidStatusLabel.setStyle("-fx-text-fill: green;");
                             }
                         } else {
                             showError(res2.getMessage());
                         }
                     } catch (NumberFormatException e) {
-                        showError("Vui lòng nhập số tiền hợp lệ.");
+                        showError("Please enter correct number");
                     } catch (Exception e) {
-                        showError("Lỗi khi đặt giá: " + e.getMessage());
+                        showError("Error in bidding: " + e.getMessage());
                         e.printStackTrace();
                     }
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    showError("Lỗi kiểm tra phiên: " + e.getMessage());
+                    showError("Error in checking auction: " + e.getMessage());
                     e.printStackTrace();
                 });
             }
@@ -518,7 +526,7 @@ public class ViewLiveAuctions {
                         if (stepHintLabel != null) {
                             stepHintLabel.setText("* Bước giá: " + formatMoney(stepPrice) + " VNĐ (Nhập số tiền muốn CỘNG THÊM)");
                         }
-                        // KIÊN QUYẾT KHÔNG GHI ĐÈ bidAmountField Ở ĐÂY ĐỂ TRÁNH LỖI NHẢY GIÁ
+                      
                     });
                 }
             } catch (Exception e) {
@@ -718,20 +726,51 @@ public class ViewLiveAuctions {
             itemImageView.setImage(imageToDisplay);
         }
     }
+    
+    /**
+    * Method to handle auction that have no bidder or not accept the condiiton
+    */
+    public void handleAuctionFinishedNoWinner (long auctionId) {
+        removeAuctionRealtime(auctionId);
+        
+        if (currentAuctionId == auctionId) {
+            // Thay Alert bằng ToastUtil hiển thị thông báo nhẹ nhàng
+            ToastUtil.showInfo("Pathetic, no one bid this item!");
+            lockAuctionUI(); // <-- Đã được dời vào bên trong IF
+        }
+    }
+    
+    /*
+    * Method to turn on the notification if the result is set
+    */
+    public void showWinnerNotification(AuctionWinnerDTO winnerData) {
+        removeAuctionRealtime(winnerData.getAuctionId());
+        
+        if (currentAuctionId == winnerData.getAuctionId()) {
+            WinnerBoardUtil.showWinnerBoard(winnerData, ClientSession.getUserId());
+            lockAuctionUI(); 
+        }
+    }
 
+    /**
+    * Lock Ui
+    */
+    public void lockAuctionUI() {
+        if (statusLabel != null) {
+            statusLabel.setText("FINISHED");
+            statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+        }
+        
+        if (remainingLabel != null) remainingLabel.setText("TIME UP");
+        if (bidAmountField != null) bidAmountField.setDisable(true);
+        if (enableAutoBidCheckBox != null) enableAutoBidCheckBox.setDisable(true);
+    }
+    
     private void showError(String message) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle("Đấu giá");
-        a.setHeaderText(null);
-        a.setContentText(message);
-        a.showAndWait();
+        ToastUtil.showError(message);
     }
 
     private void showInfo(String message) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION);
-        a.setTitle("Đấu giá");
-        a.setHeaderText(null);
-        a.setContentText(message != null ? message : "Thành công");
-        a.showAndWait();
+        ToastUtil.showInfo(message != null ? message : "Thành công");
     }
 }

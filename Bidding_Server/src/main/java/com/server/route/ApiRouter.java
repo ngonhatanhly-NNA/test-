@@ -3,20 +3,12 @@ package com.server.route;
 import com.server.controller.AuctionController;
 import com.server.controller.AuthController;
 import com.server.controller.AdminController;
+import com.server.controller.BidderController;
 import com.server.controller.SellerController;
 import com.server.controller.UserController;
-import com.server.controller.command.CancelAutoBidCommand;
-import com.server.controller.command.CreateAuctionCommand;
-import com.server.controller.command.CreateItemCommand;
-import com.server.controller.command.GetActiveAuctionsCommand;
-import com.server.controller.command.GetAllItemsCommand;
-import com.server.controller.command.GetItemsBySellerIdCommand;
-import com.server.controller.command.GetAuctionDetailCommand;
-import com.server.controller.command.GetBidHistoryCommand;
-import com.server.controller.command.PlaceBidCommand;
-import com.server.controller.command.UpdateAutoBidAmountCommand;
-import com.server.controller.command.UpdateProfileCommand;
+import com.server.controller.command.*;
 import com.server.service.AuctionService;
+import com.server.service.BidderService;
 import com.server.service.ItemService;
 import com.server.service.UserService;
 import com.server.model.Role;
@@ -36,6 +28,7 @@ public class ApiRouter {
     private final AuthController authController;
     private final AuctionController auctionController;
     private final AdminController adminController;
+    private final BidderController bidderController;
     private final SellerController sellerController;
     private final ItemService itemService;
     private final AuctionService auctionService;
@@ -44,13 +37,14 @@ public class ApiRouter {
     private final ImageController imageController; // [MỚI] Thêm controller xử lý ảnh
 
     public ApiRouter(AuthController authController, AuctionController auctionController,
-                     AdminController adminController, SellerController sellerController,
-                     ItemService itemService, AuctionService auctionService,
-                     JwtUtil jwtUtil, UserController userController,
+                     AdminController adminController, BidderController bidderController,
+                     SellerController sellerController, ItemService itemService,
+                     AuctionService auctionService, JwtUtil jwtUtil, UserController userController,
                      ImageController imageController) { // [MỚI] Thêm ImageController vào constructor
         this.authController = authController;
         this.auctionController = auctionController;
         this.adminController = adminController;
+        this.bidderController = bidderController;
         this.sellerController = sellerController;
         this.itemService = itemService;
         this.auctionService = auctionService;
@@ -98,6 +92,14 @@ public class ApiRouter {
             ctx.json(resultJson);
         });
 
+        // --- Nhóm API Bidder (Nạp tiền, ví, thông tin) ---
+        app.put("/api/bidders/{bidderId}/deposit", ctx -> bidderController.depositMoney(ctx));
+        app.get("/api/bidders/{bidderId}/wallet", ctx -> bidderController.getWalletBalance(ctx));
+        app.get("/api/bidders/{bidderId}/profile", ctx -> bidderController.getBidderProfile(ctx));
+        // Seller cũng có thể dùng các endpoint này vì Seller extends Bidder
+        app.put("/api/sellers/{sellerId}/deposit", ctx -> bidderController.depositMoney(ctx));
+        app.get("/api/sellers/{sellerId}/wallet", ctx -> bidderController.getWalletBalance(ctx));
+
         // --- Nhóm API Sản phẩm (Items) ---
         app.get("/api/items", new GetAllItemsCommand(itemService));
         app.post("/api/items", new CreateItemCommand(itemService));
@@ -106,6 +108,7 @@ public class ApiRouter {
         // --- Nhóm API Đấu giá (Auctions) ---
         app.post("/api/auctions", new CreateAuctionCommand(auctionService));
         app.get("/api/auctions/active", new GetActiveAuctionsCommand(auctionService));
+        app.get("/api/auctions/upcoming", new GetUpcomingAuctionsCommand(auctionService));
         app.post("/api/auctions/bid", new PlaceBidCommand(auctionService));
         app.get("/api/auctions/{auctionId}", new GetAuctionDetailCommand(auctionService));
         app.get("/api/auctions/{auctionId}/bids", new GetBidHistoryCommand(auctionService));

@@ -85,6 +85,41 @@ public class BidderNetwork {
     }
 
     /**
+     * NẠP TIỀN VÀO VÍ (Deposit Money)
+     * @param bidderId ID của Bidder
+     * @param depositAmount Số tiền nạp
+     * @return Response từ server
+     */
+    public CompletableFuture<Response> depositMoney(long bidderId, BigDecimal depositAmount) {
+        // Tạo request body
+        String jsonBody = gson.toJson(new DepositMoneyRequest(depositAmount));
+
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + bidderId + "/deposit"))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
+
+    /**
+     * LẤY THÔNG TIN VÍ (Get Wallet Balance)
+     * @param bidderId ID của Bidder
+     * @return Response chứa số dư ví
+     */
+    public CompletableFuture<Response> getWalletBalance(long bidderId) {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + bidderId + "/wallet"))
+                .GET()
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
+
+    /**
      * Lớp helper để gửi request cập nhật số dư
      */
     private static class UpdateBalanceRequest {
@@ -96,6 +131,21 @@ public class BidderNetwork {
 
         public BigDecimal getNewBalance() {
             return newBalance;
+        }
+    }
+
+    /**
+     * Lớp helper để gửi request nạp tiền vào ví
+     */
+    private static class DepositMoneyRequest {
+        private final BigDecimal depositAmount;
+
+        public DepositMoneyRequest(BigDecimal depositAmount) {
+            this.depositAmount = depositAmount;
+        }
+
+        public BigDecimal getDepositAmount() {
+            return depositAmount;
         }
     }
 }

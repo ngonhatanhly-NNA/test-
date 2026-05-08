@@ -14,6 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +39,7 @@ import com.shared.dto.AuctionUpdateDTO;
 import com.shared.dto.BidHistoryDTO;
 import com.shared.dto.BidRequestDTO;
 import com.shared.dto.CreateAuctionDTO;
+import com.shared.dto.AuctionWinnerDTO;
 
 /**
  * AuctionService: Quản lý toàn bộ logic đấu giá
@@ -268,7 +270,7 @@ public class AuctionService {
 
         // 3. GỌI CONSTRUCTOR - KIỂM TRA KỸ THỨ TỰ (15 THAM SỐ)
         return new AuctionDetailDTO(
-                auction.getId(),                                    // 1. auctionId (long)
+                auction.getId(),                                     // 1. auctionId (long)
                 auction.getItemId(),                                 // 2. itemId (long)
                 itemName,                                            // 3. itemName (String)
                 itemDescription,                                     // 4. itemDescription (String)
@@ -429,6 +431,21 @@ public class AuctionService {
                             auction.getWinnerId() != null ? auction.getWinnerId() : "Không có",
                             auction.getCurrentHighestBid());
 
+                    if (auction.getWinnerId() != null && eventListener != null) {
+                        try {
+                            User winner = userRepository.getUserById(auction.getWinnerId());
+                            String winnerName = (winner != null && winner.getFullName() != null) ? winner.getFullName() : "Unknown";
+                            String itemName = "Name: #" + auction.getItemId();
+                            
+                            AuctionWinnerDTO winnerDTO = new AuctionWinnerDTO(
+                                    auction.getId(), itemName, auction.getWinnerId(), winnerName, auction.getCurrentHighestBid()
+                            );
+                            eventListener.onAuctionWon(winnerDTO);
+                        } catch (Exception e) {
+                            logger.error("Lỗi tải người thắng", e);
+                        }
+                    } 
+                    
                     // Dọn dẹp resources khỏi cache (đã lưu DB rồi)
                     auctionCache.remove(auctionId);
                     auctionLocks.remove(auctionId);
@@ -528,42 +545,47 @@ public class AuctionService {
     }
 
     /**
-     * Lấy danh sách TẤT CẢ các phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chung).
-     * Đọc từ cache (dữ liệu real-time nhất).
+     * Lấy danh sách TẤT CẢ các phiên đấu giá ĐANG DIỄN RA (OPEN hoặc RUNNING).
      */
     public List<AuctionDetailDTO> getActiveAuctions() {
         return auctionCache.values().stream()
-                .filter(a -> a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.SCHEDULED)
+                .filter(a -> a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.RUNNING)
                 .map(this::toDetailDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**
-     * [MỚI] Lấy các phiên đấu giá đang hoạt động của MỘT SELLER CỤ THỂ.
-     * Dùng cho tab "Live Auction Monitoring" trong Seller Portal.
-     * Kết hợp cache (real-time) + DB (để đảm bảo đồng bộ).
+     * Lấy danh sách các phiên đấu giá SẮP DIỄN RA (Chỉ SCHEDULED).
+     */
+    public List<AuctionDetailDTO> getUpcomingAuctions() {
+        return auctionCache.values().stream()
+                .filter(a -> a.getStatus() == Auction.AuctionStatus.SCHEDULED)
+                .map(this::toDetailDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy các phiên đấu giá đang hoạt động của MỘT SELLER CỤ THỂ.
      */
     public List<AuctionDetailDTO> getActiveAuctionsBySeller(long sellerId) {
-        // Lấy từ cache trước (có giá real-time)
         List<AuctionDetailDTO> fromCache = auctionCache.values().stream()
                 .filter(a -> a.getSellerId() == sellerId &&
                         (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.SCHEDULED))
                 .map(this::toDetailDto)
-                .toList();
+                .collect(Collectors.toList());
 
-        // Nếu cache rỗng, thử load từ DB (phòng trường hợp server vừa restart)
         if (fromCache.isEmpty()) {
             List<Auction> dbAuctions = auctionRepository.findByStatusIn(
                     List.of(Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING, Auction.AuctionStatus.SCHEDULED));
             dbAuctions.stream()
-                    .filter(a -> a.getSellerId() == sellerId)
-                    .forEach((var a) -> {
-                        if (!auctionCache.containsKey(a.getId())) {
-                            cacheAuction(a);
-                            if (a.getStatus() == Auction.AuctionStatus.SCHEDULED) {
-                                scheduleAuctionStart(a);
-                            } else if (a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.RUNNING) {
-                                scheduleAuctionEnd(a);
+                    .filter(auctionItem -> auctionItem.getSellerId() == sellerId)
+                    .forEach(auctionItem -> {
+                        if (!auctionCache.containsKey(auctionItem.getId())) {
+                            cacheAuction(auctionItem);
+                            if (auctionItem.getStatus() == Auction.AuctionStatus.SCHEDULED || auctionItem.getStatus() == Auction.AuctionStatus.OPEN) {
+                                scheduleAuctionStart(auctionItem);
+                            } else if (auctionItem.getStatus() == Auction.AuctionStatus.RUNNING) {
+                                scheduleAuctionEnd(auctionItem);
                             }
                         }
                     });
@@ -571,7 +593,7 @@ public class AuctionService {
                     .filter(a -> a.getSellerId() == sellerId &&
                             (a.getStatus() == Auction.AuctionStatus.RUNNING || a.getStatus() == Auction.AuctionStatus.OPEN || a.getStatus() == Auction.AuctionStatus.SCHEDULED))
                     .map(this::toDetailDto)
-                    .toList();
+                    .collect(Collectors.toList());
         }
         return fromCache;
     }
@@ -585,7 +607,7 @@ public class AuctionService {
         List<Auction> wonAuctions = auctionRepository.findWonAuctionsByBidderId(bidderId);
         return wonAuctions.stream()
                 .map(this::toDetailDto)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**
@@ -714,7 +736,7 @@ public class AuctionService {
                         bid.getTimestamp(),
                         bid.isAutoBid()
                 ))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     // Sập nguồn :)))

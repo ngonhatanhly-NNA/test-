@@ -26,7 +26,7 @@ public class BidderService {
     }
 
     /**
-     * NẠP TIỀN VÀ LƯU DATABASE
+     * NẠP TIỀN VÀ LƯU DATABASE (Overload 1: với Bidder object)
      */
     public String depositMoney(Bidder bidder, double amount) {
         try {
@@ -57,6 +57,30 @@ public class BidderService {
     }
 
     /**
+     * NẠP TIỀN VÀ LƯU DATABASE (Overload 2: với bidderId)
+     * Dùng từ Controller khi chỉ có ID
+     */
+    public String depositMoney(long bidderId, double amount) {
+        try {
+            if (amount <= 0) {
+                return gson.toJson(new Response("FAIL", "Số tiền nạp phải lớn hơn 0!", null));
+            }
+
+            // Lấy Bidder từ DB
+            Bidder bidder = bidderRepo.getBidderById(bidderId);
+            if (bidder == null) {
+                return gson.toJson(new Response("FAIL", "Không tìm thấy Bidder với ID: " + bidderId, null));
+            }
+
+            // Gọi overload 1
+            return depositMoney(bidder, amount);
+        } catch (Exception e) {
+            logger.error("Lỗi nạp tiền cho bidder ID {}: {}", bidderId, e.getMessage());
+            return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
+        }
+    }
+
+    /**
      * KIỂM TRA TÀI CHÍNH (Lấy số dư mới nhất từ DB)
      */
     public boolean canAffordBid(Bidder bidder, double requiredAmount) {
@@ -81,5 +105,12 @@ public class BidderService {
                 logger.error("Lỗi DB: Chưa trừ được tiền người thắng!");
             }
         }
+    }
+
+    /**
+     * LẤY THÔNG TIN CHI TIẾT BIDDER (dùng cho profile hoặc wallet display)
+     */
+    public Bidder getBidderDetails(long bidderId) {
+        return bidderRepo.getBidderById(bidderId);
     }
 }

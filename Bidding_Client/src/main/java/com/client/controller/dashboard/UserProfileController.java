@@ -53,6 +53,8 @@ public class UserProfileController {
     // --- Box và Nút nâng cấp ---
     @FXML private HBox upgradeToSellerBox;
     @FXML private Button upgradeButton; // <-- Thêm khai báo cho nút
+    @FXML private Button btnDepositMoney; // <-- THÊM MỚI: Nút nạp tiền
+
 
     private final AuthNetwork authNetwork = new AuthNetwork();
     private final Gson gson = new Gson();
@@ -60,21 +62,16 @@ public class UserProfileController {
     private String currentUserRole = "BIDDER";
     private BaseProfileUpdateDTO currentProfile;
 
-    // Temp for user đang đăng nhập
     private String loggedInUsername = "";
 
     @FXML
     public void initialize() {
         hideAllRoleSections();
 
-        // --- GÁN SỰ KIỆN BẰNG CODE JAVA ---
-        // Cách này đảm bảo sự kiện được liên kết chính xác
         if (upgradeButton != null) {
             upgradeButton.setOnAction(this::handleRequestSeller);
         }
-        // ---------------------------------
 
-        // Lấy user thật từ session (được set sau khi Login thành công)
         loggedInUsername = ClientSession.getUsername();
 
         if (loggedInUsername == null || loggedInUsername.trim().isEmpty()) {
@@ -107,11 +104,9 @@ public class UserProfileController {
                         String role = jsonData.has("role") ? jsonData.get("role").getAsString() : "BIDDER";
                         currentUserRole = role.toUpperCase();
 
-                        // Parse DTO theo role
                         BaseProfileUpdateDTO profile = parseProfileByRole(jsonData, currentUserRole);
                         currentProfile = profile;
 
-                        // Điền dữ liệu chung vào Form
                         txtFullName.setText(profile.getFullName() != null ? profile.getFullName() : "");
                         txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
                         txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
@@ -120,13 +115,11 @@ public class UserProfileController {
                         lblHeaderName.setText(profile.getFullName());
                         lblRoleTag.setText("Vai trò: " + role);
 
-                        // Display wallet balance if available
                         if (jsonData.has("walletBalance") && !jsonData.get("walletBalance").isJsonNull()) {
                             double walletBalance = jsonData.get("walletBalance").getAsDouble();
                             txtWalletBalance.setText(String.format("%,.0f VNĐ", walletBalance));
                         }
 
-                        // Sử dụng Strategy Pattern để setup UI
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
                         lblStatus.setText("Lỗi parse dữ liệu từ Server!");
@@ -206,21 +199,14 @@ public class UserProfileController {
     }
 
     private void setupUIByRoleStrategy(BaseProfileUpdateDTO profile, String role) {
-        // Lấy strategy từ Factory
         IProfileUIStrategy strategy = ProfileUIStrategyFactory.getStrategy(role);
-
-        // Hiển thị dữ liệu theo strategy
         strategy.displayProfile(this, profile);
 
-        // --- LOGIC HIỂN THỊ NÚT NÂNG CẤP ---
-        // Để kiểm tra giao diện, tạm thời luôn hiện nút này.
         if (upgradeToSellerBox != null) {
-             upgradeToSellerBox.setVisible(true);
-             upgradeToSellerBox.setManaged(true);
+            upgradeToSellerBox.setVisible(true);
+            upgradeToSellerBox.setManaged(true);
         }
-        // --- KẾT THÚC THAY ĐỔI ---
 
-        // Setup VBox visibility và styling
         if ("ADMIN".equals(role)) {
             vboxAdmin.setVisible(true); vboxAdmin.setManaged(true);
             lblRoleTag.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
@@ -241,12 +227,9 @@ public class UserProfileController {
         lblStatus.setText("Đang lưu thay đổi...");
         lblStatus.setStyle("-fx-text-fill: #E3B04B;");
 
-        // Sử dụng Strategy để collect data
         IProfileUIStrategy strategy = ProfileUIStrategyFactory.getStrategy(currentUserRole);
         BaseProfileUpdateDTO updateData = strategy.collectData(this);
 
-        // Backward-compatible: nếu backend cần id (AuthService.updateProfile), thì gửi kèm id.
-        // Với backend mới dùng session, id có/không đều OK.
         long id = (currentProfile != null && currentProfile.getId() > 0) ? currentProfile.getId() : ClientSession.getUserId();
         if (id > 0) {
             updateData.setId(id);
@@ -275,30 +258,28 @@ public class UserProfileController {
 
     @FXML
     public void handleRequestSeller(ActionEvent actionEvent) {
-        // Vô hiệu hóa nút để tránh người dùng nhấn nhiều lần
         if (upgradeButton != null) {
             upgradeButton.setDisable(true);
         }
         lblStatus.setText("Đang gửi yêu cầu...");
         lblStatus.setStyle("-fx-text-fill: #E3B04B;");
 
-        // Gọi đến AuthNetwork để gửi yêu cầu
         authNetwork.requestUpgradeToSeller(loggedInUsername).thenAccept(response -> {
-            // Callback này sẽ được thực thi sau khi nhận được phản hồi từ Server
-            // Quan trọng: Phải chạy trên luồng của JavaFX để cập nhật UI
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
-                    lblStatus.setText("Nâng cấp thành công! Đang tải lại thông tin...");
+                    // Chỉ hiện thông báo, KHÔNG gọi loadUserDataFromAPI() vì JWT cũ sẽ gây lỗi
+                    lblStatus.setText("Role của bạn đã thay đổi, vui lòng đăng nhập lại.");
                     lblStatus.setStyle("-fx-text-fill: #28a745;");
-                    // Tải lại toàn bộ dữ liệu profile để giao diện được cập nhật (hiện thêm các trường của Seller)
-                    loadUserDataFromAPI();
+                    if (upgradeButton != null) {
+                        upgradeButton.setDisable(true);
+                    }
                 } else {
                     lblStatus.setText("Yêu cầu thất bại: " + response.getMessage());
                     lblStatus.setStyle("-fx-text-fill: #dc3545;");
-                }
-                // Bật lại nút sau khi xử lý xong (nếu cần)
-                if (upgradeButton != null) {
-                    upgradeButton.setDisable(false);
+                    // Bật lại nút nếu thất bại để người dùng thử lại
+                    if (upgradeButton != null) {
+                        upgradeButton.setDisable(false);
+                    }
                 }
             });
         }).exceptionally(ex -> {
@@ -311,6 +292,36 @@ public class UserProfileController {
             });
             return null;
         });
+    }
+
+    /**
+     * MỞ DIALOG NẠP TIỀN
+     */
+    @FXML
+    public void handleOpenDepositDialog() {
+        try {
+            // Load FXML
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                    getClass().getResource("/fxml/DepositPopup.fxml"));
+            javafx.scene.Parent depositRoot = loader.load();
+
+            // Tạo Stage mới
+            javafx.stage.Stage depositStage = new javafx.stage.Stage();
+            depositStage.setTitle("Nạp Tiền");
+            depositStage.setScene(new javafx.scene.Scene(depositRoot, 600, 700));
+            depositStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            depositStage.setResizable(false);
+
+            // Hiển thị dialog
+            depositStage.showAndWait();
+
+            // Sau khi dialog đóng, tải lại thông tin profile để cập nhật số dư
+            loadUserDataFromAPI();
+
+        } catch (Exception e) {
+            showAlert(javafx.scene.control.Alert.AlertType.ERROR, "Lỗi",
+                    "Không thể mở dialog nạp tiền: " + e.getMessage());
+        }
     }
 
     private void showAlert(Alert.AlertType alertType, String title, String message) {
