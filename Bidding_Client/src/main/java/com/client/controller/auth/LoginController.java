@@ -46,6 +46,11 @@ public class LoginController {
         if (iconEye != null) {
             iconEye.setImage(eyeClosed);
         }
+
+        // [THÊM MỚI] Bắt sự kiện Enter (gọi thẳng hàm handleLogin)
+        txtUsername.setOnAction(this::handleLogin);
+        txtPassword.setOnAction(this::handleLogin);
+        txtPasswordVisible.setOnAction(this::handleLogin); // Cho trường hợp đang hiện password
     }
 
     @FXML

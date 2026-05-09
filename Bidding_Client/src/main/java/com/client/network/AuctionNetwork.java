@@ -8,7 +8,7 @@ import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,16 @@ import com.shared.dto.AutoBidUpdateDTO;
 import com.shared.dto.BidRequestDTO;
 import com.shared.dto.CreateAuctionDTO;
 import com.shared.network.Response;
+import com.shared.dto.BidHistoryDTO;
 
+
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonDeserializationContext;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 /**
  * REST tới Bidding_Server (Javalin cổng 7070, HTTP).
  *
@@ -32,7 +41,15 @@ public class AuctionNetwork {
 
     private static final Logger logger = LoggerFactory.getLogger(AuctionNetwork.class);
     private static final String BASE_URL = "http://localhost:7070/api/auctions";
-    private static final Gson gson = new Gson();
+    private static final Gson gson = new GsonBuilder()
+        .registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
+            @Override
+            public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+                // Parse chuỗi ngày tháng từ server thành LocalDateTime
+                return LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+        })
+        .create();
 
     private static final Type AUCTION_DETAIL_LIST = new TypeToken<List<AuctionDetailDTO>>() {
     }.getType();
@@ -55,7 +72,7 @@ public class AuctionNetwork {
     }
 
     /**
-     * Lấy TẤT CẢ phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chung).
+     * Lấy TẤT CẢ phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chuhng).
      */
     public static List<AuctionDetailDTO> getActiveAuctions() throws Exception {
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
@@ -186,6 +203,21 @@ public class AuctionNetwork {
         return gson.fromJson(jsonResponse, Response.class);
     }
 
+	public static List<BidHistoryDTO> getBidHistory (long auctionId) throws Exception {
+		HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId + "/bids"))
+			.GET().build();
+		HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString())	;		
+		Response res = parseResponse(response.body());
+        
+        if ("SUCCESS".equals(res.getStatus())) {
+            Type listType = new TypeToken<ArrayList<BidHistoryDTO>>(){}.getType();
+           
+            String dataJson = gson.toJson(res.getData()); 
+            return gson.fromJson(dataJson, listType);
+        } else {
+            throw new Exception(res.getMessage());
+        }
+	}
 
 
     private static String postJson(String uri, String jsonBody) throws Exception {

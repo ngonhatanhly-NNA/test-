@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.client.util.BidHistoryUtil;
 import com.client.network.AuctionNetwork;
 import com.client.session.ClientSession;
 import com.shared.dto.AuctionDetailDTO;
@@ -20,6 +21,7 @@ import com.shared.dto.AuctionUpdateDTO;
 import com.shared.dto.AuctionWinnerDTO;
 import com.shared.network.Response;
 import com.client.network.MyWebSocketClient;
+import com.shared.dto.BidHistoryDTO;
 import com.client.util.ToastUtil; 
 import com.client.util.WinnerBoardUtil;
 import javafx.animation.Animation;
@@ -78,6 +80,8 @@ public class ViewLiveAuctions {
     @FXML
     private VBox auctionsContainer;
 
+	@FXML 
+	private Button historyButton;
     @FXML
     private ImageView itemImageView;
     @FXML
@@ -296,11 +300,29 @@ public class ViewLiveAuctions {
         
         updateCountdownRealtime();
 
-        if (priceSeries != null) {
-            priceSeries.getData().clear();
-            String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            priceSeries.getData().add(new XYChart.Data<>(timeNow, a.getCurrentPrice() != null ? a.getCurrentPrice() : BigDecimal.ZERO));
-        }
+		ioPool.execute(() -> {
+			try {
+				List<BidHistoryDTO> history = AuctionNetwork.getBidHistory(a.getAuctionId());
+				Platform.runLater(() -> {
+					if (priceSeries != null) {
+						priceSeries.getData().clear();
+						
+						if (history != null && !history.isEmpty()) {
+							for (BidHistoryDTO bh : history) {
+								String time = bh.getTimestamp().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+								priceSeries.getData().add(new XYChart.Data<>(time, bh.getBidAmount()));
+							}
+						} else {
+								// Nếu CHƯA CÓ AI BID (lịch sử rỗng), hiển thị điểm giá khởi điểm
+								String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+								priceSeries.getData().add(new XYChart.Data<>(timeNow, a.getCurrentPrice() != null ? a.getCurrentPrice() : BigDecimal.ZERO));
+						}
+					}
+				});
+			} catch (Exception e) {
+				logger.log(Level.WARNING, "Cant load bid history");
+			}
+		});
     }
 
     private static String formatMoney(BigDecimal v) {
@@ -406,13 +428,10 @@ public class ViewLiveAuctions {
     @FXML
     public void handleCancelAutoBid() {
         if (currentAuctionId <= 0) {
-            showError("Chưa có phiên đấu giá. Bấm \"Làm mới\".");
+            showError("There isn;t any Auction ->Refresh");
             return;
         }
-        if (!ClientSession.isLoggedIn()) {
-            showError("Vui lòng đăng nhập.");
-            return;
-        }
+       
         ioPool.execute(() -> {
             try {
                 String raw = AuctionNetwork.cancelAutoBid(currentAuctionId, ClientSession.getUserId());
@@ -422,7 +441,7 @@ public class ViewLiveAuctions {
                         showInfo(res.getMessage());
                         if (autoBidStatusLabel != null) {
                             autoBidStatusLabel.setVisible(true);
-                            autoBidStatusLabel.setText("✗ Auto-bid đã hủy");
+                            autoBidStatusLabel.setText("✗ Auto-bid cancelled");
                             autoBidStatusLabel.setStyle("-fx-text-fill: red;");
                         }
                         if (enableAutoBidCheckBox != null) {
@@ -433,7 +452,7 @@ public class ViewLiveAuctions {
                     }
                 });
             } catch (Exception e) {
-                Platform.runLater(() -> showError("Lỗi khi hủy auto-bid: " + e.getMessage()));
+                Platform.runLater(() -> showError("Error in quit auto-bid: " + e.getMessage()));
             }
         });
     }
@@ -474,6 +493,28 @@ public class ViewLiveAuctions {
             }
         });
     }
+	
+	@FXML
+    private void handleOpenBidHistory() {
+        if (currentAuctionId <= 0) {
+            ToastUtil.showError("Vui lòng chọn một phiên đấu giá trước.");
+            return;
+        }
+
+        ioPool.execute(() -> {
+            try {
+                // 1. Lấy dữ liệu từ Server
+                List<BidHistoryDTO> history = AuctionNetwork.getBidHistory(currentAuctionId);
+                
+                // 2. Chuyển dữ liệu sang Util để hiển thị bảng
+                BidHistoryUtil.showBidHistoryBoard(currentAuctionId, history);
+                
+            } catch (Exception e) {
+                Platform.runLater(() -> ToastUtil.showError("Lỗi tải lịch sử"));
+				logger.log(Level.SEVERE, "Lỗi lấy lịch sử đấu giá", e);
+			}
+        });
+    }
 
     public void updatePriceRealtime(AuctionUpdateDTO updateData) {
         if (updateData == null) return;
@@ -504,7 +545,7 @@ public class ViewLiveAuctions {
         if (priceSeries != null && updateData.getCurrentPrice() != null) {
             String timeNow = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             priceSeries.getData().add(new XYChart.Data<>(timeNow, updateData.getCurrentPrice()));
-            if (priceSeries.getData().size() > 15) {
+            if (priceSeries.getData().size() > 88) {
                 priceSeries.getData().remove(0);
             }
         }
@@ -731,12 +772,13 @@ public class ViewLiveAuctions {
     * Method to handle auction that have no bidder or not accept the condiiton
     */
     public void handleAuctionFinishedNoWinner (long auctionId) {
+        boolean isCurrentlyViewing = (currentAuctionId == auctionId);
+        
         removeAuctionRealtime(auctionId);
         
-        if (currentAuctionId == auctionId) {
-            // Thay Alert bằng ToastUtil hiển thị thông báo nhẹ nhàng
+        if (isCurrentlyViewing) {
             ToastUtil.showInfo("Pathetic, no one bid this item!");
-            lockAuctionUI(); // <-- Đã được dời vào bên trong IF
+            lockAuctionUI(); 
         }
     }
     
@@ -744,9 +786,12 @@ public class ViewLiveAuctions {
     * Method to turn on the notification if the result is set
     */
     public void showWinnerNotification(AuctionWinnerDTO winnerData) {
+        // Lưu lại biến kiểm tra trước khi bị reset về 0
+        boolean isCurrentlyViewing = (currentAuctionId == winnerData.getAuctionId());
+        
         removeAuctionRealtime(winnerData.getAuctionId());
         
-        if (currentAuctionId == winnerData.getAuctionId()) {
+        if (isCurrentlyViewing) {
             WinnerBoardUtil.showWinnerBoard(winnerData, ClientSession.getUserId());
             lockAuctionUI(); 
         }

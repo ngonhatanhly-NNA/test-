@@ -19,6 +19,7 @@
 <?import javafx.scene.paint.LinearGradient?>
 <?import javafx.scene.paint.Stop?>
 <?import javafx.scene.text.Font?>
+<?import javafx.scene.control.Tooltip?>
 
 <VBox prefHeight="720.0" prefWidth="1150.0" spacing="20.0" style="-fx-background-color: #E8EEF2; -fx-padding: 25;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.ViewLiveAuctions">
 
@@ -169,7 +170,12 @@
                             <NumberAxis label="Price (VNĐ)" tickLabelFill="#94A3B8" />
                         </yAxis>
                     </LineChart>
-
+					<Button fx:id="historyButton" onAction="#handleOpenBidHistory" text="📜 Lịch sử" 
+							style="-fx-background-color: #f39c12; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold; -fx-background-radius: 5;">
+						<tooltip>
+							<Tooltip text="Xem danh sách các lượt đặt giá chi tiết" />
+						</tooltip>
+					</Button>
                     <VBox spacing="8.0">
                         <HBox spacing="12.0">
                             <TextField fx:id="bidAmountField" prefHeight="50.0" promptText="EX: 1.600.000 VNĐ" style="-fx-background-color: #F8FAFC; -fx-background-radius: 10; -fx-border-color: #CBD5E1; -fx-border-width: 1.5; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-size: 15px; -fx-font-weight: bold; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 3);" HBox.hgrow="ALWAYS" />

@@ -1,5 +1,6 @@
 package com.client.controller.dashboard;
 
+import com.client.util.DashboardNavigation;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -61,6 +62,9 @@ public class DashboardController {
                 btnManagement.setManaged(false);
             }
         }
+        // BƠM LOGIC CHUYỂN TRANG CHO CÁC NÚT BẤM Ở DASHBOARD (Sử dụng hàm đã có sẵn của em)
+        DashboardNavigation.setOpenLiveAuctions(() -> handleBtnLiveAuctions(null));
+        DashboardNavigation.setNavigateToAuctionDetail(auctionId -> handleBtnLiveAuctions(null));
 
         handleBtnDashboard(null);
     }

@@ -28,6 +28,18 @@ public class RegisterController {
 
     // GOij den network
     private AuthNetwork authNetwork = new AuthNetwork();
+
+    // [THÊM MỚI] Hàm khởi tạo để bắt sự kiện Enter
+    @FXML
+    public void initialize() {
+        // Gắn sự kiện Enter cho tất cả các ô nhập liệu
+        txtUsername.setOnAction(this::handleRegister);
+        txtFullName.setOnAction(this::handleRegister);
+        txtEmail.setOnAction(this::handleRegister);
+        txtPassword.setOnAction(this::handleRegister);
+        txtConfirmPassword.setOnAction(this::handleRegister);
+    }
+
     // XỬ LÝ KHI NGƯỜI DÙNG BẤM NÚT ĐĂNG KÝ, XỬ LÍ GIAO DIỆN
     @FXML
     public void handleRegister(ActionEvent event) {

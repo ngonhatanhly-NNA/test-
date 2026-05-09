@@ -28,7 +28,7 @@ public class GetBidHistoryCommand extends BaseApiCommand {
             String json = gson.toJson(ResponseUtils.success("Loaded bid history", bidHistory));
             ctx.status(200).result(json).contentType("application/json");
         } catch (Exception e) {
-            throw new AuthValidationException("Lỗi lấy lịch sử: " + e.getMessage());
+            throw new AuthValidationException("Error in getting BidHistory: " + e.getMessage());
         }
     }
 }

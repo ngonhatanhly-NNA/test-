@@ -16,6 +16,7 @@ import com.client.util.DashboardNavigation;
 import com.client.util.DashboardSearchBridge;
 import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.ItemResponseDTO;
+import java.net.URL;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -213,42 +214,62 @@ public class ViewDashboardController {
         VBox card = new VBox();
         card.setSpacing(10);
         card.setPadding(new Insets(12));
-        card.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 8; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-cursor: hand;");
-        card.setPrefWidth(220);
+        card.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 12; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 4);");
+        card.setPrefWidth(240);
 
+        // --- FIX ẢNH: Sử dụng logic tìm ảnh thông minh ---
         ImageView imageView = new ImageView();
         imageView.setFitHeight(140);
-        imageView.setFitWidth(200);
+        imageView.setFitWidth(210);
         imageView.setPreserveRatio(true);
+
+        Image cardImg = null;
         if (auction.getItemImageUrls() != null && !auction.getItemImageUrls().isEmpty()) {
-            try {
-                imageView.setImage(new Image(auction.getItemImageUrls().get(0)));
-            } catch (Exception e) {
-                imageView.setImage(getDefaultImage());
+            String firstUrl = auction.getItemImageUrls().get(0);
+            java.io.File f = new java.io.File(firstUrl);
+            if (f.exists()) cardImg = new Image(f.toURI().toString(), true);
+            else {
+                URL res = getClass().getResource(firstUrl.startsWith("/") ? firstUrl : "/images/" + firstUrl);
+                if (res != null) cardImg = new Image(res.toExternalForm(), true);
             }
-        } else {
-            imageView.setImage(getDefaultImage());
         }
+        imageView.setImage(cardImg != null ? cardImg : getDefaultImage());
 
         Label nameLabel = new Label(auction.getItemName());
-        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 13));
+        nameLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
         nameLabel.setWrapText(true);
-        nameLabel.setMaxWidth(200);
 
-        Label priceLabel = new Label(formatCurrency(auction.getCurrentPrice().doubleValue()));
-        priceLabel.setFont(Font.font("System", 12));
-        priceLabel.setStyle("-fx-text-fill: #ff6b6b;");
+        Label priceLabel = new Label("Giá hiện tại: " + formatCurrency(auction.getCurrentPrice().doubleValue()));
+        priceLabel.setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
 
-        Label timeLabel = new Label(formatRemainingTime(auction.getRemainingTime()));
-        timeLabel.setFont(Font.font("System", FontWeight.BOLD, 11));
-        timeLabel.setStyle("-fx-text-fill: #d9534f;");
+        // --- FIX THỜI GIAN: Hiển thị Start - End rõ ràng ---
+        VBox timeBox = new VBox(2);
+        Label startLbl = new Label("📅 Từ: " + formatTimeDisplay(auction.getStartTime()));
+        Label endLbl = new Label("🏁 Đến: " + formatTimeDisplay(auction.getEndTime()));
+        startLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #7f8c8d;");
+        endLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #c0392b; -fx-font-weight: bold;");
+        timeBox.getChildren().addAll(startLbl, endLbl);
 
-        card.getChildren().addAll(imageView, nameLabel, priceLabel, timeLabel);
+        card.getChildren().addAll(imageView, nameLabel, priceLabel, timeBox);
+
         card.setOnMouseClicked(event -> {
+            // Nếu là phiên SCHEDULED (Sắp diễn ra), báo lỗi nhẹ nhàng
+            if (auction.getRemainingTime() > 0 && auction.getRemainingTime() > Duration.between(java.time.LocalDateTime.now(), java.time.LocalDateTime.parse(auction.getEndTime())).toMillis()) {
+                // Có thể thêm Toast thông báo ở đây
+            }
             DashboardNavigation.navigateToAuctionDetail(auction.getAuctionId());
         });
 
         return card;
+    }
+
+    // Hàm bổ trợ định dạng thời gian cho dễ đọc
+    private String formatTimeDisplay(String isoTime) {
+        if (isoTime == null || isoTime.isBlank()) return "---";
+        try {
+            java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(isoTime);
+            return ldt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM"));
+        } catch (Exception e) { return isoTime; }
     }
 
     private Image getDefaultImage() {
@@ -425,25 +446,24 @@ public class ViewDashboardController {
     }
 
     private Image loadItemImage(ItemResponseDTO item) {
-        String u = item.getThumbnailUrl();
+        String url = item.getThumbnailUrl();
+        if (url == null || url.isBlank()) return getDefaultImage();
+
         try {
-            if (u != null && (u.startsWith("http://") || u.startsWith("https://"))) {
-                return new Image(u, 120, 120, true, true, true);
+            // 1. Thử load đường dẫn tuyệt đối (Ảnh em gán từ ổ đĩa)
+            java.io.File file = new java.io.File(url);
+            if (file.exists()) {
+                return new Image(file.toURI().toString(), 120, 120, true, true);
             }
-            if (u != null && !u.isBlank()) {
-                String path = u.startsWith("/") ? u : ("/images/" + u);
-                InputStream local = getClass().getResourceAsStream(path);
-                if (local != null) {
-                    return new Image(local, 120, 120, true, true);
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        InputStream fallback = getClass().getResourceAsStream("/images/ABRA.png");
-        if (fallback != null) {
-            return new Image(fallback, 120, 120, true, true);
-        }
-        return new Image(getClass().getResourceAsStream("/images/Gardevoir.png"), 120, 120, true, true);
+
+            // 2. Thử load từ resources
+            String path = url.startsWith("/") ? url : ("/images/" + url);
+            InputStream is = getClass().getResourceAsStream(path);
+            if (is != null) return new Image(is, 120, 120, true, true);
+
+        } catch (Exception ignored) {}
+
+        return getDefaultImage();
     }
 }
 
