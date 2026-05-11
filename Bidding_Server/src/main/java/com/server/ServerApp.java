@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.server.DAO.*;
 import com.server.controller.*;
 import com.server.service.*;
 import org.java_websocket.WebSocket;
@@ -12,15 +13,9 @@ import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.server.DAO.AuctionRepository;
-import com.server.DAO.AutoBidRepository;
-import com.server.DAO.BidTransactionRepository;
-import com.server.DAO.ItemRepository;
-import com.server.DAO.UserRepository;
 import com.server.config.DBConnection;
 import com.server.route.ApiRouter;
 import com.server.security.JwtUtil;
-import com.server.DAO.SellerRepository;
 import com.server.service.auction.antisnipe.DefaultAntiSnipingStrategy;
 import com.server.service.auction.processor.AutoBidProcessor;
 import com.server.service.auction.processor.ManualBidProcessor;
@@ -159,7 +154,8 @@ public class ServerApp extends WebSocketServer {
 
         // Khởi tạo Services
         BidValidationChain validator = new BidValidationChain();
-        ManualBidProcessor manualProc = new ManualBidProcessor(auctionRepo);
+        BidderRepository bidderRepoReal = new BidderRepository(); // Thêm dòng này nếu chưa có biến bidderRepo kiểu BidderRepository
+        ManualBidProcessor manualProc = new ManualBidProcessor(auctionRepo, bidderRepoReal);
         AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo);
         Broadcaster broadcaster = new Broadcaster();
 

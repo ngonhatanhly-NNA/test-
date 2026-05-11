@@ -38,6 +38,22 @@ public class BidderRepository implements IBidderRepository {
         }
     }
 
+    // --- THÊM MỚI: CẬP NHẬT CẢ VÍ CHÍNH VÀ VÍ ĐÓNG BĂNG CÙNG LÚC ---
+    @Override
+    public boolean updateWalletBalances(long bidderId, BigDecimal mainBalance, BigDecimal tempBalance) {
+        String sql = "UPDATE bidders SET walletBalance = ?, tempBalance = ? WHERE user_id = ?";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setBigDecimal(1, mainBalance);
+            pstmt.setBigDecimal(2, tempBalance);
+            pstmt.setLong(3, bidderId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            logger.error("Lỗi DB: Không thể cập nhật ví cho ID {}: {}", bidderId, e.getMessage(), e);
+            return false;
+        }
+    }
+
     // --- VIỆC 2: TÌM BIDDER THEO USERNAME (Dùng khi Đăng nhập) ---
     @Override
     public Bidder getBidderByUsername(String username) {

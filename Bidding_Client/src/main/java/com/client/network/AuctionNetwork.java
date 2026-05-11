@@ -22,7 +22,7 @@ import com.shared.dto.CreateAuctionDTO;
 import com.shared.network.Response;
 import com.shared.dto.BidHistoryDTO;
 
-
+import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -45,8 +45,28 @@ public class AuctionNetwork {
         .registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
             @Override
             public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-                // Parse chuỗi ngày tháng từ server thành LocalDateTime
-                return LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                try {
+                    if (json.isJsonObject()) {
+                        // Đã thêm chữ "JsonObject" để khai báo biến đúng chuẩn Java
+                        JsonObject obj = json.getAsJsonObject();
+                        JsonObject date = obj.getAsJsonObject("date");
+                        JsonObject time = obj.getAsJsonObject("time");
+                        
+                        return LocalDateTime.of(
+                                date.get("year").getAsInt(),
+                                date.get("month").getAsInt(),
+                                date.get("day").getAsInt(),
+                                time.get("hour").getAsInt(),
+                                time.get("minute").getAsInt(),
+                                time.has("second") ? time.get("second").getAsInt() : 0
+                        );
+                    } else if (json.isJsonPrimitive()) {
+                        return LocalDateTime.parse(json.getAsString());
+                    }
+                } catch (Exception e) {
+                    logger.error("Lỗi parse LocalDateTime: " + json.toString(), e);
+                }
+                return LocalDateTime.now();
             }
         })
         .create();
@@ -205,17 +225,27 @@ public class AuctionNetwork {
 
 	public static List<BidHistoryDTO> getBidHistory (long auctionId) throws Exception {
 		HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId + "/bids"))
-			.GET().build();
-		HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString())	;		
-		Response res = parseResponse(response.body());
+            .GET().build();
+        HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         
-        if ("SUCCESS".equals(res.getStatus())) {
+        Response res;
+        try {
+            res = parseResponse(response.body());
+        } catch (Exception e) {
+            throw new Exception("Fail on Json component");
+        }
+
+        if (res != null && "SUCCESS".equals(res.getStatus())) {
+            // Nếu chưa có ai đặt giá, trả về danh sách rỗng thay vì báo lỗi
+            if (res.getData() == null) {
+                return new ArrayList<>(); 
+            }
             Type listType = new TypeToken<ArrayList<BidHistoryDTO>>(){}.getType();
-           
             String dataJson = gson.toJson(res.getData()); 
-            return gson.fromJson(dataJson, listType);
+            List<BidHistoryDTO> result = gson.fromJson(dataJson, listType);
+            return result != null ? result : new ArrayList<>();
         } else {
-            throw new Exception(res.getMessage());
+            throw new Exception(res != null ? res.getMessage() : "Server response incorrect");
         }
 	}
 

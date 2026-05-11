@@ -22,6 +22,10 @@ public class AuctionException extends Exception {
         AUTO_BID_NOT_FOUND("Cấu hình auto-bid cho người dùng này không tồn tại."),
         INVALID_AUTO_BID_CONFIG("Cấu hình auto-bid không hợp lệ (ví dụ: giá tối đa không hợp lệ)."),
 
+        // [THÊM MỚI] Lỗi tài chính và người dùng
+        USER_NOT_FOUND("Không tìm thấy thông tin tài khoản người dùng."),
+        INSUFFICIENT_BALANCE("Số dư trong ví không đủ để thực hiện giao dịch."),
+
         // Lỗi hệ thống
         OPERATION_FAILED("Thao tác thất bại do lỗi hệ thống.");
 

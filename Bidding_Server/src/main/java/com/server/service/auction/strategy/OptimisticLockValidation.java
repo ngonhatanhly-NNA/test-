@@ -1,9 +1,10 @@
 package com.server.service.auction.strategy;
 
+import java.math.BigDecimal;
+
 import com.server.exception.AuctionException;
 import com.server.model.Auction;
 import com.shared.dto.BidRequestDTO;
-import java.math.BigDecimal;
 
 /**
  * Xử lý Race Condition bằng cách so sánh giá kỳ vọng của Client
@@ -13,7 +14,7 @@ public class OptimisticLockValidation implements BidValidationStrategy {
 
     @Override
     public void validate(BidRequestDTO request, Auction auction) throws AuctionException {
-        // Giá hiện tại thực tế trên Server (có thể vừa bị ai đó mua)
+        // Giá hiện tại thực tế trên Server (được cập nhật liên tục khi có người đặt giá mới)
         BigDecimal actualCurrentBid = auction.getCurrentHighestBid() != null ?
                                       auction.getCurrentHighestBid() : BigDecimal.ZERO;
         
