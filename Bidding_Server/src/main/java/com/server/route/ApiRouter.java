@@ -77,6 +77,11 @@ public class ApiRouter {
         // [MỚI] ĐĂNG KÝ NHÓM API QUẢN LÝ ẢNH
         // Upload ảnh (Cần role SELLER)
         app.post("/api/images/upload", ctx -> imageController.uploadImage(ctx));
+		app.post("/api/users/avatar", ctx -> {
+            String jsonBody = ctx.body();
+            String resultJson = userController.handleUpdateAvatar(jsonBody);
+            ctx.json(resultJson);
+        });
         // Xem ảnh (Mở public cho tất cả mọi người cùng xem)
         app.get("/api/images/{filename}", ctx -> imageController.serveImage(ctx));
 

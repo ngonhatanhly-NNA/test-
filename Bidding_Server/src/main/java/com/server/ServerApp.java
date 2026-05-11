@@ -12,6 +12,7 @@ import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.javalin.http.staticfiles.Location;
 
 import com.server.config.DBConnection;
 import com.server.route.ApiRouter;
@@ -187,6 +188,7 @@ public class ServerApp extends WebSocketServer {
         // Khởi động REST API (Cổng 7070)
         Javalin app = Javalin.create(config -> {
             config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
+			config.staticFiles.add("uploads", Location.EXTERNAL);
         }).start(7070);
         logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 

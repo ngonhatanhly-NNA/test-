@@ -109,21 +109,21 @@ public class UserController {
             String base64Image = data.get("base64Image").getAsString();
 
             // Tạo thư mục lưu trữ nếu chưa có
-            String uploadDir = "uploads/avatars/";
+            String uploadDir = "/avatars/";
             File dir = new File(uploadDir);
             if (!dir.exists()) {
-                dir.mkdirs(); 
+                dir.mkdirs();
             }
 
             // Giải mã chuỗi Base64 thành mảng byte
             byte[] imageBytes = Base64.getDecoder().decode(base64Image);
             
-            // 3. Lưu file vào ổ cứng
+            // Lưu file vào ổ cứng
             String fileName = username + "_avatar.png";
             String filePath = uploadDir + fileName;
             Files.write(Paths.get(filePath), imageBytes);
 
-            // 4. Gọi Service để cập nhật Database
+            // Gọi Service để cập nhật Database
             String dbPath = "/" + filePath; // Đường dẫn tương đối (Ví dụ: /uploads/avatars/admin_avatar.png)
             Response response = userService.updateAvatarUrl(username, dbPath);
             
@@ -131,14 +131,14 @@ public class UserController {
             if ("SUCCESS".equals(response.getStatus())) {
                 JsonObject resData = new JsonObject();
                 resData.addProperty("avatarUrl", dbPath);
-                response.setData(resData);
+               return gson.toJson(new Response ("SUCCESS", "Successfully update profile image", resData));
             }
 
             return gson.toJson(response);
 
         } catch (Exception e) {
-            logger.error("Lỗi cập nhật Avatar: {}", e.getMessage(), e);
-            return gson.toJson(new Response("ERROR", "Lỗi xử lý file trên Server: " + e.getMessage(), null));
+            logger.error("Error in updating avatar: {}", e.getMessage(), e);
+            return gson.toJson(new Response("ERROR", "Error in file hanlding: " + e.getMessage(), null));
         }
     }
 }

@@ -73,6 +73,7 @@ public class UserService {
         map.put("address", user.getAddress());
         map.put("role", user.getRole().name());
         map.put("status", user.getStatus().name());
+		map.put("avatarUrl", user.getAvatarUrl());
         return map;
     }
 
@@ -190,16 +191,16 @@ public class UserService {
         }
     }
 	
-	public Response<?> updateAvatarUrl (String username, String avatarUrl) {
+	public Response updateAvatarUrl (String username, String avatarUrl) {
 		try {
 			boolean isUpdated = userRepository.updateAvatarUrl(username, avatarUrl);
 			if (isUpdated) {
-				return new Response<>("SUCCESS", "Cập nhật ảnh đại diện thành công!", null);
+				return new Response("SUCCESS", "SUCESS", null);
 			} else {
-				return new Response<>("FAIL", "Không tìm thấy user để cập nhật ảnh", null);
+				return new Response("FAIL", "no image", null);
 			}
 		} catch (Exception e) {
-			return new Response<>("ERROR", "Lỗi database: " + e.getMessage(), null);
+			return new Response("ERROR", "Lỗi database: " + e.getMessage(), null);
 		}
 	}
 

@@ -9,7 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
-
+import com.google.gson.JsonObject;
 import com.shared.network.*;
 import com.shared.dto.*;
 import javafx.application.Platform;
@@ -103,6 +103,28 @@ public class AuthNetwork {
         // Giả sử server sẽ lấy username từ session/token, nên body có thể rỗng
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create("http://localhost:7070/api/users/upgrade-to-seller"))
                 .POST(HttpRequest.BodyPublishers.noBody()) // Gửi yêu cầu POST không có body
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
+	
+	/**
+     * Gửi chuỗi Base64 của Avatar lên Server để lưu trữ.
+     */
+    public CompletableFuture<Response> updateAvatar(String username, String base64Image) {
+        // Tạo JSON chứa username và ảnh
+        JsonObject data = new JsonObject();
+        data.addProperty("username", username);
+        data.addProperty("base64Image", base64Image);
+        
+        String jsonBody = gson.toJson(data);
+
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create("http://localhost:7070/api/users/avatar"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                 .build();
 
         return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(

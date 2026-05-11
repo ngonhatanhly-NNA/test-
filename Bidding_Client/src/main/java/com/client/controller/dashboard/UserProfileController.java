@@ -20,6 +20,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;        
+import javafx.scene.image.ImageView;   
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
@@ -31,17 +33,14 @@ import java.util.Base64;
 
 public class UserProfileController {
 
-    // --- Header ---
     @FXML private Label lblHeaderName;
     @FXML private Label lblRoleTag;
-	@FXML private ImageView avatarView;
+    @FXML private ImageView avatarView;
 
-    // --- VBox Containers để ẩn/hiện theo Role ---
     @FXML private VBox vboxBidder;
     @FXML private VBox vboxSeller;
     @FXML private VBox vboxAdmin;
 
-    // --- Form Fields ---
     @FXML private TextField txtUsername;
     @FXML private TextField txtFullName;
     @FXML private TextField txtEmail;
@@ -57,11 +56,9 @@ public class UserProfileController {
 
     @FXML private Label lblStatus;
 
-    // --- Box và Nút nâng cấp ---
     @FXML private HBox upgradeToSellerBox;
-    @FXML private Button upgradeButton; // <-- Thêm khai báo cho nút
-    @FXML private Button btnDepositMoney; // <-- THÊM MỚI: Nút nạp tiền
-
+    @FXML private Button upgradeButton; 
+    @FXML private Button btnDepositMoney; 
 
     private final AuthNetwork authNetwork = new AuthNetwork();
     private final Gson gson = new Gson();
@@ -75,11 +72,11 @@ public class UserProfileController {
     public void initialize() {
         hideAllRoleSections();
 
-		if (avatarView != null) {
-			Circle clip = new Circle (51, 51, 51);
-			avatarView.setClip(clip);
-		}
-		
+        if (avatarView != null) {
+            Circle clip = new Circle (51, 51, 51);
+            avatarView.setClip(clip);
+        }
+        
         if (upgradeButton != null) {
             upgradeButton.setOnAction(this::handleRequestSeller);
         }
@@ -87,8 +84,10 @@ public class UserProfileController {
         loggedInUsername = ClientSession.getUsername();
 
         if (loggedInUsername == null || loggedInUsername.trim().isEmpty()) {
-            lblStatus.setText("Bạn chưa đăng nhập")
-            lblStatus.setStyle("-fx-text-fill: #dc3545;");
+            if(lblStatus != null) {
+                lblStatus.setText("Bạn chưa đăng nhập");
+                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+            }
             return;
         }
         loadUserDataFromAPI();
@@ -101,13 +100,15 @@ public class UserProfileController {
     }
 
     private void loadUserDataFromAPI() {
-        lblStatus.setText("Loading...");
-        lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        if (lblStatus != null) {
+            lblStatus.setText("Loading...");
+            lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        }
 
         authNetwork.getUserProfile(loggedInUsername).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
-                    lblStatus.setText("");
+                    if (lblStatus != null) lblStatus.setText("");
 
                     try {
                         JsonElement dataElement = gson.toJsonTree(response.getData());
@@ -119,41 +120,54 @@ public class UserProfileController {
                         BaseProfileUpdateDTO profile = parseProfileByRole(jsonData, currentUserRole);
                         currentProfile = profile;
 
-                        txtFullName.setText(profile.getFullName() != null ? profile.getFullName() : "");
-                        txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
-                        txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
-                        txtAddress.setText(profile.getAddress() != null ? profile.getAddress() : "");
+                        if (txtFullName != null) txtFullName.setText(profile.getFullName() != null ? profile.getFullName() : "");
+                        if (txtEmail != null) txtEmail.setText(profile.getEmail() != null ? profile.getEmail() : "");
+                        if (txtPhone != null) txtPhone.setText(profile.getPhoneNumber() != null ? profile.getPhoneNumber() : "");
+                        if (txtAddress != null) txtAddress.setText(profile.getAddress() != null ? profile.getAddress() : "");
 
-                        lblHeaderName.setText(profile.getFullName());
-                        lblRoleTag.setText("Vai trò: " + role);
+                        if (lblHeaderName != null) lblHeaderName.setText(profile.getFullName());
+                        if (lblRoleTag != null) lblRoleTag.setText("Vai trò: " + role);
 
-                        if (jsonData.has("walletBalance") && !jsonData.get("walletBalance").isJsonNull()) {
+                        if (txtWalletBalance != null && jsonData.has("walletBalance") && !jsonData.get("walletBalance").isJsonNull()) {
                             double walletBalance = jsonData.get("walletBalance").getAsDouble();
                             txtWalletBalance.setText(String.format("%,.0f VNĐ", walletBalance));
                         }
-						
-						// Load Avatar URL nếu có từ DB
-                        // if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
-                        //     String avatarUrl = jsonData.get("avatarUrl").getAsString();
-                        //     avatarView.setImage(new Image(avatarUrl));
-                        // }
-						
+                        
+                        // [CHUẨN NHẤT]: Load Avatar URL từ Server
+                        if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
+                            String avatarUrl = jsonData.get("avatarUrl").getAsString();
+                            try {
+                                String fullHttpUrl = "http://localhost:7070" + avatarUrl;
+                                if (avatarView != null) {
+                                    avatarView.setImage(new Image(fullHttpUrl, true)); 
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Không load được ảnh đại diện từ link: " + e.getMessage());
+                            }
+                        }
+                        
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
-                        lblStatus.setText("Lỗi parse dữ liệu từ Server!");
-                        lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                        if (lblStatus != null) {
+                            lblStatus.setText("Lỗi parse dữ liệu từ Server!");
+                            lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                        }
                         e.printStackTrace();
                     }
 
                 } else {
-                    lblStatus.setText("Lỗi lấy dữ liệu: " + response.getMessage());
-                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    if (lblStatus != null) {
+                        lblStatus.setText("Lỗi lấy dữ liệu: " + response.getMessage());
+                        lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    }
                 }
             });
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
-                lblStatus.setText("Lỗi kết nối Server!");
-                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                if (lblStatus != null) {
+                    lblStatus.setText("Lỗi kết nối Server!");
+                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                }
             });
             return null;
         });
@@ -161,7 +175,6 @@ public class UserProfileController {
 
     private BaseProfileUpdateDTO parseProfileByRole(JsonObject jsonData, String role) {
         long id = getLongValue(jsonData, "id");
-
         switch(role) {
             case "ADMIN":
                 AdminProfileUpdateDTO adminProfile = new AdminProfileUpdateDTO();
@@ -204,8 +217,7 @@ public class UserProfileController {
             if (jsonObject.has(key) && !jsonObject.get(key).isJsonNull()) {
                 return jsonObject.get(key).getAsLong();
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         return 0L;
     }
 
@@ -226,24 +238,26 @@ public class UserProfileController {
         }
 
         if ("ADMIN".equals(role)) {
-            vboxAdmin.setVisible(true); vboxAdmin.setManaged(true);
-            lblRoleTag.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
+            if (vboxAdmin != null) { vboxAdmin.setVisible(true); vboxAdmin.setManaged(true); }
+            if (lblRoleTag != null) lblRoleTag.setStyle("-fx-background-color: #dc3545; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
 
         } else if ("SELLER".equals(role)) {
-            vboxBidder.setVisible(true); vboxBidder.setManaged(true);
-            vboxSeller.setVisible(true); vboxSeller.setManaged(true);
-            lblRoleTag.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
+            if (vboxBidder != null) { vboxBidder.setVisible(true); vboxBidder.setManaged(true); }
+            if (vboxSeller != null) { vboxSeller.setVisible(true); vboxSeller.setManaged(true); }
+            if (lblRoleTag != null) lblRoleTag.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
 
         } else { // BIDDER
-            vboxBidder.setVisible(true); vboxBidder.setManaged(true);
-            lblRoleTag.setStyle("-fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
+            if (vboxBidder != null) { vboxBidder.setVisible(true); vboxBidder.setManaged(true); }
+            if (lblRoleTag != null) lblRoleTag.setStyle("-fx-background-color: #007bff; -fx-text-fill: white; -fx-padding: 3 8; -fx-background-radius: 10;");
         }
     }
 
     @FXML
     public void handleUpdateProfile() {
-        lblStatus.setText("Đang lưu thay đổi...");
-        lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        if (lblStatus != null) {
+            lblStatus.setText("Đang lưu thay đổi...");
+            lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        }
 
         IProfileUIStrategy strategy = ProfileUIStrategyFactory.getStrategy(currentUserRole);
         BaseProfileUpdateDTO updateData = strategy.collectData(this);
@@ -256,19 +270,25 @@ public class UserProfileController {
         authNetwork.updateProfile(updateData).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
-                    lblStatus.setText("Cập nhật thông tin thành công!");
-                    lblStatus.setStyle("-fx-text-fill: #28a745;");
-                    lblHeaderName.setText(txtFullName.getText());
-                    txtPassword.clear();
+                    if (lblStatus != null) {
+                        lblStatus.setText("Cập nhật thông tin thành công!");
+                        lblStatus.setStyle("-fx-text-fill: #28a745;");
+                    }
+                    if (lblHeaderName != null && txtFullName != null) lblHeaderName.setText(txtFullName.getText());
+                    if (txtPassword != null) txtPassword.clear();
                 } else {
-                    lblStatus.setText("Cập nhật thất bại: " + response.getMessage());
-                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    if (lblStatus != null) {
+                        lblStatus.setText("Cập nhật thất bại: " + response.getMessage());
+                        lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    }
                 }
             });
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
-                lblStatus.setText("Mất kết nối tới Server! (" + (ex.getMessage() != null ? ex.getMessage() : "unknown") + ")");
-                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                if (lblStatus != null) {
+                    lblStatus.setText("Mất kết nối tới Server!");
+                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                }
             });
             return null;
         });
@@ -279,22 +299,26 @@ public class UserProfileController {
         if (upgradeButton != null) {
             upgradeButton.setDisable(true);
         }
-        lblStatus.setText("Đang gửi yêu cầu...");
-        lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        if (lblStatus != null) {
+            lblStatus.setText("Đang gửi yêu cầu...");
+            lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        }
 
         authNetwork.requestUpgradeToSeller(loggedInUsername).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
-                    // Chỉ hiện thông báo, KHÔNG gọi loadUserDataFromAPI() vì JWT cũ sẽ gây lỗi
-                    lblStatus.setText("Role của bạn đã thay đổi, vui lòng đăng nhập lại.");
-                    lblStatus.setStyle("-fx-text-fill: #28a745;");
+                    if (lblStatus != null) {
+                        lblStatus.setText("Role của bạn đã thay đổi, vui lòng đăng nhập lại.");
+                        lblStatus.setStyle("-fx-text-fill: #28a745;");
+                    }
                     if (upgradeButton != null) {
                         upgradeButton.setDisable(true);
                     }
                 } else {
-                    lblStatus.setText("Yêu cầu thất bại: " + response.getMessage());
-                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
-                    // Bật lại nút nếu thất bại để người dùng thử lại
+                    if (lblStatus != null) {
+                        lblStatus.setText("Yêu cầu thất bại: " + response.getMessage());
+                        lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    }
                     if (upgradeButton != null) {
                         upgradeButton.setDisable(false);
                     }
@@ -302,8 +326,10 @@ public class UserProfileController {
             });
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
-                lblStatus.setText("Lỗi kết nối Server khi gửi yêu cầu!");
-                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                if (lblStatus != null) {
+                    lblStatus.setText("Lỗi kết nối Server khi gửi yêu cầu!");
+                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                }
                 if (upgradeButton != null) {
                     upgradeButton.setDisable(false);
                 }
@@ -312,28 +338,20 @@ public class UserProfileController {
         });
     }
 
-    /**
-     * MỞ DIALOG NẠP TIỀN
-     */
     @FXML
     public void handleOpenDepositDialog() {
         try {
-            // Load FXML
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
                     getClass().getResource("/fxml/DepositPopup.fxml"));
             javafx.scene.Parent depositRoot = loader.load();
 
-            // Tạo Stage mới
             javafx.stage.Stage depositStage = new javafx.stage.Stage();
             depositStage.setTitle("Nạp Tiền");
             depositStage.setScene(new javafx.scene.Scene(depositRoot, 600, 700));
             depositStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
             depositStage.setResizable(false);
 
-            // Hiển thị dialog
             depositStage.showAndWait();
-
-            // Sau khi dialog đóng, tải lại thông tin profile để cập nhật số dư
             loadUserDataFromAPI();
 
         } catch (Exception e) {
@@ -341,68 +359,69 @@ public class UserProfileController {
                     "Không thể mở dialog nạp tiền: " + e.getMessage());
         }
     }
-	
-	@FXML
-	public void handleChangeAvatar() {
-		FileChooser fileChooser = new FileChooser();
-		fileChooser.setTitle("Choose your profile image");
-		
-		fileChooser.getExtensionFilters().addAll(
-			new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
-		);
-		File selectedFile = fileChooser.showOpenDialog(avatarView.getScene().getWindow());
-		
-		if (selectedFile != null) {
+    
+    @FXML
+    public void handleChangeAvatar() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choose your profile image");
+        
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+        );
+        File selectedFile = fileChooser.showOpenDialog(avatarView.getScene().getWindow());
+        
+        if (selectedFile != null) {
             if (selectedFile.length() > 2 * 1024 * 1024) {
                 showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Ảnh quá lớn, vui lòng chọn ảnh dưới 2MB");
                 return;
             }
 
             try {
-                // Hiển thị ảnh ngay lập tức
                 Image newAvatar = new Image(selectedFile.toURI().toString());
-                avatarView.setImage(newAvatar);
+                if (avatarView != null) avatarView.setImage(newAvatar);
 
-                // Chuyển đổi sang Base64
                 byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
                 String base64Image = Base64.getEncoder().encodeToString(fileContent);
 
-                // Gửi Base64 lên Server
                 uploadAvatarToServer(base64Image);
 
             } catch (Exception e) {
                 showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể đọc file ảnh: " + e.getMessage());
             }
         }
-	}
-	
-	private void uploadAvatarToServer(String base64Image) {
-        System.out.println("Đang gửi ảnh lên Server...");
-        lblStatus.setText("Đang tải ảnh lên...");
-        lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+    }
+    
+    private void uploadAvatarToServer(String base64Image) {
+        if (lblStatus != null) {
+            lblStatus.setText("Đang tải ảnh lên...");
+            lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        }
         
-        // TODO: Mở comment đoạn dưới khi bạn đã có API updateAvatar trong AuthNetwork
-        /*
         authNetwork.updateAvatar(loggedInUsername, base64Image).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
-                    lblStatus.setText("Cập nhật ảnh đại diện thành công!");
-                    lblStatus.setStyle("-fx-text-fill: #28a745;");
+                    if (lblStatus != null) {
+                        lblStatus.setText("Cập nhật ảnh đại diện thành công!");
+                        lblStatus.setStyle("-fx-text-fill: #28a745;");
+                    }
                 } else {
-                    lblStatus.setText("Cập nhật ảnh thất bại: " + response.getMessage());
-                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    if (lblStatus != null) {
+                        lblStatus.setText("Cập nhật ảnh thất bại: " + response.getMessage());
+                        lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                    }
                 }
             });
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
-                lblStatus.setText("Lỗi kết nối khi tải ảnh lên!");
-                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                if (lblStatus != null) {
+                    lblStatus.setText("Lỗi kết nối khi tải ảnh lên!");
+                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                }
             });
             return null;
         });
-        */
     }
-	
+    
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);
@@ -411,7 +430,6 @@ public class UserProfileController {
         alert.showAndWait();
     }
 
-    // Getters cho các TextField - dùng bởi Strategy classes
     public TextField getTxtFullName() { return txtFullName; }
     public TextField getTxtEmail() { return txtEmail; }
     public TextField getTxtPhone() { return txtPhone; }
