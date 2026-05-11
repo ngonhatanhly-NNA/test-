@@ -22,12 +22,19 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
+import javafx.stage.FileChooser;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.util.Base64;
 
 public class UserProfileController {
 
     // --- Header ---
     @FXML private Label lblHeaderName;
     @FXML private Label lblRoleTag;
+	@FXML private ImageView avatarView;
 
     // --- VBox Containers để ẩn/hiện theo Role ---
     @FXML private VBox vboxBidder;
@@ -68,6 +75,11 @@ public class UserProfileController {
     public void initialize() {
         hideAllRoleSections();
 
+		if (avatarView != null) {
+			Circle clip = new Circle (51, 51, 51);
+			avatarView.setClip(clip);
+		}
+		
         if (upgradeButton != null) {
             upgradeButton.setOnAction(this::handleRequestSeller);
         }
@@ -75,7 +87,7 @@ public class UserProfileController {
         loggedInUsername = ClientSession.getUsername();
 
         if (loggedInUsername == null || loggedInUsername.trim().isEmpty()) {
-            lblStatus.setText("Bạn chưa đăng nhập (không có session username)");
+            lblStatus.setText("Bạn chưa đăng nhập")
             lblStatus.setStyle("-fx-text-fill: #dc3545;");
             return;
         }
@@ -89,7 +101,7 @@ public class UserProfileController {
     }
 
     private void loadUserDataFromAPI() {
-        lblStatus.setText("Đang tải dữ liệu...");
+        lblStatus.setText("Loading...");
         lblStatus.setStyle("-fx-text-fill: #E3B04B;");
 
         authNetwork.getUserProfile(loggedInUsername).thenAccept(response -> {
@@ -119,7 +131,13 @@ public class UserProfileController {
                             double walletBalance = jsonData.get("walletBalance").getAsDouble();
                             txtWalletBalance.setText(String.format("%,.0f VNĐ", walletBalance));
                         }
-
+						
+						// Load Avatar URL nếu có từ DB
+                        // if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
+                        //     String avatarUrl = jsonData.get("avatarUrl").getAsString();
+                        //     avatarView.setImage(new Image(avatarUrl));
+                        // }
+						
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
                         lblStatus.setText("Lỗi parse dữ liệu từ Server!");
@@ -323,7 +341,68 @@ public class UserProfileController {
                     "Không thể mở dialog nạp tiền: " + e.getMessage());
         }
     }
+	
+	@FXML
+	public void handleChangeAvatar() {
+		FileChooser fileChooser = new FileChooser();
+		fileChooser.setTitle("Choose your profile image");
+		
+		fileChooser.getExtensionFilters().addAll(
+			new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+		);
+		File selectedFile = fileChooser.showOpenDialog(avatarView.getScene().getWindow());
+		
+		if (selectedFile != null) {
+            if (selectedFile.length() > 2 * 1024 * 1024) {
+                showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Ảnh quá lớn, vui lòng chọn ảnh dưới 2MB");
+                return;
+            }
 
+            try {
+                // Hiển thị ảnh ngay lập tức
+                Image newAvatar = new Image(selectedFile.toURI().toString());
+                avatarView.setImage(newAvatar);
+
+                // Chuyển đổi sang Base64
+                byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
+                String base64Image = Base64.getEncoder().encodeToString(fileContent);
+
+                // Gửi Base64 lên Server
+                uploadAvatarToServer(base64Image);
+
+            } catch (Exception e) {
+                showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể đọc file ảnh: " + e.getMessage());
+            }
+        }
+	}
+	
+	private void uploadAvatarToServer(String base64Image) {
+        System.out.println("Đang gửi ảnh lên Server...");
+        lblStatus.setText("Đang tải ảnh lên...");
+        lblStatus.setStyle("-fx-text-fill: #E3B04B;");
+        
+        // TODO: Mở comment đoạn dưới khi bạn đã có API updateAvatar trong AuthNetwork
+        /*
+        authNetwork.updateAvatar(loggedInUsername, base64Image).thenAccept(response -> {
+            Platform.runLater(() -> {
+                if ("SUCCESS".equals(response.getStatus())) {
+                    lblStatus.setText("Cập nhật ảnh đại diện thành công!");
+                    lblStatus.setStyle("-fx-text-fill: #28a745;");
+                } else {
+                    lblStatus.setText("Cập nhật ảnh thất bại: " + response.getMessage());
+                    lblStatus.setStyle("-fx-text-fill: #dc3545;");
+                }
+            });
+        }).exceptionally(ex -> {
+            Platform.runLater(() -> {
+                lblStatus.setText("Lỗi kết nối khi tải ảnh lên!");
+                lblStatus.setStyle("-fx-text-fill: #dc3545;");
+            });
+            return null;
+        });
+        */
+    }
+	
     private void showAlert(Alert.AlertType alertType, String title, String message) {
         Alert alert = new Alert(alertType);
         alert.setTitle(title);

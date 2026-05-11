@@ -135,3 +135,4 @@ CREATE TABLE auto_bids (
 );
 ALTER TABLE bidders ADD COLUMN reserved_amount DECIMAL(19, 2) DEFAULT 0.00;
 -- Tiền đang "giữ lại" do các bid hiện tại (chưa thanh toán)
+ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) DEFAULT NULL;

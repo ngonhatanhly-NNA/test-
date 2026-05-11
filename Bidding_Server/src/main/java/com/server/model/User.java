@@ -7,7 +7,7 @@ public abstract class User extends Entity {
     private String fullName;
     private String phoneNumber;
     private String address;
-
+    private String avatarUrl; // URL ảnh đại diện (có thể null)
     private Status status; //  "ACTIVE", "INACTIVE", "BANNED"
     private Role role; //Mo rong thanh Enum BIDDER, SELLER, ADMIN
 
@@ -60,5 +60,10 @@ public abstract class User extends Entity {
     public Role getRole() { return role; }
     public void setRole(Role newRole) {
         this.role = newRole;
+    }
+
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }

@@ -192,6 +192,19 @@ public class UserRepository implements IUserRepository {
         }
     }
 
+	public boolean updateAvatarUrl(String username, String avatarUrl) {
+		String sql = "UPDATE users SET avatarUrl = ? WHERE username = ?";
+		try (Connection conn = DBConnection.getInstance().getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pstmt.setString(1, avatarUrl);
+			pstmt.setString(2, username);
+			return pstmt.executeUpdate() > 0;
+		} catch (Exception e) {
+			logger.error("Error in updateAvatarUrl: {}", e.getMessage(), e);
+			return false;
+		}
+	}
+
 	public List<User> getAllUsers() {
 		List<User> users = new ArrayList<>();
 		String sql = UserQueryFactory.getFullUserQueryForAll();

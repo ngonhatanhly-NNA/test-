@@ -13,3 +13,7 @@ logs/
 .idea/
 .vscode/
 *.iml
+
+# Ignore configuration files with sensitive data
+Bidding_Server/src/main/resources/application.properties
+Bidding_Client/src/main/resources/client-config.properties

@@ -1,6 +1,8 @@
 package com.client.controller.dashboard;
 
 import com.client.util.DashboardNavigation;
+import javafx.animation.TranslateTransition;
+import javafx.animation.AnimationTimer;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -8,10 +10,20 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.AnchorPane; 
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.image.Image;     
+import javafx.scene.image.ImageView;   
+import javafx.util.Duration;           
+import javafx.application.Platform;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
+import com.client.util.BiddingPet;
 import com.client.util.SwitchPane;
 import com.client.util.SceneController;
 import com.client.session.ClientSession;
@@ -19,14 +31,14 @@ import com.client.session.ClientSession;
 public class DashboardController {
 
     @FXML private BorderPane mainBorderPane;
-    private SwitchPane mainPane; // qeen mat la chua khoi taoj :)
+    private SwitchPane mainPane; 
 
     // Nút Menu
     @FXML private Button btnDashboard;
     @FXML private Button btnLiveAuctions;
     @FXML private Button btnMyInventory;
     @FXML private Button btnLogout;
-    @FXML private Button btnManagement; // Nút dành cho Admin/Seller
+    @FXML private Button btnManagement;
 
     // Header
     @FXML private Label lblUsername;
@@ -37,6 +49,16 @@ public class DashboardController {
     @FXML private CheckBox chkFineArts;
     @FXML private CheckBox chkVehicles;
 
+    // --- GAME COMPONENTS ---
+    @FXML private AnchorPane gameLayer; 
+    @FXML private Label bidCounter;     
+    private BiddingPet pet;
+    private int caughtCount = 0;
+
+    private List<ImageView> activeCoins = new ArrayList<>();
+    private AnimationTimer gameLoop;
+    public static DashboardController instance;
+
     // --- HÀM KHỞI TẠO ---
     @FXML
     public void initialize() {
@@ -44,8 +66,6 @@ public class DashboardController {
 
         if (ClientSession.isLoggedIn()) {
             lblUsername.setText(ClientSession.getUsername());
-            // TODO: Phân quyền, hiện chỉ đang ẩn ở UI, nếu gọi api seller thì bidder vẫn thấy đc
-            // Lấy vai trò của người dùng
             String role = ClientSession.getRole();
 
             if (role == null || role.equalsIgnoreCase("BIDDER")) {
@@ -56,28 +76,105 @@ public class DashboardController {
             }
         } else {
             lblUsername.setText("Khách");
-            // Khách cũng không được thấy nút Management
             if (btnManagement != null) {
                 btnManagement.setVisible(false);
                 btnManagement.setManaged(false);
             }
         }
-        // BƠM LOGIC CHUYỂN TRANG CHO CÁC NÚT BẤM Ở DASHBOARD (Sử dụng hàm đã có sẵn của em)
+
+        instance = this;
+        
+        if (gameLayer != null) {
+            pet = new BiddingPet(gameLayer);
+            setupGameLoopAndControls(); // Cài đặt phím bấm và vòng lặp game
+        }
+        
+        handleBtnDashboard(null);
+        
         DashboardNavigation.setOpenLiveAuctions(() -> handleBtnLiveAuctions(null));
         DashboardNavigation.setNavigateToAuctionDetail(auctionId -> handleBtnLiveAuctions(null));
+    }
 
-        handleBtnDashboard(null);
+    // --- CÀI ĐẶT GAME LOOP VÀ BÀN PHÍM ---
+    private void setupGameLoopAndControls() {
+        // Đợi UI load xong mới gắn sự kiện phím
+        Platform.runLater(() -> {
+            gameLayer.getScene().setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.A || e.getCode() == KeyCode.LEFT) pet.setMoveLeft(true);
+                if (e.getCode() == KeyCode.D || e.getCode() == KeyCode.RIGHT) pet.setMoveRight(true);
+            });
+            gameLayer.getScene().setOnKeyReleased(e -> {
+                if (e.getCode() == KeyCode.A || e.getCode() == KeyCode.LEFT) pet.setMoveLeft(false);
+                if (e.getCode() == KeyCode.D || e.getCode() == KeyCode.RIGHT) pet.setMoveRight(false);
+            });
+        });
+
+        gameLoop = new AnimationTimer() {
+            @Override
+            public void handle(long now) {
+                if (pet != null) pet.updateMovement();
+                checkCollisions();
+            }
+        };
+        gameLoop.start();
+    }
+
+    // --- XỬ LÝ VA CHẠM (HỨNG ĐỒ) ---
+    private void checkCollisions() {
+        if (pet == null) return;
+        Iterator<ImageView> it = activeCoins.iterator();
+        while (it.hasNext()) {
+            ImageView coin = it.next();
+            if (pet.intersects(coin)) { // Nếu Pikachu chạm vào đồng tiền
+                gameLayer.getChildren().remove(coin);
+                it.remove();
+                
+                caughtCount++;
+                if (bidCounter != null) bidCounter.setText("Bids: " + caughtCount);
+                pet.jumpCelebrate(); // Nhảy ăn mừng
+            }
+        }
+    }
+
+    // --- SỰ KIỆN RƠI ĐỒ ---
+    public void handleNewBidEvent() {
+        if (gameLayer == null || pet == null) return;
+
+        double startX = 100 + Math.random() * (gameLayer.getWidth() - 300);
+        
+        try {
+            ImageView coin = new ImageView(new Image(getClass().getResourceAsStream("/images/item066.png")));
+            coin.setFitWidth(40);
+            coin.setFitHeight(40);
+            coin.setLayoutX(startX);
+            coin.setLayoutY(-50); 
+            
+            gameLayer.getChildren().add(coin);
+            activeCoins.add(coin); // Lưu vào danh sách để xét va chạm
+
+            TranslateTransition fall = new TranslateTransition(Duration.seconds(2.5), coin);
+            fall.setFromY(0);
+            fall.setToY(gameLayer.getHeight() + 50); // Rơi tụt xuống đất
+            
+            fall.setOnFinished(e -> {
+                // Rớt xuống đất mà không ai hứng thì xóa đi
+                gameLayer.getChildren().remove(coin);
+                activeCoins.remove(coin);
+            });
+            fall.play();
+        } catch (Exception e) {
+            System.err.println("Không thể tạo vật phẩm: " + e.getMessage());
+        }
     }
 
     // --- HÀM TÔ MÀU NÚT ---
     private void setActiveButton(Button activeButton) {
-        // Trả tất cả về giao diện mặc định
         String defaultStyle = "-fx-background-color: transparent; -fx-text-fill: #333333; -fx-alignment: CENTER_LEFT; -fx-padding: 12; -fx-font-size: 14px;";
 
         if (btnDashboard != null) btnDashboard.setStyle(defaultStyle);
         if (btnLiveAuctions != null) btnLiveAuctions.setStyle(defaultStyle);
         if (btnMyInventory != null) btnMyInventory.setStyle(defaultStyle);
-        if (btnManagement != null) btnManagement.setStyle(defaultStyle); // Cập nhật cả nút này
+        if (btnManagement != null) btnManagement.setStyle(defaultStyle);
 
         String activeStyle = "-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-padding: 12; -fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 14px;";
         if (activeButton != null) {
@@ -98,8 +195,6 @@ public class DashboardController {
         setActiveButton(btnLiveAuctions);
     }
 
-    // TODO: Tạm chưa hoàn thành phân quền, sau dùng token chỉnh sau
-    // --- CHUYỂN CẢNH THEO ROLE ---
     @FXML
     void handleBtnManagement(ActionEvent event) {
         if (!ClientSession.isLoggedIn()) return;
@@ -111,11 +206,9 @@ public class DashboardController {
         } else if ("ADMIN".equalsIgnoreCase(role)) {
             mainPane.loadView("AdminDashboard.fxml");
         } else {
-            // Log lỗi hoặc hiện thông báo đề phòng trường hợp lọt quyền
             System.err.println("CẢNH BÁO: Tài khoản " + ClientSession.getUsername() + " cố truy cập Management trái phép!");
             return;
         }
-
         setActiveButton(btnManagement);
     }
 
@@ -127,26 +220,24 @@ public class DashboardController {
 
     @FXML
     void handleLogout(ActionEvent event) throws IOException {
-        // Xóa thông tin đăng nhập trước khi văng ra ngoài
         ClientSession.clear();
-        SceneController.switchScene(event, "AuctionMenu.fxml"); // Hoặc Login.fxml tuỳ bạn
+        SceneController.switchScene(event, "AuctionMenu.fxml"); 
     }
 
-    // --- SỰ KIỆN CATEGORIES (Lọc sản phẩm) ---
+    // --- SỰ KIỆN CATEGORIES ---
     @FXML
     void handleCategoryFilter(ActionEvent event) {
         System.out.println("Lọc sản phẩm...");
         if (chkElectronics != null && chkElectronics.isSelected()) System.out.println("- Đồ điện tử");
         if (chkFineArts != null && chkFineArts.isSelected()) System.out.println("- Nghệ thuật");
         if (chkVehicles != null && chkVehicles.isSelected()) System.out.println("- Xe cộ");
-
-        // TODO: Nối với ViewDashboardController để lọc danh sách hiển thị
+    
+        handleNewBidEvent(); // Kích hoạt sự kiện rơi đồ để test
     }
-
+    
     @FXML
     void handleOpenProfile (MouseEvent event) {
         mainPane.loadView("UserProfile.fxml");
-
         setActiveButton(null);
     }
 }

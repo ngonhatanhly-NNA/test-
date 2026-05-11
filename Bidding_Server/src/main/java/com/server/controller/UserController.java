@@ -1,11 +1,16 @@
 package com.server.controller;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.server.model.Role;
 import com.server.service.UserService;
 import com.shared.dto.*;
 import com.shared.network.Response;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -92,5 +97,48 @@ public class UserController {
         logger.info("Nhận được yêu cầu nâng cấp vai trò cho user '{}'", username);
         Response response = userService.requestSellerUpgrade(username);
         return gson.toJson(response);
+    }
+
+    /**
+     * Xử lý yêu cầu cập nhật ảnh đại diện (Avatar)
+     */
+    public String handleUpdateAvatar(String jsonBody) {
+        try {
+            JsonObject data = gson.fromJson(jsonBody, JsonObject.class);
+            String username = data.get("username").getAsString();
+            String base64Image = data.get("base64Image").getAsString();
+
+            // Tạo thư mục lưu trữ nếu chưa có
+            String uploadDir = "uploads/avatars/";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs(); 
+            }
+
+            // Giải mã chuỗi Base64 thành mảng byte
+            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+            
+            // 3. Lưu file vào ổ cứng
+            String fileName = username + "_avatar.png";
+            String filePath = uploadDir + fileName;
+            Files.write(Paths.get(filePath), imageBytes);
+
+            // 4. Gọi Service để cập nhật Database
+            String dbPath = "/" + filePath; // Đường dẫn tương đối (Ví dụ: /uploads/avatars/admin_avatar.png)
+            Response response = userService.updateAvatarUrl(username, dbPath);
+            
+            // Nếu thành công, nhét thêm cái dbPath vào data trả về để Client biết đường dẫn mới
+            if ("SUCCESS".equals(response.getStatus())) {
+                JsonObject resData = new JsonObject();
+                resData.addProperty("avatarUrl", dbPath);
+                response.setData(resData);
+            }
+
+            return gson.toJson(response);
+
+        } catch (Exception e) {
+            logger.error("Lỗi cập nhật Avatar: {}", e.getMessage(), e);
+            return gson.toJson(new Response("ERROR", "Lỗi xử lý file trên Server: " + e.getMessage(), null));
+        }
     }
 }

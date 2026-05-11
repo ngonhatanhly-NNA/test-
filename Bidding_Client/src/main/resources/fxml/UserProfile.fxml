@@ -6,8 +6,10 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
@@ -34,12 +36,24 @@
 
             <VBox maxWidth="750.0" spacing="25.0" style="-fx-background-color: #FFFFFF; -fx-background-radius: 20; -fx-padding: 45; -fx-effect: dropshadow(gaussian, rgba(17,24,39,0.06), 30, 0, 5, 5);">
 
-                <HBox alignment="CENTER_LEFT" spacing="25.0">
-                    <Circle fill="linear-gradient(to bottom right, #D4AF37, #FDE047)" radius="45.0" stroke="#FFFFFF" strokeType="INSIDE" strokeWidth="4.0">
-                        <style>
-                            -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5);
-                        </style>
-                    </Circle>
+                <HBox alignment="CENTER_LEFT" spacing="35.0">
+                    <VBox alignment="CENTER" spacing="10.0">
+                        <StackPane>
+                            <Circle fill="linear-gradient(to bottom right, #D4AF37, #FDE047)" radius="55.0" stroke="#FFFFFF" strokeType="INSIDE" strokeWidth="4.0">
+                                <style>
+                                    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 5);
+                                </style>
+                            </Circle>
+                            
+                            <ImageView fx:id="avatarView" fitHeight="102.0" fitWidth="102.0" pickOnBounds="true" preserveRatio="false" />
+                        </StackPane>
+                        
+                        <Button mnemonicParsing="false" onAction="#handleChangeAvatar" style="-fx-background-color: #F1F5F9; -fx-text-fill: #475569; -fx-border-color: #CBD5E1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 4 12;" text="📷 Đổi ảnh">
+                            <font>
+                                <Font name="System Bold" size="12.0" />
+                            </font>
+                        </Button>
+                    </VBox>
                     <VBox alignment="CENTER_LEFT" spacing="8.0">
                         <Label fx:id="lblHeaderName" text="Đang tải..." textFill="#1E293B">
                             <font>

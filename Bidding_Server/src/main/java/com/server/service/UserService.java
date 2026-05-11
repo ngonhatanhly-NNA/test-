@@ -189,6 +189,19 @@ public class UserService {
             return storedHash.equals(rawPassword);
         }
     }
+	
+	public Response<?> updateAvatarUrl (String username, String avatarUrl) {
+		try {
+			boolean isUpdated = userRepository.updateAvatarUrl(username, avatarUrl);
+			if (isUpdated) {
+				return new Response<>("SUCCESS", "Cập nhật ảnh đại diện thành công!", null);
+			} else {
+				return new Response<>("FAIL", "Không tìm thấy user để cập nhật ảnh", null);
+			}
+		} catch (Exception e) {
+			return new Response<>("ERROR", "Lỗi database: " + e.getMessage(), null);
+		}
+	}
 
     /**
      * Xử lý yêu cầu nâng cấp một BIDDER thành SELLER.
