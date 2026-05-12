@@ -30,6 +30,9 @@ public class UserProfileResponseDTO implements Serializable {
 
     @SerializedName("walletBalance")
     private double walletBalance; // Cần thiết để hiển thị số dư
+	
+	@SerializedName("avatarUrl")
+    private String avatarUrl;
 
     public UserProfileResponseDTO() {
     }
@@ -45,6 +48,7 @@ public class UserProfileResponseDTO implements Serializable {
         this.address = address;
         this.role = role;
         this.walletBalance = walletBalance;
+		this.avatarUrl = avatarUrl;
     }
 
     public String getRole() {
@@ -78,6 +82,10 @@ public class UserProfileResponseDTO implements Serializable {
     public double getWalletBalance() {
         return walletBalance;
     }
+	
+	public String getAvatarUrl() {
+        return avatarUrl;
+    }
     // Getters để JavaFX xử lí
 
     @Override
@@ -90,6 +98,8 @@ public class UserProfileResponseDTO implements Serializable {
                 Objects.equals(fullName, that.fullName) && Objects.equals(phoneNumber, that.phoneNumber) &&
                 Objects.equals(address, that.address) && Objects.equals(role, that.role);
     }
+	
+
 
     @Override
     public int hashCode() {

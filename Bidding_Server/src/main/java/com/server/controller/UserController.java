@@ -9,6 +9,7 @@ import com.shared.network.Response;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Map;
@@ -103,42 +104,24 @@ public class UserController {
      * Xử lý yêu cầu cập nhật ảnh đại diện (Avatar)
      */
     public String handleUpdateAvatar(String jsonBody) {
-        try {
-            JsonObject data = gson.fromJson(jsonBody, JsonObject.class);
-            String username = data.get("username").getAsString();
-            String base64Image = data.get("base64Image").getAsString();
+		try {
+			JsonObject data = gson.fromJson(jsonBody, JsonObject.class);
+			String username = data.get("username").getAsString();
+			
+			String dbPath = data.get("base64Image").getAsString(); 
+			Response response = userService.updateAvatarUrl(username, dbPath);
+			
+			if ("SUCCESS".equals(response.getStatus())) {
+				JsonObject resData = new JsonObject();
+				resData.addProperty("avatarUrl", dbPath);
+				return gson.toJson(new Response("SUCCESS", "Cập nhật ảnh đại diện thành công", resData));
+			}
 
-            // Tạo thư mục lưu trữ nếu chưa có
-            String uploadDir = "/avatars/";
-            File dir = new File(uploadDir);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
+			return gson.toJson(response);
 
-            // Giải mã chuỗi Base64 thành mảng byte
-            byte[] imageBytes = Base64.getDecoder().decode(base64Image);
-            
-            // Lưu file vào ổ cứng
-            String fileName = username + "_avatar.png";
-            String filePath = uploadDir + fileName;
-            Files.write(Paths.get(filePath), imageBytes);
-
-            // Gọi Service để cập nhật Database
-            String dbPath = "/" + filePath; // Đường dẫn tương đối (Ví dụ: /uploads/avatars/admin_avatar.png)
-            Response response = userService.updateAvatarUrl(username, dbPath);
-            
-            // Nếu thành công, nhét thêm cái dbPath vào data trả về để Client biết đường dẫn mới
-            if ("SUCCESS".equals(response.getStatus())) {
-                JsonObject resData = new JsonObject();
-                resData.addProperty("avatarUrl", dbPath);
-               return gson.toJson(new Response ("SUCCESS", "Successfully update profile image", resData));
-            }
-
-            return gson.toJson(response);
-
-        } catch (Exception e) {
-            logger.error("Error in updating avatar: {}", e.getMessage(), e);
-            return gson.toJson(new Response("ERROR", "Error in file hanlding: " + e.getMessage(), null));
-        }
-    }
+		} catch (Exception e) {
+			logger.error("Error in updating avatar: {}", e.getMessage(), e);
+			return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
+		}
+	}
 }

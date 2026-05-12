@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UserService {   
+public class UserService {  
     private final UserRepository userRepository;
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
@@ -74,6 +74,10 @@ public class UserService {
         map.put("role", user.getRole().name());
         map.put("status", user.getStatus().name());
 		map.put("avatarUrl", user.getAvatarUrl());
+		
+		if (user instanceof Bidder) {
+			map.put("walletBalance", ((Bidder) user).getWalletBalance());
+		}
         return map;
     }
 

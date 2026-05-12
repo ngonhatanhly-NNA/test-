@@ -133,18 +133,40 @@ public class UserProfileController {
                             txtWalletBalance.setText(String.format("%,.0f VNĐ", walletBalance));
                         }
                         
-                        // [CHUẨN NHẤT]: Load Avatar URL từ Server
+                        // Load Avatar URL từ Server
                         if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
-                            String avatarUrl = jsonData.get("avatarUrl").getAsString();
-                            try {
-                                String fullHttpUrl = "http://localhost:7070" + avatarUrl;
-                                if (avatarView != null) {
-                                    avatarView.setImage(new Image(fullHttpUrl, true)); 
-                                }
-                            } catch (Exception e) {
-                                System.err.println("Không load được ảnh đại diện từ link: " + e.getMessage());
-                            }
-                        }
+							String avatarUrl = jsonData.get("avatarUrl").getAsString();
+							try {
+								Image imageToDisplay = null;
+								
+								// Đọc từ ổ cứng (Local File) - Y hệt Item
+								java.io.File localFile = new java.io.File(avatarUrl);
+								if (localFile.exists()) {
+									imageToDisplay = new Image(localFile.toURI().toString(), true);
+								} else {
+									// CĐọc từ thư mục resources của JavaFX (/images/...) - Y hệt Item
+									String resourcePath = avatarUrl.startsWith("/") ? avatarUrl : "/images/" + avatarUrl;
+									java.net.URL resourceUrl = getClass().getResource(resourcePath);
+									if (resourceUrl != null) {
+										imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
+									}
+								}
+								
+								// Ảnh mặc định nếu không tìm thấy (giống Item fallback về Gardevoir.png)
+								if (imageToDisplay == null) {
+									java.net.URL fallbackUrl = getClass().getResource("/images/shopkeeper.png"); // Bạn có thể đổi thành ảnh avatar mặc định
+									if (fallbackUrl != null) imageToDisplay = new Image(fallbackUrl.toExternalForm(), true);
+								}
+								
+								// Hiển thị ảnh lên View
+								if (imageToDisplay != null && avatarView != null) {
+									avatarView.setImage(imageToDisplay);
+								}
+								
+							} catch (Exception e) {
+								System.err.println("Không load được ảnh đại diện: " + e.getMessage());
+							}
+						}
                         
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
