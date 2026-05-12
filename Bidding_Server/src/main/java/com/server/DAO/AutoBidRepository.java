@@ -78,7 +78,7 @@ public class AutoBidRepository {
                 }
             }
         } catch (SQLException e) {
-            logger.error("Lỗi lấy auto-bid cho auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
+            logger.error("Error in getting autobid in auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
         }
         return null;
     }
@@ -99,7 +99,7 @@ public class AutoBidRepository {
                 }
             }
         } catch (SQLException e) {
-            logger.error("Lỗi lấy danh sách auto-bid cho auction {}: {}", auctionId, e.getMessage(), e);
+            logger.error("Eroor in getting auto-bid for auction {}: {}", auctionId, e.getMessage(), e);
         }
         return autoBids;
     }
@@ -115,7 +115,7 @@ public class AutoBidRepository {
             pstmt.setLong(2, bidderId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            logger.error("Lỗi vô hiệu hóa auto-bid cho auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
+            logger.error("Error in cancel auto-bid cho auction {} bidder {} in repo: {}", auctionId, bidderId, e.getMessage(), e);
         }
     }
 
@@ -130,7 +130,7 @@ public class AutoBidRepository {
             pstmt.setLong(2, bidderId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            logger.error("Lỗi xóa auto-bid cho auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
+            logger.error("Error in delete auto-bid for auction {} bidder {}: {}", auctionId, bidderId, e.getMessage(), e);
         }
     }
 

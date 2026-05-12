@@ -193,7 +193,7 @@ public class UserRepository implements IUserRepository {
     }
 
 	public boolean updateAvatarUrl(String username, String avatarUrl) {
-		String sql = "UPDATE users SET avatarUrl = ? WHERE username = ?";
+		String sql = "UPDATE users SET avatar_url = ? WHERE username = ?";
 		try (Connection conn = DBConnection.getInstance().getConnection();
 			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, avatarUrl);

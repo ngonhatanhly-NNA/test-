@@ -21,7 +21,6 @@ public class BidTransactionRepository {
             VALUES (?, ?, ?, ?, ?, ?)
             """;
 
-        // ĐÃ SỬA: Gọi kết nối trực tiếp từ Singleton của HikariCP
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 

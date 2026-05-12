@@ -17,6 +17,9 @@ class AdminRowMapper implements UserRowMapper {
         Status statusEnum = Status.valueOf(rs.getString("status").toUpperCase());
         Admin admin = new Admin(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
                 rs.getString("fullName"), rs.getString("phoneNumber"), rs.getString("address"), statusEnum, rs.getString("roleLevel"));
+        
+        admin.setAvatarUrl(rs.getString("avatar_url"));
+        
         if (rs.getString("lastLoginIp") != null) {
             admin.updateLoginIp(rs.getString("lastLoginIp"));
         }
@@ -27,21 +30,29 @@ class AdminRowMapper implements UserRowMapper {
 class SellerRowMapper implements UserRowMapper {
     @Override
     public User mapRow(ResultSet rs) throws Exception {
-        return new Seller(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
+        Seller seller = new Seller(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
                 rs.getString("fullName"), rs.getString("phoneNumber"), rs.getString("address"),
                 Status.valueOf(rs.getString("status").toUpperCase()), Role.valueOf(rs.getString("role").toUpperCase()),
                 rs.getBigDecimal("walletBalance"), rs.getString("creditCardInfo"), rs.getString("shopName"),
                 rs.getString("bankAccountNumber"), rs.getDouble("rating"), rs.getInt("totalReviews"), rs.getBoolean("isVerified"));
+        
+        seller.setAvatarUrl(rs.getString("avatar_url"));
+        
+        return seller;
     }
 }
 
 class BidderRowMapper implements UserRowMapper {
     @Override
     public User mapRow(ResultSet rs) throws Exception {
-        return new Bidder(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
+        Bidder bidder = new Bidder(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
                 rs.getString("fullName"), rs.getString("phoneNumber"), rs.getString("address"),
                 Status.valueOf(rs.getString("status").toUpperCase()), Role.valueOf(rs.getString("role").toUpperCase()),
                 rs.getBigDecimal("walletBalance"), rs.getString("creditCardInfo"));
+        
+        bidder.setAvatarUrl(rs.getString("avatar_url"));
+        
+        return bidder;
     }
 }
 

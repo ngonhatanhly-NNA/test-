@@ -28,7 +28,6 @@ public abstract class BaseApiCommand implements Handler {
             String json = gson.toJson(ResponseUtils.fromAppException(e));
             ctx.status(e.getHttpStatus()).result(json).contentType("application/json");
         } catch (IllegalArgumentException e) {
-            // Sửa dòng ctx.json thành ctx.result
             String errorJson = gson.toJson(ResponseUtils.fail("VALIDATION", e.getMessage()));
             ctx.status(400).result(errorJson).contentType("application/json");
         } catch (Exception e) {

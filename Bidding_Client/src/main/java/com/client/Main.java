@@ -6,6 +6,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.scene.image.Image;
 
 import java.net.URL;
 
@@ -22,6 +23,7 @@ public class Main extends Application {
         }
 
         Parent root = FXMLLoader.load(url);
+		primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icons/icon.png")));
         primaryStage.setTitle("App Đấu Giá Trực Tuyến");
         primaryStage.setScene(new Scene(root, 1200, 720)); // Kích thước cửa sổ
         primaryStage.setResizable(false); // nào sửa được đống frame thì thả :">

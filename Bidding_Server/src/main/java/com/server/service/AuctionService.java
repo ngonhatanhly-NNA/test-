@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -72,6 +73,7 @@ public class AuctionService {
 
     // ========== Queues & Executors ==========
     private final LinkedBlockingQueue<BidTransaction> bidQueue = new LinkedBlockingQueue<>();
+    private final ExecutorService bidDbSavers = Executors.newFixedThreadPool(5); // Nhân viên của bidQueue
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
 
     // ========== Strategies ==========
@@ -216,24 +218,27 @@ public class AuctionService {
      * Bắt đầu background thread để xử lý bid queue và lưu vào DB
      */
     private void startBidQueueProcessor() {
-        Thread processor = new Thread(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    BidTransaction bid = bidQueue.take();
+        // rent 5 threads để xử lsy bid lưu vào, tránh quá nhiều việc, vì đang xử lí trên toàn hệ thôgns
+        for (int i = 0; i < 5; i++) {
+            bidDbSavers.submit(() -> {
+                while (!Thread.currentThread().isInterrupted()) {
                     try {
-                        bidRepository.save(bid);
-                    } catch (Exception e) {
-                        logger.error("Lỗi khi lưu bid cho phiên đấu giá {}: {}", bid.getAuctionId(), e.getMessage());
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.info("Bid processor thread đã dừng");
-                    break;
+                        BidTransaction bid = bidQueue.take();
+                        try {
+                            bidRepository.save(bid);
+                            logger.debug("Bid transaction saved to DB: Auction {}, Bidder {}, Amount {}",
+                                    bid.getAuctionId(), bid.getBidderId(), bid.getBidAmount());
+                        } catch (Exception e) {
+                            logger.error("Lỗi khi lưu bid vào DB: ", e);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        logger.info("Bid queue processor thread interrupted, shutting down.");
+                        break;
+                    } 
                 }
-            }
-        }, "bid-processor");
-        processor.setDaemon(true);
-        processor.start();
+            });
+        }
     }
 
 
@@ -260,7 +265,7 @@ public class AuctionService {
                 : "No bids";
         String sellerName = resolveUserDisplayName(auction.getSellerId(), "Seller");
 
-        // 2. Lấy thông tin Item
+    
         Item item = itemService.getItemById(auction.getItemId());
         String itemName = (item != null && item.getName() != null) ? item.getName() : "Item #" + auction.getItemId();
         String itemDescription = (item != null && item.getDescription() != null) ? item.getDescription() : "(Không có mô tả)";
@@ -268,7 +273,6 @@ public class AuctionService {
         Map<String, String> itemSpecifics = (item != null) ? itemService.extractItemSpecifics(item) : new HashMap<>();
         List<String> itemImageUrls = (item != null) ? item.getImageUrls() : new ArrayList<>();
 
-        // 3. GỌI CONSTRUCTOR - KIỂM TRA KỸ THỨ TỰ (15 THAM SỐ)
         return new AuctionDetailDTO(
                 auction.getId(),                                     // 1. auctionId (long)
                 auction.getItemId(),                                 // 2. itemId (long)
@@ -397,7 +401,7 @@ public class AuctionService {
                 auction.setStatus(Auction.AuctionStatus.OPEN);
                 auctionRepository.save(auction);
                 cacheAndScheduleAuction(auction);
-                logger.info("Phiên đấu giá {} đã bắt đầu", auctionId);
+                logger.info("Auction {} started", auctionId);
 
                 // Broadcast auction started - client will update the list
                 if (eventListener != null) {
@@ -405,7 +409,7 @@ public class AuctionService {
                 }
             }
         } catch (Exception e) {
-            logger.error("Lỗi khi bắt đầu phiên đấu giá {}: {}", auctionId, e.getMessage());
+            logger.error("Error in starting auction {}: {}", auctionId, e.getMessage());
         }
     }
 
@@ -426,9 +430,9 @@ public class AuctionService {
                     auction.setStatus(Auction.AuctionStatus.FINISHED);
                     // Lưu vào DB: winner_id và status=FINISHED được ghi ngay lập tức
                     auctionRepository.save(auction);
-                    logger.info("Phiên đấu giá {} đã kết thúc. Winner: {}, Giá: {}",
+                    logger.info("Auction {} has finished. Winner: {}, Bid: {}",
                             auctionId,
-                            auction.getWinnerId() != null ? auction.getWinnerId() : "Không có",
+                            auction.getWinnerId() != null ? auction.getWinnerId() : "None",
                             auction.getCurrentHighestBid());
 
                     if (auction.getWinnerId() != null && eventListener != null) {
@@ -442,7 +446,7 @@ public class AuctionService {
                             );
                             eventListener.onAuctionWon(winnerDTO);
                         } catch (Exception e) {
-                            logger.error("Lỗi tải người thắng", e);
+                            logger.error("Error loading auction winner: {}", e.getMessage(), e);
                         }
                     } 
                     
@@ -539,7 +543,7 @@ public class AuctionService {
         } catch (AuctionException e) {
             throw e;
         } catch (Exception e) {
-            logger.error("Lỗi khi set auto-bid: ", e);
+            logger.error("Error in setting auto-bid: ", e);
             throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Lỗi khi cấu hình auto-bid: " + e.getMessage());
         }
     }
@@ -705,7 +709,7 @@ public class AuctionService {
             if (auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
                 cacheAuction(auction);  // Thêm vào cache ngay lập tức để hiển thị
                 scheduleAuctionStart(auction);
-            } else {
+            } else { 
                 cacheAndScheduleAuction(auction);
             }
 

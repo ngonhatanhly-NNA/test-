@@ -22,13 +22,13 @@ public class CreateAuctionCommand extends BaseApiCommand {
             CreateAuctionDTO request = gson.fromJson(ctx.body(), CreateAuctionDTO.class);
             
             if (request == null || request.getItemId() <= 0 || request.getSellerId() <= 0) {
-                throw new AuthValidationException("ItemId và SellerId phải lớn hơn 0");
+                throw new AuthValidationException("ItemId và SellerId must be greater than 0");
             }
 
             long auctionId = auctionService.createAuction(request);
             AuctionDetailDTO detail = auctionService.getAuctionDetail(auctionId);
             
-            String json = gson.toJson(ResponseUtils.success("Phiên đấu giá đã tạo thành công", detail));
+            String json = gson.toJson(ResponseUtils.success("Create auction successfully", detail));
             ctx.status(201).result(json).contentType("application/json");
             
         } catch (AuctionException e) {
