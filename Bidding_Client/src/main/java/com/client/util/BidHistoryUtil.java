@@ -26,7 +26,7 @@ public class BidHistoryUtil {
 
                 // Hiển thị cái bảng lên màn hình
                 Stage stage = new Stage();
-                stage.setTitle("Detail Bid Hítory");
+                stage.setTitle("Detail Bid History");
                 stage.initModality(Modality.APPLICATION_MODAL);
                 stage.setScene(new Scene(root, 500, 650));
                 stage.setResizable(false);

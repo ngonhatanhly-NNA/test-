@@ -91,7 +91,7 @@ public class UserRepository implements IUserRepository {
 	public User getUserByUsername(String username) {
 		String sql = UserQueryFactory.getFullUserQuery();
 		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, username);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
@@ -143,7 +143,7 @@ public class UserRepository implements IUserRepository {
 	public boolean updatePassword(String username, String newPassword) {
 		String sql = "UPDATE users SET passwordHash = ? WHERE username = ?";
 		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, newPassword);
 			pstmt.setString(2, username);
 			return pstmt.executeUpdate() > 0;
@@ -157,7 +157,7 @@ public class UserRepository implements IUserRepository {
 	public boolean updateUserStatus(long userId, Status newStatus) {
 		String sql = "UPDATE users SET status = ? WHERE id = ?";
 		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, newStatus.name());
 			pstmt.setLong(2, userId);
 			int affectedRows = pstmt.executeUpdate();
@@ -171,31 +171,31 @@ public class UserRepository implements IUserRepository {
 			return false;
 		}
 	}
-    
-    @Override
-    public boolean updateUser(User user) {
-        String sql = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
-        try (Connection conn = DBConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, user.getEmail());
-            pstmt.setString(2, user.getFullName());
-            pstmt.setString(3, user.getPhoneNumber());
-            pstmt.setString(4, user.getAddress());
-            pstmt.setLong(5, user.getId());
+	@Override
+	public boolean updateUser(User user) {
+		String sql = "UPDATE users SET email=?, fullName=?, phoneNumber=?, address=? WHERE id=?";
+		try (Connection conn = DBConnection.getInstance().getConnection();
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            return pstmt.executeUpdate() > 0;
+			pstmt.setString(1, user.getEmail());
+			pstmt.setString(2, user.getFullName());
+			pstmt.setString(3, user.getPhoneNumber());
+			pstmt.setString(4, user.getAddress());
+			pstmt.setLong(5, user.getId());
 
-        } catch (Exception e) {
-            logger.error("LỖI CẬP NHẬT USER DATABASE: {}", e.getMessage(), e);
-            return false;
-        }
-    }
+			return pstmt.executeUpdate() > 0;
+
+		} catch (Exception e) {
+			logger.error("LỖI CẬP NHẬT USER DATABASE: {}", e.getMessage(), e);
+			return false;
+		}
+	}
 
 	public boolean updateAvatarUrl(String username, String avatarUrl) {
 		String sql = "UPDATE users SET avatar_url = ? WHERE username = ?";
 		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 			pstmt.setString(1, avatarUrl);
 			pstmt.setString(2, username);
 			return pstmt.executeUpdate() > 0;
@@ -209,8 +209,8 @@ public class UserRepository implements IUserRepository {
 		List<User> users = new ArrayList<>();
 		String sql = UserQueryFactory.getFullUserQueryForAll();
 		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql);
-			 ResultSet rs = pstmt.executeQuery()) {
+		     PreparedStatement pstmt = conn.prepareStatement(sql);
+		     ResultSet rs = pstmt.executeQuery()) {
 			while (rs.next()) {
 				String roleStr = rs.getString("role");
 				Role roleEnum = (roleStr != null) ? Role.valueOf(roleStr.toUpperCase()) : Role.BIDDER;
@@ -222,23 +222,23 @@ public class UserRepository implements IUserRepository {
 		}
 		return users;
 	}
-    
-    public boolean updateUserRole(String username, Role newRole) {
-        String sql = "UPDATE users SET role = ? WHERE username = ?";
-        try (Connection conn = DBConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, newRole.name());
-            pstmt.setString(2, username);
+	public boolean updateUserRole(String username, Role newRole) {
+		String sql = "UPDATE users SET role = ? WHERE username = ?";
+		try (Connection conn = DBConnection.getInstance().getConnection();
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            int affectedRows = pstmt.executeUpdate();
-            logger.info("Cập nhật vai trò cho '{}' thành '{}', số dòng ảnh hưởng: {}", username, newRole.name(), affectedRows);
-            return affectedRows > 0;
-        } catch (Exception e) {
-            logger.error("LỖI CẬP NHẬT VAI TRÒ CHO USER '{}': {}", username, e.getMessage(), e);
-            return false;
-        }
-    }
+			pstmt.setString(1, newRole.name());
+			pstmt.setString(2, username);
+
+			int affectedRows = pstmt.executeUpdate();
+			logger.info("Cập nhật vai trò cho '{}' thành '{}', số dòng ảnh hưởng: {}", username, newRole.name(), affectedRows);
+			return affectedRows > 0;
+		} catch (Exception e) {
+			logger.error("LỖI CẬP NHẬT VAI TRÒ CHO USER '{}': {}", username, e.getMessage(), e);
+			return false;
+		}
+	}
 
 	private static void saveAdminData(Connection conn, long userId, Admin admin) throws Exception {
 		String sql = "INSERT INTO admins (user_id, roleLevel, lastLoginIp) VALUES (?, ?, ?)";
@@ -284,18 +284,18 @@ public class UserRepository implements IUserRepository {
 	private static void updateSellerData(Connection conn, long userId, SellerProfileUpdateDTO dto) throws Exception {
 		String sql = "INSERT INTO sellers (bidder_id, shopName, bankAccountNumber) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE shopName = VALUES(shopName), bankAccountNumber = VALUES(bankAccountNumber)";
 		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-			pstmt.setString(1, dto.getShopName());
-			pstmt.setString(2, dto.getBankAccountNumber());
-			pstmt.setLong(3, userId);
+			pstmt.setLong(1, userId);
+			pstmt.setString(2, dto.getShopName());
+			pstmt.setString(3, dto.getBankAccountNumber());
 			pstmt.executeUpdate();
 		}
 	}
-    
-    public User getUserById(long userId) {
+
+	public User getUserById(long userId) {
 		String sql = UserQueryFactory.getFullUserQueryById();
 
 		try (Connection conn = DBConnection.getInstance().getConnection();
-			 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		     PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
 			pstmt.setLong(1, userId);
 			try (ResultSet rs = pstmt.executeQuery()) {

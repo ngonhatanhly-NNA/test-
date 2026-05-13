@@ -23,11 +23,15 @@ public class UpdateProfileCommand extends BaseApiCommand {
 
     @Override
     protected void execute(Context ctx) throws Exception {
-        // 1. Lấy Username từ Session/Token
-        // Yêu cầu Server mở Session ra kiểm tra thông tin
-        String currentUsername = ctx.sessionAttribute("username");
+        // 1. Lấy Username từ JWT attribute (được AuthGuard đặt vào sau khi xác thực Bearer token)
+        String currentUsername = ctx.attribute("auth.username");
 
-        // Chặn cửa bọn chưa đăng nhập hoặc Session hết hạn (Không có username trong Session)
+        // Fallback: thử lấy từ session để tương thích ngược
+        if (currentUsername == null) {
+            currentUsername = ctx.sessionAttribute("username");
+        }
+
+        // Chặn cửa bọn chưa đăng nhập hoặc token không hợp lệ
         if (currentUsername == null) {
             ctx.status(401).json(new Response("FAIL", "Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn!", null));
             return;

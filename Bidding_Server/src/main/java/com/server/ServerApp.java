@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import com.server.DAO.*;
 import com.server.controller.*;
 import com.server.service.*;
+import com.server.util.ResponseUtils;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -157,7 +158,9 @@ public class ServerApp extends WebSocketServer {
         BidValidationChain validator = new BidValidationChain();
         BidderRepository bidderRepoReal = new BidderRepository(); // Thêm dòng này nếu chưa có biến bidderRepo kiểu BidderRepository
         ManualBidProcessor manualProc = new ManualBidProcessor(auctionRepo, bidderRepoReal);
-        AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo);
+
+        // [ĐÃ SỬA] Cấp quyền cho Bot Auto-bid được chọc vào Database của Auction (để lưu giá) và Bidder (để trừ tiền)
+        AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo, auctionRepo, bidderRepoReal);
         Broadcaster broadcaster = new Broadcaster();
 
         AuthService authService = new AuthService(userRepo);
@@ -187,9 +190,18 @@ public class ServerApp extends WebSocketServer {
 
         // Khởi động REST API (Cổng 7070)
         Javalin app = Javalin.create(config -> {
-            config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
-			config.staticFiles.add("uploads", Location.EXTERNAL);
-        }).start(7070);
+                    config.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()));
+                    config.staticFiles.add("uploads", Location.EXTERNAL);
+                })
+                // [ĐÃ THÊM]: Màng lưới tóm gọn mọi Exception (kể cả InvalidCredentialException)
+                // Gói nó thành chuẩn JSON Response để Client không bị "câm nín" khi đăng nhập sai.
+                .exception(Exception.class, (e, ctx) -> {
+                    logger.error("Javalin bắt được lỗi ngầm: {}", e.getMessage());
+                    // Trả về JSON chứa câu báo lỗi để Client hiện Popup đỏ
+                    ctx.status(400).json(ResponseUtils.fail("ERROR", e.getMessage()));
+                })
+                .start(7070);
+
         logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
 
         // Truyền SellerController vào ApiRouter

@@ -20,6 +20,7 @@ public class RegisterRequestDTO implements Serializable {
     @SerializedName("fullName")
     private String fullName;
 
+    public RegisterRequestDTO(){}
     public RegisterRequestDTO(String username, String password, String email, String fullName) {
         this.username = username;
         this.password = password;

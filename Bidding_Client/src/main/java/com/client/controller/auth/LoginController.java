@@ -12,13 +12,23 @@ import javafx.scene.paint.Color;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
+import javafx.scene.Parent;
+import javafx.fxml.FXMLLoader;
 
 import com.google.gson.Gson;
 import javafx.application.Platform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.shared.dto.*;
+import java.io.IOException;
 
 public class LoginController {
+
+    // Logger
+    private static final Logger logger = LoggerFactory.getLogger(LoginController.class);
 
     // Khai báo các biến khớp với fx:id bên file FXML
     @FXML private TextField txtUsername;
@@ -90,17 +100,22 @@ public class LoginController {
 
         // Validate dữ liệu cơ bản
         if (username.isEmpty() || password.isEmpty()) {
-            showMessage("Vui lòng nhập đầy đủ Tài khoản và Mật khẩu!", Color.web("#e74c3c")); // Hiện chữ đỏ
-            return; // Dừng lại, không chạy tiếp
+            showMessage("⚠️  Vui lòng nhập đầy đủ Tài khoản và Mật khẩu!", Color.web("#e74c3c"));
+            return;
         }
 
-        // GỌI XUỐNG SERVICE & DATABASE (Sẽ thực hiện ở bước sau)
-        // User loggedInUser = AuthService.login(username, password);
+        // Xóa thông báo cũ
+        lblMessage.setText("");
 
         // Gói dữ liệu
-		LoginRequestDTO loginData = new LoginRequestDTO(username, password);
+        LoginRequestDTO loginData = new LoginRequestDTO(username, password);
 
         Gson gson = new Gson();
+
+        // Hiển thị thông báo loading
+        lblMessage.setText("⏳ Đang kiểm tra thông tin đăng nhập...");
+        lblMessage.setTextFill(Color.web("#3B82F6")); // Màu xanh
+
         authNetwork.login(loginData).thenAccept(res -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(res.getStatus())) {
@@ -119,17 +134,52 @@ public class LoginController {
                             ClientSession.clear();
                         }
                     }
-                    lblMessage.setText("Đang vào Dashboard...");
-                    // Route to appropriate dashboard based on user role
+                    lblMessage.setText("✓ Đăng nhập thành công! Đang vào Dashboard...");
+                    lblMessage.setTextFill(Color.web("#10B981")); // Màu xanh lá
                     String role = ClientSession.getRole();
-                    String targetScene = "Dashboard.fxml"; // Mặc định, các sesion kia cho vào chức năng sau
+                    String targetScene = "Dashboard.fxml";
 
-                    SceneController.switchScene(event, targetScene);
+                    switchToDashboard(targetScene);
                 } else {
-                    lblMessage.setText(res.getMessage());
+                    // Hiển thị thông báo lỗi rõ ràng
+                    String errorMessage = res.getMessage();
+                    if (errorMessage.contains("không tồn tại")) {
+                        showMessage("❌ Tài khoản không tồn tại!", Color.web("#e74c3c"));
+                    } else if (errorMessage.contains("Sai mật khẩu")) {
+                        showMessage("❌ Mật khẩu không đúng! Vui lòng thử lại.", Color.web("#e74c3c"));
+                    } else if (errorMessage.contains("khóa")) {
+                        showMessage("🔒 Tài khoản của bạn đã bị khóa!", Color.web("#EF4444"));
+                    } else {
+                        showMessage("❌ " + errorMessage, Color.web("#e74c3c"));
+                    }
+
+                    // Xóa trường mật khẩu
+                    txtPassword.clear();
+                    txtPasswordVisible.clear();
                 }
             });
+        }).exceptionally(ex -> {
+            Platform.runLater(() -> {
+                logger.error("Lỗi kết nối server: {}", ex.getMessage());
+                showMessage("❌ Không thể kết nối đến server. Vui lòng kiểm tra kết nối!", Color.web("#e74c3c"));
+            });
+            return null;
         });
+    }
+
+    // Phương thức riêng để chuyển scene, không cần ActionEvent
+    private void switchToDashboard(String fxmlFile) {
+        try {
+            Stage stage = (Stage) lblMessage.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/" + fxmlFile));
+            Parent root = loader.load();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            System.err.println("LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);
+            e.printStackTrace();
+        }
     }
 
 

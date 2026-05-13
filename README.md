@@ -6,7 +6,7 @@ Một hệ thống đấu giá trực tuyến được xây dựng dựa trên k
 
 | STT | Họ và Tên | Mã Sinh Viên | Vai trò (Role) |
 |:---:|:---|:---|:---|
-| 1 | Ngô Nhật Ánh | 25020030 | Main FrontEnd - Backend Auth, Auction, User - DTO net, DB set up and Net setup - Configuration |
+| 1 | Ngô Nhật Ánh | 25020030 | Main FrontEnd - Backend Auth, Auction, User - DTO net, DB set up and Network setup - Configuration |
 | 2 | Đinh Anh Vũ | 25020432 | Frontend - Backend Item, User - DTO net - DB setup| 
 | 3 | Hoàng Văn Tưởng | 25020383 | Backend Admin - Seller - Bidder |
 | 4 | Mai Thế Phong | 25020310 |Admin FrontEnd -  Backend Admin - Seller - Bidder |
@@ -53,44 +53,34 @@ mvn clean install
 - WebSocket: ws://localhost:8080
 
 ## 📋 Bảng Theo Dõi Tiến Độ Công Việc (Team 13)
+## Bảng Đánh Giá Chi Tiết Dự Án
 
-| Nhóm chức năng | Tên công việc / Tính năng | Trạng thái | Người phụ trách                     |
-| :--- | :--- | :---: |:------------------------------------|
-| **1. Khởi tạo & Kiến trúc** | Thiết lập kiến trúc Multi-module Maven (shared, client, server) | ✅ Hoàn thành | Ngô Nhật Ánh                        |
-| | Thiết kế hệ thống Entity & Data Models cốt lõi | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ           |
-| | Thiết lập CSDL MySQL & cấu hình kết nối Singleton JDBC | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ           |
-| | App Config, các dữ liệu kiểu tài khoản, mật khẩu | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| **2. Xác thực & Người dùng** | UI/UX màn hình Đăng ký & Đăng nhập (JavaFX) | ✅ Hoàn thành | Ngô Nhật Ánh                        |
-| | Xử lý logic kết nối DB cho Đăng ký/Đăng nhập qua class Base User | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ           |
-| | Middleware phân quyền (AuthZ) bảo vệ API (VD: bắt buộc login, check role) | ❌ Chưa làm | Phong Tưởng                         |
-| | Logic Bidder, Admin, Service và Repository | ✅ Hoàn thành | Phong, Tưởng                        |
-| | Quản lý ví (Wallet), nạp/rút tiền, và thanh toán/settlement | ⚠️ Đang làm | Phong Tưởng                         |
-| | Tính năng phụ: Quên mật khẩu, xác thực email, Ban/Unban tài khoản | ❌ Chưa làm | Phong Tưởng                         |
-| **3. Quản lý Sản phẩm (Item)**| Thiết kế giao diện Sảnh chính (Dashboard / Auction Menu) | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ           |
-| | Tính năng tạo phiên đấu giá (Create Item) & hiển thị danh sách Live | ✅ Hoàn thành | Ngô Nhật Ánh, Đinh Anh Vũ           |
-| | UI nhập thuộc tính riêng biệt theo từng loại Item (Electronics, Art, Vehicle) | ✅ Hoàn thành | Đinh Anh Vũ                         |
-| | Quản lý upload và hiển thị ảnh thực tế (ImageController) | ✅ Hoàn thành| Đinh Anh Vũ                         |
-| **4. Nghiệp vụ Đấu giá** | Thiết lập Socket 2 chiều Client-Server để truyền tải DTO | 🔄 Đang làm | Ngô Nhật Ánh, Đinh Anh Vũ           |
-| | Tích hợp Observer Pattern để broadcast cập nhật giá Real-time | 🔄 Đang làm | Ngô Nhật Ánh                        |
-| | Xử lý thuật toán Đấu giá tự động (Auto-bidding) & Chống cướp giờ chót | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| | Xử lý đấu giá đồng thời (Concurrent bidding) | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| | Code luật giá sàn (ReservePriceValidation) | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| | Cơ chế khôi phục trạng thái đấu giá (Cache vs DB) khi Server restart | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| **5. Chức năng Admin** | Xây dựng API lấy danh sách User (getAllUsers) và lịch sử hoạt động | ❌ Chưa làm | Đinh Anh Vũ                         |
-| | Chức năng hủy phiên đấu giá (cancel auction) và duyệt người bán | ❌ Chưa làm | Phong Tưởng                         |
-| | Parse dữ liệu và hiển thị lên giao diện AdminDashboardController | ❌ Chưa làm | Đinh Anh Vũ, Nhật Ánh, Phong, Tưởng |
-| **6. Vận hành & CI/CD** | Cấu hình GitHub Actions (build-test, SonarCloud, Docker workflow) | 🔄 Đang làm | Ngô Nhật Ánh                        |
-| | Sửa lỗi test Mockito, cấu hình JaCoCo report, bật test mặc định | ❌ Chưa làm | Phong Tưởng                         |
-| | Bổ sung Logging đồng bộ (correlation id), check endpoint (/health) | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| | Đóng gói ứng dụng và chạy, kiểm thử: Docker, CI/CD, Github Actions | ❌ Chưa làm | Ngô Nhật Ánh                        |
-| **7. JUnit + Refactor** | Thiết kế test cho chức năng đấu giá, Item | ⚠️ Nửa vời | Phong                               |
-| | Refactor project tuân thủ Builder Pattern và Prototype Pattern | ⚠️ Nửa vời | Đinh Anh Vũ                         |
+| Nội dung đánh giá | Điểm | Mức | Thành viên tham gia | Mức độ đóng góp (%) |
+| :--- | :---: | :---: | :--- | :---: |
+| **1. Thiết kế lớp và cây kế thừa** | | | | |
+| Xác định và triển khai các lớp chính (User, Bidder/Seller/Admin, Item, Auction, BidTransaction,...) | 0.5 | Bắt buộc | Cả nhóm | |
+| Áp dụng đúng các nguyên tắc OOP (Encapsulation, Inheritance, Polymorphism, Abstraction) | 1.0 | Bắt buộc | Cả nhóm | |
+| Áp dụng design pattern phù hợp | 1.0 | Bắt buộc | Cả nhóm | |
+| **2. Chức năng chính** | | | | |
+| Quản lý người dùng, sản phẩm | 1.0 | Bắt buộc | Phong (chính), Tưởng (chính), Vũ (chính), Ánh | |
+| Chức năng đấu giá | 1.0 | Bắt buộc | Ánh (chính), Vũ | |
+| Xử lý lỗi & ngoại lệ | 1.0 | Bắt buộc | Phong (chính), Tưởng (chính), Ánh (Auction exception), Vũ (Item - Auction (10%)Exception) | |
+| **3. Kỹ thuật quan trọng & concurrency** | | | | |
+| Xử lý đấu giá đồng thời an toàn (tránh lost update, rollback, race condition) | 1.0 | Bắt buộc | Ánh | |
+| Realtime update (Observer/Socket): thông báo bid mới cho tất cả client | 0.5 | Bắt buộc | Ánh | |
+| **4. Tích hợp, kiến trúc & chất lượng mã** | | | | |
+| Thiết kế kiến trúc Client-Server rõ ràng | 0.5 | Bắt buộc | Ánh | |
+| Áp dụng MVC (JavaFX + FXML cho client, Controller-Model-DAO cho server) | 0.5 | Bắt buộc | Ánh, Vũ (chính), Phong (UI User) | |
+| Sử dụng Maven/Gradle, coding convention tốt, mã nguồn sạch | 0.5 | Bắt buộc | Ánh, Vũ | |
+| Unit Test (JUnit) cho logic quan trọng | 0.5 | Bắt buộc | Phong, Tưởng | |
+| Thiết lập CI/CD cơ bản (GitHub Actions + test tự động) | 0.5 | Bắt buộc | Ánh | |
+| **5. Chức năng nâng cao (tối đa 1.5đ)** | | | | |
+| Auto-Bidding (đấu giá tự động với maxBid, increment, PriorityQueue) | 0.5 | Tùy chọn | Ánh | |
+| Gia hạn phiên đấu giá (Anti-sniping) khi bid cuối | 0.5 | Tùy chọn | Ánh | |
+| Bid History Visualization: biểu đồ đường giá realtime (line chart) | 0.5 | Tùy chọn | Ánh, Vũ | |
+| Các tính năng sáng tạo khác | 0.5 | Tùy chọn | Cả nhóm | |
+| **TỔNG ĐIỂM** | **10 + 1** | | | **100%** |
 
-> **Chú thích trạng thái:**
-> * ✅ **Hoàn thành:** Đã code xong và chạy ổn định.
-> * 🔄 **Đang làm:** Đang trong quá trình phát triển.
-> * ⚠️ **Nửa vời / Cần update:** Đã làm một phần nhưng chưa hoàn thiện hoặc cần fix thêm.
-> * ❌ **Chưa làm:** Nằm trong kế hoạch nhưng chưa bắt đầu.
 ## Kiến trúc hệ thống
 
 Dự án được chia thành 3 module độc lập để đảm bảo Tách biệt mối quan hệ**:
@@ -108,6 +98,8 @@ Trung tâm xử lý nghiệp vụ, giao tiếp với MySQL và quản lý kết 
   * Chống cướp giờ chót (Anti-sniping) và Đấu giá tự động (Auto-Bidding).
 * **Repository/DAO :** Điểm duy nhất chứa SQL. Áp dụng cơ chế kết nối Singleton (`DBConnection`) để tối ưu hóa Connection Pool, chống quá tải hệ thống.
 * **WebSocket/Broadcaster:** Quản lý danh sách Client trong phòng đấu giá, phát sóng (broadcast) trạng thái giá mới nhất theo thời gian thực (Real-time).
+* **Security: JWT, Bcrypt mã hóa token và phiên (mới mã hóa mật khẩu)
+* **Config: Setup hệ thống ban đầu
 
 ###  Module `Bidding_Client` (Frontend JavaFX)
 Chịu trách nhiệm hiển thị giao diện và tương tác người dùng theo mô hình **MVC**.
@@ -125,7 +117,7 @@ Hệ thống linh hoạt áp dụng các Mẫu thiết kế phần mềm để g
 * **Strategy:** Cho phép cấu hình động các thuật toán như luật chống snipe (`AntiSnipingStrategy`), xác thực giá thầu (`BidValidationStrategy`), và render UI theo Role.
 * **Factory / Builder:** Khởi tạo các gói cấu hình phức tạp (Item, Auction) và DTO mạng.
 * **Command:** Đóng gói các yêu cầu từ Client thành các đối tượng lệnh (e.g., `UpdateProfileCommand`) để xử lý tuần tự hoặc đa luồng trên Server.
-* **State:** Quản lý vòng đời khép kín của một phiên đấu giá (PENDING, ACTIVE, ENDED).
+* **State:** Quản lý vòng đời khép kín của một phiên đấu giá (SCHEDULED, ACTIVE, ENDED).
 
 ---
 
@@ -142,10 +134,10 @@ Hệ thống linh hoạt áp dụng các Mẫu thiết kế phần mềm để g
 - [x] Hoàn thiện luồng kết nối DB cho tính năng Register/Login qua Base `User`.
 
 ### Giai đoạn 3: Nghiệp vụ & Thời gian thực (Đang phát triển)
-- [ ] Hoàn thiện kết nối Socket 2 chiều Client - Server cho việc truyền tải DTO.
-- [ ] Tích hợp Observer Pattern để broadcast giá đấu thời gian thực.
-- [ ] Phát triển tính năng tạo phiên đấu giá (Create Item) và hiển thị danh sách live.
+- [X] Hoàn thiện kết nối Socket 2 chiều Client - Server cho việc truyền tải DTO.
+- [X] Tích hợp Observer Pattern để broadcast giá đấu thời gian thực.
+- [X] Phát triển tính năng tạo phiên đấu giá (Create Item) và hiển thị danh sách live.
 
 ### Giai đoạn 4: Tối ưu & Mở rộng (Sắp tới)
-- [ ] Hoàn thiện thuật toán Anti-sniping và Auto-bidding.
+- [X] Hoàn thiện thuật toán Anti-sniping và Auto-bidding.
 - [ ] Kiểm thử đồng thời (Concurrency testing).

@@ -36,17 +36,22 @@ public class AuthController{
         }
     }
 
-    public void processLoginRest(Context ctx) throws Exception {
-        LoginRequestDTO loginData = gson.fromJson(ctx.body(), LoginRequestDTO.class);
-        UserProfileResponseDTO profile = authService.login(loginData);
-        String token = jwtUtil.generateToken(
-                profile.getId(),
-                profile.getUsername(),
-                Role.valueOf(profile.getRole())
-        );
-        LoginResponseDTO loginResponseDTO = new LoginResponseDTO(profile, token);
-        logger.info("Đăng nhập thành công: {} (role: {})", profile.getUsername(), profile.getRole());
-        ctx.json(new Response("SUCCESS", "Đăng nhập thành công!", loginResponseDTO));
+    public void processLoginRest(Context ctx) {
+        try {
+            LoginRequestDTO loginData = gson.fromJson(ctx.body(), LoginRequestDTO.class);
+            UserProfileResponseDTO profile = authService.login(loginData);
+            String token = jwtUtil.generateToken(
+                    profile.getId(),
+                    profile.getUsername(),
+                    Role.valueOf(profile.getRole())
+            );
+            LoginResponseDTO loginResponseDTO = new LoginResponseDTO(profile, token);
+            logger.info("Đăng nhập thành công: {} (role: {})", profile.getUsername(), profile.getRole());
+            ctx.json(new Response("SUCCESS", "Đăng nhập thành công!", loginResponseDTO));
+        } catch (Exception e) {
+            logger.warn("Đăng nhập thất bại: {}", e.getMessage());
+            ctx.status(401).json(new Response("ERROR", e.getMessage(), null));
+        }
     }
 
     public void getUserProfile(Context ctx) throws Exception {

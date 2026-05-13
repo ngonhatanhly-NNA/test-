@@ -14,6 +14,10 @@ public class LoginRequestDTO implements Serializable {
     @SerializedName("password")
     private String password;
 
+    // [THÊM MỚI] Bắt buộc phải có Constructor rỗng để Gson làm việc
+    public LoginRequestDTO() {
+    }
+
     public LoginRequestDTO(String username, String password) {
         this.username = username;
         this.password = password;

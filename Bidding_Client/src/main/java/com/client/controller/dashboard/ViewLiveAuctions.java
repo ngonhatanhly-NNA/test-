@@ -322,7 +322,13 @@ public class ViewLiveAuctions {
                     }
                 });
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Cant load bid history");
+                // Thay vì chỉ in ra dòng chữ vô thưởng vô phạt
+                // Ta truyền thêm biến 'e' vào logger để nó in ra toàn bộ cây lỗi (Stack Trace)
+                // Từ đó ta sẽ biết nó lỗi do Parse JSON, do HTTP 404, hay do đứt mạng.
+                logger.log(Level.WARNING, "Cant load bid history: " + e.getMessage(), e);
+
+                // Ép hệ thống in thẳng lỗi ra màn hình Terminal bằng màu đỏ
+                e.printStackTrace();
             }
         });
     }

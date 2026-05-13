@@ -104,24 +104,24 @@ public class UserController {
      * Xử lý yêu cầu cập nhật ảnh đại diện (Avatar)
      */
     public String handleUpdateAvatar(String jsonBody) {
-		try {
-			JsonObject data = gson.fromJson(jsonBody, JsonObject.class);
-			String username = data.get("username").getAsString();
-			
-			String dbPath = data.get("base64Image").getAsString(); 
-			Response response = userService.updateAvatarUrl(username, dbPath);
-			
-			if ("SUCCESS".equals(response.getStatus())) {
-				JsonObject resData = new JsonObject();
-				resData.addProperty("avatarUrl", dbPath);
-				return gson.toJson(new Response("SUCCESS", "Cập nhật ảnh đại diện thành công", resData));
-			}
+    try {
+        JsonObject data = gson.fromJson(jsonBody, JsonObject.class);
+        String username = data.get("username").getAsString();
+        
+        // Lấy trực tiếp đường dẫn tuyệt đối mà Client gửi lên (Ví dụ: C:\Users\...\avatar.png)
+        String dbPath = data.get("base64Image").getAsString(); 
 
-			return gson.toJson(response);
-
-		} catch (Exception e) {
-			logger.error("Error in updating avatar: {}", e.getMessage(), e);
-			return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
-		}
-	}
+        // Lưu vào Database
+        Response response = userService.updateAvatarUrl(username, dbPath);
+        
+        if ("SUCCESS".equals(response.getStatus())) {
+            JsonObject resData = new JsonObject();
+            resData.addProperty("avatarUrl", dbPath);
+            return gson.toJson(new Response("SUCCESS", "Cập nhật thành công", resData));
+        }
+        return gson.toJson(response);
+    } catch (Exception e) {
+        return gson.toJson(new Response("ERROR", e.getMessage(), null));
+    }
+}
 }

@@ -1,0 +1,11 @@
+.tab-pane .tab-header-area .tab-header-background {
+    -fx-background-color: transparent;
+}
+.tab-pane .tab {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-text-base-color: #94A3B8;
+}
+.tab-pane .tab:selected {
+    -fx-background-color: rgba(212, 175, 55, 0.2);
+    -fx-text-base-color: #D4AF37;
+}

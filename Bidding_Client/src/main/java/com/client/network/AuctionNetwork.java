@@ -22,14 +22,17 @@ import com.shared.dto.CreateAuctionDTO;
 import com.shared.network.Response;
 import com.shared.dto.BidHistoryDTO;
 
-import com.google.gson.JsonObject;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonSerializer;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonDeserializationContext;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 /**
  * REST tới Bidding_Server (Javalin cổng 7070, HTTP).
  *
@@ -37,48 +40,49 @@ import java.time.format.DateTimeFormatter;
  * - getActiveAuctionsBySeller(sellerId): Lấy auction đang hoạt động theo seller
  * - getWonAuctions(bidderId): Lấy auction đã thắng theo bidder
  */
+
 public class AuctionNetwork {
 
     private static final Logger logger = LoggerFactory.getLogger(AuctionNetwork.class);
     private static final String BASE_URL = "http://localhost:7070/api/auctions";
+
+    // [GIÁO SƯ ĐÃ SỬA]: Huấn luyện lại Gson để nó biến LocalDateTime thành một CHUỖI VĂN BẢN (String)
+    // khi giao tiếp qua mạng, thay vì cố chọc ngoáy vào lõi bộ nhớ của Java 17.
     private static final Gson gson = new GsonBuilder()
-        .registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
-            @Override
-            public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-                try {
-                    if (json.isJsonObject()) {
-                        // Đã thêm chữ "JsonObject" để khai báo biến đúng chuẩn Java
-                        JsonObject obj = json.getAsJsonObject();
-                        JsonObject date = obj.getAsJsonObject("date");
-                        JsonObject time = obj.getAsJsonObject("time");
-                        
-                        return LocalDateTime.of(
-                                date.get("year").getAsInt(),
-                                date.get("month").getAsInt(),
-                                date.get("day").getAsInt(),
-                                time.get("hour").getAsInt(),
-                                time.get("minute").getAsInt(),
-                                time.has("second") ? time.get("second").getAsInt() : 0
-                        );
-                    } else if (json.isJsonPrimitive()) {
-                        return LocalDateTime.parse(json.getAsString());
+            // DẠY CÁCH ĐỌC (TỪ JSON SANG JAVA): Nếu thấy chuỗi văn bản, biến nó thành LocalDateTime
+            .registerTypeAdapter(LocalDateTime.class, new JsonDeserializer<LocalDateTime>() {
+                @Override
+                public LocalDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+                    try {
+                        // Trích xuất chuỗi ISO-8601 (VD: "2026-05-12T20:30:00") và dịch sang Java Object
+                        return LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                    } catch (Exception e) {
+                        logger.error("Lỗi ĐỌC thời gian: " + json.toString(), e);
+                        return LocalDateTime.now(); // Cứu cánh nếu lỗi
                     }
-                } catch (Exception e) {
-                    logger.error("Lỗi parse LocalDateTime: " + json.toString(), e);
                 }
-                return LocalDateTime.now();
-            }
-        })
-        .create();
+            })
+            // DẠY CÁCH VIẾT (TỪ JAVA SANG JSON): Khi ép JSON, hãy biến nó thành một chuỗi ISO-8601
+            // ĐÂY CHÍNH LÀ ĐOẠN MÃ ĐÃ GIẢI CỨU LỖI HISTORY BỐC HƠI!
+            .registerTypeAdapter(LocalDateTime.class, new JsonSerializer<LocalDateTime>() {
+                @Override
+                public JsonElement serialize(LocalDateTime src, Type typeOfSrc, JsonSerializationContext context) {
+                    return new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                }
+            })
+            .create();
 
     private static final Type AUCTION_DETAIL_LIST = new TypeToken<List<AuctionDetailDTO>>() {
     }.getType();
+
+    // =================================================================================
+    // CÁC HÀM CŨ ĐƯỢC GIỮ NGUYÊN (Không thay đổi luồng nghiệp vụ)
+    // =================================================================================
 
     public static Response parseResponse(String jsonBody) {
         return gson.fromJson(jsonBody, Response.class);
     }
 
-    /** Danh sách phiên đang mở; nếu lỗi parse trả list rỗng. */
     public static List<AuctionDetailDTO> parseActiveAuctionList(Response response) {
         if (response == null || response.getData() == null || !"SUCCESS".equals(response.getStatus())) {
             return Collections.emptyList();
@@ -91,74 +95,39 @@ public class AuctionNetwork {
         }
     }
 
-    /**
-     * Lấy TẤT CẢ phiên đấu giá đang hoạt động (dùng cho trang Live Auctions chuhng).
-     */
     public static List<AuctionDetailDTO> getActiveAuctions() throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active")).GET().build();
         HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        Response response = parseResponse(httpResponse.body());
-        return parseActiveAuctionList(response);
+        return parseActiveAuctionList(parseResponse(httpResponse.body()));
     }
 
-    /**
-     * [MỚI] Lấy danh sách phiên đấu giá sắp diễn ra
-     * Gọi: GET /api/auctions/upcoming
-     */
     public static List<AuctionDetailDTO> getUpcomingAuctions() throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/upcoming"))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/upcoming")).GET().build();
         HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        Response response = parseResponse(httpResponse.body());
-        return parseActiveAuctionList(response);
+        return parseActiveAuctionList(parseResponse(httpResponse.body()));
     }
 
-    /**
-     * [MỚI] Lấy danh sách phiên đấu giá đã THẮNG của một bidder.
-     * Gọi: GET /api/auctions/bidder/{bidderId}/won
-     * Dùng trong Won Auctions ở My Inventory.
-     */
     public static List<AuctionDetailDTO> getWonAuctions(long bidderId) throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(
-                        URI.create(BASE_URL + "/bidder/" + bidderId + "/won"))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/bidder/" + bidderId + "/won")).GET().build();
         HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        Response response = parseResponse(httpResponse.body());
-        return parseActiveAuctionList(response);
+        return parseActiveAuctionList(parseResponse(httpResponse.body()));
     }
 
-    /**
-     * [MỚI] Lấy phiên đấu giá đang hoạt động lọc theo SELLER.
-     * Gọi: GET /api/auctions/seller/{sellerId}/active
-     * Dùng trong Live Auction Monitoring tab của Seller Portal.
-     */
     public static List<AuctionDetailDTO> getActiveAuctionsBySeller(long sellerId) throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(
-                        URI.create(BASE_URL + "/seller/" + sellerId + "/active"))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/seller/" + sellerId + "/active")).GET().build();
         HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        Response response = parseResponse(httpResponse.body());
-        return parseActiveAuctionList(response);
+        return parseActiveAuctionList(parseResponse(httpResponse.body()));
     }
 
     public static CompletableFuture<Response> getActiveAuctionsAsync() {
-        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active"))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/active")).GET().build();
         return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> gson.fromJson(response.body(), Response.class))
                 .exceptionally(e -> new Response("ERROR", "Không thể lấy danh sách phiên đấu giá", null));
     }
 
     public static String getAuctionDetail(long auctionId) throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId)).GET().build();
         HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         return response.body();
     }
@@ -200,16 +169,8 @@ public class AuctionNetwork {
         return response.body();
     }
 
-    /**
-     * [FIX BUG 2] Kiểm tra trạng thái đấu giá của item trước khi cho phép mở phiên mới.
-     * Gọi: GET /api/auctions/item/{itemId}/status
-     * @return "ACTIVE" | "FINISHED" | "NONE"
-     */
     public static String getAuctionStatusByItemId(long itemId) throws Exception {
-        HttpRequest request = NetworkClient.newRequestBuilder(
-                        URI.create(BASE_URL + "/item/" + itemId + "/status"))
-                .GET()
-                .build();
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/item/" + itemId + "/status")).GET().build();
         HttpResponse<String> httpResponse = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
         Response response = parseResponse(httpResponse.body());
         if ("SUCCESS".equals(response.getStatus()) && response.getData() != null) {
@@ -223,11 +184,10 @@ public class AuctionNetwork {
         return gson.fromJson(jsonResponse, Response.class);
     }
 
-	public static List<BidHistoryDTO> getBidHistory (long auctionId) throws Exception {
-		HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId + "/bids"))
-            .GET().build();
+    public static List<BidHistoryDTO> getBidHistory(long auctionId) throws Exception {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + auctionId + "/bids")).GET().build();
         HttpResponse<String> response = NetworkClient.getInstance().send(request, HttpResponse.BodyHandlers.ofString());
-        
+
         Response res;
         try {
             res = parseResponse(response.body());
@@ -236,19 +196,20 @@ public class AuctionNetwork {
         }
 
         if (res != null && "SUCCESS".equals(res.getStatus())) {
-            // Nếu chưa có ai đặt giá, trả về danh sách rỗng thay vì báo lỗi
             if (res.getData() == null) {
-                return new ArrayList<>(); 
+                return new ArrayList<>();
             }
+
+            // [GIẢI THÍCH]: Lệnh toJson ở dưới sẽ gọi đến cái JsonSerializer ta vừa dạy ở đầu file.
+            // Nhờ đó nó vượt qua ải an ninh của Java 17 thành công và ép mảng về List mượt mà -> Hỗ trợ LocalDateTime trong lịch sử đấu giá.
             Type listType = new TypeToken<ArrayList<BidHistoryDTO>>(){}.getType();
-            String dataJson = gson.toJson(res.getData()); 
+            String dataJson = gson.toJson(res.getData());
             List<BidHistoryDTO> result = gson.fromJson(dataJson, listType);
             return result != null ? result : new ArrayList<>();
         } else {
             throw new Exception(res != null ? res.getMessage() : "Server response incorrect");
         }
-	}
-
+    }
 
     private static String postJson(String uri, String jsonBody) throws Exception {
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create(uri))

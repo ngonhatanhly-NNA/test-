@@ -20,7 +20,7 @@ import io.javalin.http.HandlerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.server.controller.ImageController; // [MỚI] Thêm import này để xử lý ảnh
+import com.server.controller.ImageController;
 
 public class ApiRouter {
     private static final Logger logger = LoggerFactory.getLogger(ApiRouter.class);
@@ -34,13 +34,13 @@ public class ApiRouter {
     private final AuctionService auctionService;
     private final JwtUtil jwtUtil;
     private final UserController userController;
-    private final ImageController imageController; // [MỚI] Thêm controller xử lý ảnh
+    private final ImageController imageController;
 
     public ApiRouter(AuthController authController, AuctionController auctionController,
                      AdminController adminController, BidderController bidderController,
                      SellerController sellerController, ItemService itemService,
                      AuctionService auctionService, JwtUtil jwtUtil, UserController userController,
-                     ImageController imageController) { // [MỚI] Thêm ImageController vào constructor
+                     ImageController imageController) {
         this.authController = authController;
         this.auctionController = auctionController;
         this.adminController = adminController;
@@ -50,7 +50,7 @@ public class ApiRouter {
         this.auctionService = auctionService;
         this.jwtUtil = jwtUtil;
         this.userController = userController;
-        this.imageController = imageController; // [MỚI]
+        this.imageController = imageController;
     }
 
     public void setupRoutes(Javalin app) {
@@ -60,6 +60,7 @@ public class ApiRouter {
         // --- Bảo vệ các routes ---
         app.before("/api/admin/*", ctx -> authGuard.requireRole(ctx, Role.ADMIN));
         app.before("/api/users/profile", ctx -> authGuard.requireLogin(ctx));
+        app.before("/api/users/update", ctx -> authGuard.requireLogin(ctx));
         app.before("/api/users/upgrade-to-seller", ctx -> authGuard.requireRole(ctx, Role.BIDDER));
         app.before("/api/items", ctx -> {
             if (ctx.method() == HandlerType.POST) {
@@ -74,15 +75,13 @@ public class ApiRouter {
         app.before("/api/auctions/bid", ctx -> authGuard.requireRole(ctx, Role.BIDDER, Role.SELLER));
         app.before("/api/auctions/*/auto-bid/*", ctx -> authGuard.requireRole(ctx, Role.BIDDER, Role.SELLER));
 
-        // [MỚI] ĐĂNG KÝ NHÓM API QUẢN LÝ ẢNH
-        // Upload ảnh (Cần role SELLER)
+        // --- Nhóm API Quản lý ẢNh ---
         app.post("/api/images/upload", ctx -> imageController.uploadImage(ctx));
-		app.post("/api/users/avatar", ctx -> {
+        app.post("/api/users/avatar", ctx -> {
             String jsonBody = ctx.body();
             String resultJson = userController.handleUpdateAvatar(jsonBody);
             ctx.json(resultJson);
         });
-        // Xem ảnh (Mở public cho tất cả mọi người cùng xem)
         app.get("/api/images/{filename}", ctx -> imageController.serveImage(ctx));
 
         // --- Nhóm API Xác thực (Auth) ---
@@ -90,18 +89,16 @@ public class ApiRouter {
         app.post("/api/register", ctx -> authController.processRegisterRest(ctx));
         app.get("/api/users/profile", ctx -> authController.getUserProfile(ctx));
         app.put("/api/users/update", new UpdateProfileCommand(userService));
-
         app.post("/api/users/upgrade-to-seller", ctx -> {
             String username = authGuard.getUsernameFromToken(ctx);
             String resultJson = userController.handleUpgradeToSeller(username);
             ctx.json(resultJson);
         });
 
-        // --- Nhóm API Bidder (Nạp tiền, ví, thông tin) ---
+        // --- Nhóm API Bidder ---
         app.put("/api/bidders/{bidderId}/deposit", ctx -> bidderController.depositMoney(ctx));
         app.get("/api/bidders/{bidderId}/wallet", ctx -> bidderController.getWalletBalance(ctx));
         app.get("/api/bidders/{bidderId}/profile", ctx -> bidderController.getBidderProfile(ctx));
-        // Seller cũng có thể dùng các endpoint này vì Seller extends Bidder
         app.put("/api/sellers/{sellerId}/deposit", ctx -> bidderController.depositMoney(ctx));
         app.get("/api/sellers/{sellerId}/wallet", ctx -> bidderController.getWalletBalance(ctx));
 
@@ -110,29 +107,31 @@ public class ApiRouter {
         app.post("/api/items", new CreateItemCommand(itemService));
         app.get("/api/items/seller/{sellerId}", new GetItemsBySellerIdCommand(itemService));
 
-        // --- Nhóm API Đấu giá (Auctions) ---
+        // ==============================================================
+        // --- NHÓM API ĐẤU GIÁ (ĐÃ ĐƯỢC FIX LỖI ROUTE SHADOWING) ---
+        // ==============================================================
+
+        // 1. Đăng ký các Route cụ thể, cố định trước (Không có tham số động ở giữa)
         app.post("/api/auctions", new CreateAuctionCommand(auctionService));
+        app.post("/api/auctions/bid", new PlaceBidCommand(auctionService));
         app.get("/api/auctions/active", new GetActiveAuctionsCommand(auctionService));
         app.get("/api/auctions/upcoming", new GetUpcomingAuctionsCommand(auctionService));
-        app.post("/api/auctions/bid", new PlaceBidCommand(auctionService));
-        app.get("/api/auctions/{auctionId}", new GetAuctionDetailCommand(auctionService));
+
+        // Lấy danh sách theo seller/bidder
+        app.get("/api/auctions/seller/{sellerId}/active", ctx -> auctionController.getActiveAuctionsBySeller(ctx));
+        app.get("/api/auctions/bidder/{bidderId}/won", ctx -> auctionController.getWonAuctionsByBidder(ctx));
+        app.get("/api/auctions/item/{itemId}/status", ctx -> auctionController.getAuctionStatusByItemId(ctx));
+
+        // 2. Đăng ký các Route có tham số động DÀI trước
+        // (Nếu đặt sau GetAuctionDetailCommand, Javalin sẽ nuốt chữ "/bids" vào chung biến {auctionId})
         app.get("/api/auctions/{auctionId}/bids", new GetBidHistoryCommand(auctionService));
 
-        // [MỚI] Lấy phiên đấu giá đang hoạt động theo seller - dùng cho Live Auction Monitoring
-        app.get("/api/auctions/seller/{sellerId}/active",
-                ctx -> auctionController.getActiveAuctionsBySeller(ctx));
-
-        // [MỚI] Lấy phiên đấu giá đã thắng theo bidder - dùng cho Won Auctions ở My Inventory
-        app.get("/api/auctions/bidder/{bidderId}/won",
-                ctx -> auctionController.getWonAuctionsByBidder(ctx));
-
-        // [FIX BUG 2] Kiểm tra trạng thái đấu giá của một item - dùng cho nút Open Auction
-        app.get("/api/auctions/item/{itemId}/status",
-                ctx -> auctionController.getAuctionStatusByItemId(ctx));
-
-        // Auto-bid
+        // Route Auto-bid (Dài và cụ thể)
         app.post("/api/auctions/{auctionId}/auto-bid/cancel", new CancelAutoBidCommand(auctionService));
         app.put("/api/auctions/{auctionId}/auto-bid/update", new UpdateAutoBidAmountCommand(auctionService));
+
+        // 3. Cuối cùng mới đăng ký Route ngắn nhất, chung chung nhất để hứng các request còn lại
+        app.get("/api/auctions/{auctionId}", new GetAuctionDetailCommand(auctionService));
 
         // --- Nhóm API Seller ---
         app.get("/api/sellers/{sellerId}", ctx -> sellerController.getSellerById(ctx));
@@ -152,6 +151,6 @@ public class ApiRouter {
         app.get("/api/admin/users/{username}/activity", ctx -> adminController.getUserActivityLog(ctx));
         app.post("/api/admin/auctions/cancel", ctx -> adminController.cancelAuction(ctx));
 
-        logger.info("API routes đã được thiết lập thành công");
+        logger.info("API routes đã được thiết lập thành công (Fix Route Shadowing)");
     }
 }

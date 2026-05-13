@@ -26,6 +26,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
+import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
+import javafx.animation.ParallelTransition;
+import javafx.util.Duration;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -59,6 +63,8 @@ public class UserProfileController {
     @FXML private HBox upgradeToSellerBox;
     @FXML private Button upgradeButton; 
     @FXML private Button btnDepositMoney; 
+	@FXML
+	private VBox mainContentBox;
 
     private final AuthNetwork authNetwork = new AuthNetwork();
     private final Gson gson = new Gson();
@@ -91,6 +97,20 @@ public class UserProfileController {
             return;
         }
         loadUserDataFromAPI();
+		
+		// Tạo hiệu ứng Fade (mờ ảo hiện dần)
+		FadeTransition fade = new FadeTransition(Duration.millis(800), mainContentBox);
+		fade.setFromValue(0.0);
+		fade.setToValue(1.0);
+
+		// Tạo hiệu ứng trượt nhẹ từ dưới lên
+		TranslateTransition translate = new TranslateTransition(Duration.millis(800), mainContentBox);
+		translate.setFromY(40);
+		translate.setToY(0);
+
+		// Chạy song song cả hai hiệu ứng khi vừa mở
+		ParallelTransition transition = new ParallelTransition(fade, translate);
+		transition.play();
     }
 
     private void hideAllRoleSections() {
@@ -134,37 +154,43 @@ public class UserProfileController {
                         }
                         
                         // Load Avatar URL từ Server
-                        if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
+						if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
 							String avatarUrl = jsonData.get("avatarUrl").getAsString();
+							
 							try {
 								Image imageToDisplay = null;
-								
-								// Đọc từ ổ cứng (Local File) - Y hệt Item
+
+								// --- LỚP 1: QUÉT FILE VẬT LÝ TRÊN MÁY (Giống Item) ---
 								java.io.File localFile = new java.io.File(avatarUrl);
 								if (localFile.exists()) {
 									imageToDisplay = new Image(localFile.toURI().toString(), true);
-								} else {
-									// CĐọc từ thư mục resources của JavaFX (/images/...) - Y hệt Item
+								} 
+								
+								// --- LỚP 2: QUÉT TRONG THƯ MỤC RESOURCES (Giống Item) ---
+								if (imageToDisplay == null) {
+									// Chuẩn hóa đường dẫn resources
 									String resourcePath = avatarUrl.startsWith("/") ? avatarUrl : "/images/" + avatarUrl;
 									java.net.URL resourceUrl = getClass().getResource(resourcePath);
 									if (resourceUrl != null) {
 										imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
 									}
 								}
-								
-								// Ảnh mặc định nếu không tìm thấy (giống Item fallback về Gardevoir.png)
+
+								// --- LỚP 3: ẢNH MẶC ĐỊNH (Nếu cả 2 cách trên đều tịt) ---
 								if (imageToDisplay == null) {
-									java.net.URL fallbackUrl = getClass().getResource("/images/shopkeeper.png"); // Bạn có thể đổi thành ảnh avatar mặc định
-									if (fallbackUrl != null) imageToDisplay = new Image(fallbackUrl.toExternalForm(), true);
+									java.net.URL defaultUrl = getClass().getResource("/images/shopkeeper.png");
+									if (defaultUrl != null) {
+										imageToDisplay = new Image(defaultUrl.toExternalForm(), true);
+									}
 								}
-								
-								// Hiển thị ảnh lên View
-								if (imageToDisplay != null && avatarView != null) {
+
+								// Hiển thị lên ImageView
+								if (avatarView != null && imageToDisplay != null) {
 									avatarView.setImage(imageToDisplay);
 								}
-								
+
 							} catch (Exception e) {
-								System.err.println("Không load được ảnh đại diện: " + e.getMessage());
+								System.err.println("Lỗi quét ảnh Profile: " + e.getMessage());
 							}
 						}
                         
@@ -399,16 +425,16 @@ public class UserProfileController {
             }
 
             try {
+                // Hiển thị ảnh Local lên giao diện 
                 Image newAvatar = new Image(selectedFile.toURI().toString());
                 if (avatarView != null) avatarView.setImage(newAvatar);
 
-                byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
-                String base64Image = Base64.getEncoder().encodeToString(fileContent);
-
-                uploadAvatarToServer(base64Image);
+                // GỬI THẲNG ĐƯỜNG DẪN Ổ CỨNG LÊN SERVER
+                String imagePath = selectedFile.getAbsolutePath(); 
+                uploadAvatarToServer(imagePath);
 
             } catch (Exception e) {
-                showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể đọc file ảnh: " + e.getMessage());
+                showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể thiết lập ảnh: " + e.getMessage());
             }
         }
     }
