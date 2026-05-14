@@ -54,7 +54,10 @@ public class ViewLiveAuctionsRealtimeTest {
                 "VEHICLE",                             // itemType
                 specifics,                             // itemSpecifics
                 imageUrls,                             // itemImageUrls
-                "Seller B"                             // sellerName
+                200L,                                  // sellerId
+                "Seller B",                            // sellerName
+                "2023-01-01T10:00:00",                 // startTime
+                "2023-01-02T10:00:00"                  // endTime
         );
 
         // Create sample realtime update

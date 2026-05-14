@@ -79,7 +79,7 @@ public class UserProfileController {
         hideAllRoleSections();
 
         if (avatarView != null) {
-            Circle clip = new Circle (51, 51, 51);
+            Circle clip = new Circle(105, 105, 105); 
             avatarView.setClip(clip);
         }
         

@@ -40,8 +40,8 @@
     <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-border-color: transparent;">
         <content>
             <VBox alignment="TOP_CENTER" spacing="35.0" style="-fx-background-color: transparent; -fx-padding: 40;">
-
-                <VBox alignment="CENTER" spacing="5.0">
+                
+				<VBox alignment="CENTER" spacing="5.0">
                     <Label text="HỒ SƠ CÁ NHÂN" textFill="#FFFFFF">
                         <font>
                             <Font name="System Bold" size="32.0" />
@@ -69,10 +69,10 @@
                                     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 20, 0, 0, 8);
                                 </style>
                             </Circle>
-
+                            
                             <ImageView fx:id="avatarView" fitHeight="210.0" fitWidth="210.0" pickOnBounds="true" preserveRatio="false" />
                         </StackPane>
-
+                        
                         <VBox alignment="CENTER" spacing="8.0">
                             <Label fx:id="lblHeaderName" text="Đang tải..." textFill="#0F172A">
                                 <font>
@@ -107,24 +107,24 @@
                             </VBox>
                             <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                                 <Label text="Họ và Tên:" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                                <TextField fx:id="txtFullName" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                                <TextField fx:id="txtFullName" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                             </VBox>
                         </HBox>
 
                         <HBox spacing="20.0">
                             <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                                 <Label text="Email:" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                                <TextField fx:id="txtEmail" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                                <TextField fx:id="txtEmail" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                             </VBox>
                             <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                                 <Label text="Số điện thoại:" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                                <TextField fx:id="txtPhone" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                                <TextField fx:id="txtPhone" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                             </VBox>
                         </HBox>
 
                         <VBox spacing="8.0">
                             <Label text="Địa chỉ giao hàng:" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                            <TextField fx:id="txtAddress" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                            <TextField fx:id="txtAddress" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                         </VBox>
                     </VBox>
 
@@ -141,7 +141,7 @@
                             </VBox>
                             <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                                 <Label text="Thẻ tín dụng (Credit Card):" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                                <TextField fx:id="txtCreditCardInfo" prefHeight="45.0" promptText="VD: 4422 1133..." style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                                <TextField fx:id="txtCreditCardInfo" prefHeight="45.0" promptText="VD: 4422 1133..." style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                             </VBox>
                         </HBox>
 
@@ -169,11 +169,11 @@
                         <HBox spacing="20.0">
                             <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                                 <Label text="Tên Cửa Hàng (Shop Name):" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                                <TextField fx:id="txtShopName" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                                <TextField fx:id="txtShopName" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                             </VBox>
                             <VBox spacing="8.0" HBox.hgrow="ALWAYS">
                                 <Label text="Số Tài Khoản Ngân Hàng:" textFill="#1E293B"><font><Font name="System Bold" size="13.0" /></font></Label>
-                                <TextField fx:id="txtBankAccountNumber" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-text-fill: #1E293B; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
+                                <TextField fx:id="txtBankAccountNumber" prefHeight="45.0" style="-fx-background-color: rgba(255, 255, 255, 0.85); -fx-background-radius: 12; -fx-border-color: rgba(203, 213, 225, 0.8); -fx-border-radius: 12; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 5, 0, 0, 2);" />
                             </VBox>
                         </HBox>
 

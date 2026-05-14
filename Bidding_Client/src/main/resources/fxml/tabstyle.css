@@ -1,11 +1,64 @@
+/* 1. Xóa nền mặc định của thanh chứa Tab */
 .tab-pane .tab-header-area .tab-header-background {
     -fx-background-color: transparent;
 }
-.tab-pane .tab {
-    -fx-background-color: rgba(255, 255, 255, 0.1);
-    -fx-text-base-color: #94A3B8;
+
+.tab-pane .tab-header-area {
+    -fx-padding: 10 0 15 20; /* Tăng khoảng trống bên dưới để bóng đổ không bị cắt */
 }
+
+/* 2. STYLE CHO TAB BÌNH THƯỜNG (Viền vàng nhạt, đổ bóng nhẹ) */
+.tab-pane .tab {
+    -fx-background-color: #FFFFFF;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-color: rgba(212, 175, 55, 0.4); /* Viền vàng kim nhạt */
+    -fx-border-width: 1.5;
+    -fx-padding: 6 20 6 20;
+    -fx-margin: 0 12 0 0;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.15), 6, 0, 0, 2); /* Bóng vàng kim nhạt */
+}
+
+/* Màu chữ xám đậm cho nút bình thường */
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #64748B;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+/* 3. HIỆU ỨNG KHI DI CHUỘT VÀO (Viền đậm hơn, bóng to hơn, nền ám vàng nhẹ) */
+.tab-pane .tab:hover {
+    -fx-background-color: #FFFAEB;
+    -fx-border-color: rgba(212, 175, 55, 0.7);
+    -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.35), 10, 0, 0, 3);
+}
+
+.tab-pane .tab:hover .tab-label {
+    -fx-text-fill: #B89222;
+}
+
+/* 4. STYLE CHO NÚT ĐANG ĐƯỢC CHỌN (Viền vàng kim rực rỡ, phát sáng glow) */
 .tab-pane .tab:selected {
-    -fx-background-color: rgba(212, 175, 55, 0.2);
-    -fx-text-base-color: #D4AF37;
+    -fx-background-color: linear-gradient(to right, #FFFFFF, #FFFBEB);
+    -fx-border-color: #D4AF37; /* Vàng kim nguyên bản */
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.65), 15, 0, 0, 3); /* Bóng đổ glow vàng rực */
+}
+
+/* Màu chữ Vàng sẫm và in đậm hơn cho nút đang chọn */
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #9A7B00; 
+    -fx-font-weight: 900;
+}
+
+/* 5. LOẠI BỎ VIỀN XANH CỦA HỆ THỐNG KHI CLICK */
+.tab-pane:focused .tab-header-area .headers-region .tab:selected .focus-indicator {
+    -fx-border-width: 0;
+}
+
+/* 6. LÀM TRONG SUỐT KHUNG NỘI DUNG BÊN DƯỚI */
+.tab-pane .tab-content-area {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
 }

@@ -76,7 +76,10 @@ public class MyWebSocketClientTest {
                 "VEHICLE",
                 new HashMap<>(),
                 new ArrayList<>(),
-                "Seller"
+                200L,
+                "Seller",
+                "2023-01-01T10:00:00",
+                "2023-01-02T10:00:00"
         );
 
         String jsonPayload = gson.toJson(original);
@@ -137,7 +140,10 @@ public class MyWebSocketClientTest {
                 "VEHICLE",
                 new HashMap<>(),
                 new ArrayList<>(),
-                "Seller"
+                200L,
+                "Seller",
+                "2023-01-01T10:00:00",
+                "2023-01-02T10:00:00"
         );
 
         String jsonPayload = gson.toJson(detail);
@@ -283,7 +289,10 @@ public class MyWebSocketClientTest {
                 "VEHICLE",
                 new HashMap<>(),
                 new ArrayList<>(),
-                "Seller"
+                200L,
+                "Seller",
+                "2023-01-01T10:00:00",
+                "2023-01-02T10:00:00"
         );
 
         String message = "AUCTION_CREATED:" + gson.toJson(detail);

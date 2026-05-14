@@ -10,11 +10,10 @@ import java.util.List;
  * Chain of Responsibility Pattern: Xử lý chuỗi xác thực
  */
 public class BidValidationChain {
-    private final List<BidValidationStrategy> strategies = new ArrayList<>();
+    private final List<BidValidationStrategy> strategies;
 
-    public BidValidationChain() {
-        strategies.add(new BasicBidValidation());
-        strategies.add(new MinimumIncrementValidation());
+    public BidValidationChain(List<BidValidationStrategy> strategies) {
+        this.strategies = new ArrayList<>(strategies);
     }
 
     public void addStrategy(BidValidationStrategy strategy) {
