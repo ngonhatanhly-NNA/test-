@@ -170,7 +170,7 @@ public class ViewDashboardController {
                     itemSection.setSpacing(15);
                     Label titleLabel = new Label("📦 Khám Phá Sản Phẩm");
                     titleLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
-                    titleLabel.setStyle("-fx-text-fill: #333333;");
+                    titleLabel.setStyle("-fx-text-fill: #D4AF37;");
 
                     itemSection.getChildren().addAll(titleLabel, itemContainer);
                     mainContent.getChildren().add(itemSection);
@@ -188,7 +188,7 @@ public class ViewDashboardController {
 
         Label titleLabel = new Label(title);
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
-        titleLabel.setStyle("-fx-text-fill: #333333;");
+        titleLabel.setStyle("-fx-text-fill: #D4AF37;");
         section.getChildren().add(titleLabel);
 
         HBox auctionContainer = new HBox();
@@ -204,8 +204,8 @@ public class ViewDashboardController {
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setPrefHeight(280);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-padding: 0;");
-
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent; -fx-padding: 0;");
+		
         section.getChildren().add(scrollPane);
         return section;
     }
@@ -214,10 +214,11 @@ public class ViewDashboardController {
         VBox card = new VBox();
         card.setSpacing(10);
         card.setPadding(new Insets(12));
-        card.setStyle("-fx-background-color: #ffffff; -fx-background-radius: 12; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 4);");
+        // 1. Nhuộm đen thẻ nằm ngang
+        card.setStyle("-fx-background-color: #242424; -fx-background-radius: 12; -fx-border-color: rgba(212,175,55,0.3); -fx-border-radius: 12; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 4);");
         card.setPrefWidth(240);
 
-        // --- FIX ẢNH: Sử dụng logic tìm ảnh thông minh ---
+        // --- FIX ẢNH ---
         ImageView imageView = new ImageView();
         imageView.setFitHeight(140);
         imageView.setFitWidth(210);
@@ -237,25 +238,27 @@ public class ViewDashboardController {
 
         Label nameLabel = new Label(auction.getItemName());
         nameLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
+        // 2. Chữ tên trắng
+        nameLabel.setStyle("-fx-text-fill: #F5F5F5;");
         nameLabel.setWrapText(true);
 
         Label priceLabel = new Label("Giá hiện tại: " + formatCurrency(auction.getCurrentPrice().doubleValue()));
-        priceLabel.setStyle("-fx-text-fill: #e67e22; -fx-font-weight: bold;");
+        // 3. Chữ giá vàng Gold
+        priceLabel.setStyle("-fx-text-fill: #D4AF37; -fx-font-weight: bold;");
 
-        // --- FIX THỜI GIAN: Hiển thị Start - End rõ ràng ---
+        // --- FIX THỜI GIAN ---
         VBox timeBox = new VBox(2);
         Label startLbl = new Label("📅 Từ: " + formatTimeDisplay(auction.getStartTime()));
         Label endLbl = new Label("🏁 Đến: " + formatTimeDisplay(auction.getEndTime()));
-        startLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #7f8c8d;");
-        endLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #c0392b; -fx-font-weight: bold;");
+        // 4. Ngày tháng đổi sang xám và đỏ tươi cho nổi bật trên nền đen
+        startLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #A0A0A0;");
+        endLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #E74C3C; -fx-font-weight: bold;");
         timeBox.getChildren().addAll(startLbl, endLbl);
 
         card.getChildren().addAll(imageView, nameLabel, priceLabel, timeBox);
 
         card.setOnMouseClicked(event -> {
-            // Nếu là phiên SCHEDULED (Sắp diễn ra), báo lỗi nhẹ nhàng
             if (auction.getRemainingTime() > 0 && auction.getRemainingTime() > Duration.between(java.time.LocalDateTime.now(), java.time.LocalDateTime.parse(auction.getEndTime())).toMillis()) {
-                // Có thể thêm Toast thông báo ở đây
             }
             DashboardNavigation.navigateToAuctionDetail(auction.getAuctionId());
         });
@@ -337,7 +340,7 @@ public class ViewDashboardController {
         if (filtered.isEmpty()) {
             Label empty = new Label("Chưa có sản phẩm hoặc không khớp bộ lọc. Bấm \"Tải lại\" hoặc kiểm tra server /api/items.");
             empty.setWrapText(true);
-            empty.setStyle("-fx-text-fill: #666;");
+            empty.setStyle("-fx-text-fill: #A0A0A0;");
             itemContainer.getChildren().add(empty);
             return;
         }
@@ -401,9 +404,11 @@ public class ViewDashboardController {
         VBox card = new VBox(10);
         card.setAlignment(Pos.CENTER);
         card.setPrefWidth(220);
-        card.setStyle("-fx-background-color: white; -fx-border-color: #E3B04B; -fx-border-width: 2; " +
-                "-fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15; " +
-                "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);");
+        
+        // 1. Nền tối, viền vàng rực, đổ bóng viền
+        card.setStyle("-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.5); -fx-border-width: 1.5; " +
+                "-fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 15; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 15, 0, 0, 5);");
 
         ImageView img = new ImageView(loadItemImage(item));
         img.setFitHeight(120);
@@ -412,21 +417,25 @@ public class ViewDashboardController {
 
         Label title = new Label(item.getName() != null ? item.getName() : "Sản phẩm #" + item.getId());
         title.setFont(Font.font("System Bold", 16));
-        title.setTextFill(javafx.scene.paint.Color.web("#333333"));
+        // 2. Chữ tiêu đề màu trắng sáng
+        title.setTextFill(javafx.scene.paint.Color.web("#F5F5F5"));
         title.setWrapText(true);
 
         String priceStr = item.getStartingPrice() != null ? item.getStartingPrice().toPlainString() : "0";
         Label price = new Label("Giá khởi điểm: " + priceStr + " VNĐ");
         price.setFont(Font.font("System Bold", 14));
-        price.setTextFill(javafx.scene.paint.Color.web("#e3b04b"));
+        // 3. Chữ giá tiền màu Vàng Gold
+        price.setTextFill(javafx.scene.paint.Color.web("#D4AF37"));
 
         Label type = new Label("Loại: " + displayType(item.getType()));
-        type.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        // 4. Chữ loại sản phẩm màu xám nhạt
+        type.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 11px;");
 
         Button goLive = new Button("Tới phòng đấu giá");
         goLive.setPrefWidth(150);
-        goLive.setStyle("-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-font-weight: bold; " +
-                "-fx-background-radius: 5; -fx-cursor: hand;");
+        // 5. Nút bấm Gradient vàng - chữ đen
+        goLive.setStyle("-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-font-weight: bold; " +
+                "-fx-background-radius: 8; -fx-cursor: hand;");
         goLive.setOnAction(e -> DashboardNavigation.openLiveAuctions());
 
         card.getChildren().addAll(img, title, price, type, goLive);

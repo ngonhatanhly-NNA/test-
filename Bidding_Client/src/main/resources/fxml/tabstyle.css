@@ -62,3 +62,65 @@
     -fx-background-color: transparent;
     -fx-border-width: 0;
 }
+
+/* ========================================================
+   CSS ĐỂ STYLE CHO COMBO BOX DROP-DOWN THÀNH DARK MODE
+   ======================================================== */
+
+.dark-combo-box .list-view {
+    -fx-background-color: #181818;
+    -fx-border-color: #D4AF37;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+    -fx-padding: 2;
+}
+
+.dark-combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #E0E0E0;
+    -fx-padding: 8 10 8 10;
+}
+
+/* Khi di chuột qua (Hover) một mục trong ComboBox */
+.dark-combo-box .list-cell:filled:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #FFD700;
+}
+
+/* Khi mục đó được chọn */
+.dark-combo-box .list-cell:filled:selected {
+    -fx-background-color: #D4AF37;
+    -fx-text-fill: #121212;
+    -fx-font-weight: bold;
+}
+
+/* ========================================================
+   CSS CHO CÁC KHỐI NHẬP LIỆU BÊN TRONG (HOVER EFFECT)
+   ======================================================== */
+
+/* Trạng thái bình thường của khối */
+.input-block {
+    -fx-background-color: #1E1E1E; /* Xám tối nhạt hơn nền gốc */
+    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 12px 16px; /* Khoảng cách thở bên trong khối */
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);
+}
+
+/* Trạng thái khi di chuột vào (Nổi lên, sáng viền vàng) */
+.input-block:hover {
+    -fx-background-color: #242424; /* Nền sáng lên một chút */
+    -fx-border-color: rgba(212, 175, 55, 0.5); /* Viền vàng kim hiện ra */
+    -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.15), 15, 0, 0, 5); /* Bóng vàng tỏa nhẹ */
+    -fx-translate-y: -2px; /* Hiệu ứng nhấc bổng khối lên 2 pixel */
+}
+
+/* Fix nhẹ cho TextArea bên trong không bị chói màu */
+.input-block .text-area {
+    -fx-background-color: transparent;
+}
+.input-block .text-area .content {
+    -fx-background-color: transparent;
+}

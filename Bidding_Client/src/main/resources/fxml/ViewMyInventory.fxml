@@ -10,23 +10,23 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="720.0" prefWidth="1150.0" spacing="30.0" style="-fx-background-color: #E8EEF2; -fx-padding: 35;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.MyInventoryController">
+<VBox prefHeight="720.0" prefWidth="1150.0" spacing="30.0" style="-fx-background-color: #121212; -fx-padding: 35;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.MyInventoryController">
     <children>
         
         <HBox alignment="CENTER_LEFT">
             <children>
-                <VBox spacing="4.0">
+                <VBox spacing="5.0">
                     <children>
-                        <Label text="MY INVENTORY" textFill="#0F172A">
+                        <Label text="MY INVENTORY" textFill="#D4AF37">
                             <font>
                                 <Font name="System Bold" size="32.0" />
                             </font>
                             <style>
                                 -fx-letter-spacing: 1.5px;
-                                -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 3, 0, 0, 1);
+                                -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 10, 0, 0, 0);
                             </style>
                         </Label>
-                        <Label text="Manage your active listings and successfully won assets" textFill="#64748B">
+                        <Label text="Manage your active listings and successfully won assets" textFill="#A0A0A0">
                             <font>
                                 <Font size="15.0" />
                             </font>
@@ -36,7 +36,7 @@
 
                 <Region HBox.hgrow="ALWAYS" />
 
-                <Button fx:id="btnCreateItem" mnemonicParsing="false" onAction="#handleCreateItem" prefHeight="48.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FDE047); -fx-text-fill: #451A03; -fx-background-radius: 12; -fx-padding: 0 25; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 4);" text="➕ CREATE NEW ITEM">
+                <Button fx:id="btnCreateItem" mnemonicParsing="false" onAction="#handleCreateItem" prefHeight="48.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 12; -fx-padding: 0 25; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0);" text="➕ CREATE NEW ITEM">
                     <font>
                         <Font name="System ExtraBold" size="14.0" />
                     </font>
@@ -47,25 +47,25 @@
         <HBox spacing="35.0" VBox.vgrow="ALWAYS">
             <children>
 
-                <VBox spacing="15.0" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-width: 1.5; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 25; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 35, 0, 0, 10);" HBox.hgrow="ALWAYS">
+                <VBox spacing="15.0" style="-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.2); -fx-border-width: 1.5; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 25; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 15, 0, 0, 5);" HBox.hgrow="ALWAYS">
                     <children>
                         <HBox alignment="CENTER_LEFT">
-                            <Label text="🏷️ Active Listings" textFill="#D97706">
+                            <Label text="🏷️ Active Listings" textFill="#D4AF37">
                                 <font>
                                     <Font name="System Bold" size="20.0" />
                                 </font>
                             </Label>
                             <Region HBox.hgrow="ALWAYS" />
-                            <Label style="-fx-background-color: #FFFBEB; -fx-text-fill: #B45309; -fx-border-color: #FDE68A; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 5 12;" text="Seller Mode?">
+                            <Label style="-fx-background-color: rgba(212,175,55,0.1); -fx-text-fill: #D4AF37; -fx-border-color: rgba(212,175,55,0.4); -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 5 12;" text="Seller Mode?">
                                 <font>
                                     <Font name="System Bold" size="12.0" />
                                 </font>
                             </Label>
                         </HBox>
                         
-                        <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 2 0 0 0;" />
+                        <Separator style="-fx-background-color: transparent; -fx-border-color: #2A2A2A; -fx-border-width: 1.5 0 0 0;" />
                         
-                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #181818; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
                             <content>
                                 <FlowPane fx:id="sellingItemsContainer" hgap="25.0" style="-fx-padding: 5;" vgap="25.0" />
                             </content>
@@ -73,25 +73,25 @@
                     </children>
                 </VBox>
 
-                <VBox spacing="15.0" style="-fx-background-color: #FFFFFF; -fx-border-color: #E2E8F0; -fx-border-width: 1.5; -fx-border-radius: 20; -fx-background-radius: 20; -fx-padding: 25; -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.08), 35, 0, 0, 10);" HBox.hgrow="ALWAYS">
+                <VBox spacing="15.0" style="-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.2); -fx-border-width: 1.5; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 25; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 15, 0, 0, 5);" HBox.hgrow="ALWAYS">
                     <children>
                         <HBox alignment="CENTER_LEFT">
-                            <Label text="🏆 Won Auctions" textFill="#059669">
+                            <Label text="🏆 Won Auctions" textFill="#34D399">
                                 <font>
                                     <Font name="System Bold" size="20.0" />
                                 </font>
                             </Label>
                             <Region HBox.hgrow="ALWAYS" />
-                            <Label style="-fx-background-color: #ECFDF5; -fx-text-fill: #047857; -fx-border-color: #A7F3D0; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 5 12;" text="Collector">
+                            <Label style="-fx-background-color: rgba(52,211,153,0.1); -fx-text-fill: #34D399; -fx-border-color: rgba(52,211,153,0.4); -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 5 12;" text="Collector">
                                 <font>
                                     <Font name="System Bold" size="12.0" />
                                 </font>
                             </Label>
                         </HBox>
                         
-                        <Separator style="-fx-background-color: transparent; -fx-border-color: #F1F5F9; -fx-border-width: 2 0 0 0;" />
+                        <Separator style="-fx-background-color: transparent; -fx-border-color: #2A2A2A; -fx-border-width: 1.5 0 0 0;" />
                         
-                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #181818; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
                             <content>
                                 <FlowPane fx:id="wonItemsContainer" hgap="25.0" style="-fx-padding: 5;" vgap="25.0" />
                             </content>

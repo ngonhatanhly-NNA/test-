@@ -40,7 +40,7 @@ public class MyInventoryController {
     // Container cho Active Listings (sản phẩm đang bán)
     @FXML private FlowPane sellingItemsContainer;
 
-    // [ĐÃ SỬA] Container cho Won Auctions (đấu giá đã thắng) - cần có trong FXML
+    // Container cho Won Auctions (đấu giá đã thắng)
     @FXML private FlowPane wonItemsContainer;
 
     private final ItemNetwork itemNetwork = new ItemNetwork();
@@ -61,7 +61,7 @@ public class MyInventoryController {
             loadMyItems();
         }
 
-        // [MỚI] Luôn tải Won Auctions dù là SELLER hay BIDDER
+        // Luôn tải Won Auctions dù là SELLER hay BIDDER
         loadWonAuctions();
     }
 
@@ -85,19 +85,19 @@ public class MyInventoryController {
                     logger.info("Đã tải và vẽ xong {} sản phẩm.", items.size());
                 } else {
                     Label emptyLabel = new Label("Kho đồ của bạn đang trống. Hãy tạo sản phẩm mới!");
-                    emptyLabel.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px;");
+                    // Text xám nhạt cho nền đen
+                    emptyLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 14px;");
                     sellingItemsContainer.getChildren().add(emptyLabel);
                 }
             });
         });
     }
 
-    // --- [MỚI] HÀM 2: TẢI WON AUCTIONS TỪ DATABASE ---
+    // --- HÀM 2: TẢI WON AUCTIONS TỪ DATABASE ---
     private void loadWonAuctions() {
         long bidderId = ClientSession.getUserId();
         logger.info("Đang tải Won Auctions cho bidder ID = {}", bidderId);
 
-        // Gọi API mới: GET /api/auctions/bidder/{bidderId}/won
         new Thread(() -> {
             try {
                 List<AuctionDetailDTO> wonAuctions = AuctionNetwork.getWonAuctions(bidderId);
@@ -114,7 +114,7 @@ public class MyInventoryController {
                         logger.info("Đã tải {} won auctions.", wonAuctions.size());
                     } else {
                         Label emptyLabel = new Label("Bạn chưa thắng phiên đấu giá nào.");
-                        emptyLabel.setStyle("-fx-text-fill: #94A3B8; -fx-font-size: 14px;");
+                        emptyLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 14px;");
                         wonItemsContainer.getChildren().add(emptyLabel);
                     }
                 });
@@ -124,7 +124,8 @@ public class MyInventoryController {
                     if (wonItemsContainer != null) {
                         wonItemsContainer.getChildren().clear();
                         Label errLabel = new Label("Không thể tải dữ liệu. Kiểm tra kết nối server.");
-                        errLabel.setStyle("-fx-text-fill: #EF4444; -fx-font-size: 13px;");
+                        // Báo lỗi màu đỏ rực
+                        errLabel.setStyle("-fx-text-fill: #E74C3C; -fx-font-size: 13px;");
                         wonItemsContainer.getChildren().add(errLabel);
                     }
                 });
@@ -136,60 +137,59 @@ public class MyInventoryController {
     private VBox createItemCard(ItemResponseDTO item) {
         VBox card = new VBox(10);
         card.setPadding(new Insets(15));
-        card.setStyle("-fx-background-color: white; -fx-border-color: #E2E8F0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);");
+        // Đổi màu thẻ thành nền xám đen, viền vàng kim loại
+        card.setStyle("-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.3); -fx-border-width: 1.5; -fx-border-radius: 12; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 10, 0, 0, 4);");
         card.setPrefWidth(220);
 
         Label lblName = new Label(item.getName());
         lblName.setFont(Font.font("System", FontWeight.BOLD, 16));
-        lblName.setStyle("-fx-text-fill: #1E293B;");
+        lblName.setStyle("-fx-text-fill: #F5F5F5;"); // Chữ trắng sáng
 
         Label lblType = new Label("Category: " + item.getType());
-        lblType.setStyle("-fx-text-fill: #64748B;");
+        lblType.setStyle("-fx-text-fill: #A0A0A0;"); // Chữ xám nhạt
 
         BigDecimal price = item.getStartingPrice();
         String priceStr = price != null ? currencyFormat.format(price) + " VND" : "---";
         Label lblPrice = new Label("Start Price: " + priceStr);
         lblPrice.setFont(Font.font("System", FontWeight.BOLD, 14));
-        lblPrice.setStyle("-fx-text-fill: #D4AF37;");
+        lblPrice.setStyle("-fx-text-fill: #D4AF37;"); // Màu vàng Gold
 
-        // [FIX BUG 2] Label trạng thái đấu giá - ẩn ban đầu, sẽ hiện sau khi check API
         Label lblAuctionStatus = new Label();
         lblAuctionStatus.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 3 10;");
         lblAuctionStatus.setVisible(false);
         lblAuctionStatus.setManaged(false);
 
         Button btnOpenAuction = new Button("Open Auction");
-        btnOpenAuction.setStyle("-fx-background-color: #059669; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand;");
+        // Nút bấm Gradient vàng đen
+        btnOpenAuction.setStyle("-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;");
         btnOpenAuction.setMaxWidth(Double.MAX_VALUE);
 
         card.getChildren().addAll(lblName, lblType, lblPrice, lblAuctionStatus, btnOpenAuction);
         card.setUserData(item.getId());
 
-        // [FIX BUG 2] Kiểm tra trạng thái đấu giá bất đồng bộ rồi cập nhật UI
         new Thread(() -> {
             try {
                 String auctionStatus = AuctionNetwork.getAuctionStatusByItemId(item.getId());
                 Platform.runLater(() -> {
                     if ("ACTIVE".equals(auctionStatus)) {
-                        // Item đang được đấu giá: disable nút, hiện badge đỏ
+                        // Trạng thái Đang đấu giá: Nút màu xám tối, badge viền đỏ mờ
                         btnOpenAuction.setDisable(true);
-                        btnOpenAuction.setStyle("-fx-background-color: #94A3B8; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6;");
+                        btnOpenAuction.setStyle("-fx-background-color: #333333; -fx-text-fill: #888888; -fx-font-weight: bold; -fx-background-radius: 8;");
                         btnOpenAuction.setText("Đang đấu giá...");
                         lblAuctionStatus.setText("🔴 ĐANG ĐẤU GIÁ");
-                        lblAuctionStatus.setStyle("-fx-background-color: #FEF2F2; -fx-text-fill: #DC2626; -fx-border-color: #FECACA; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
+                        lblAuctionStatus.setStyle("-fx-background-color: rgba(220,38,38,0.1); -fx-text-fill: #E74C3C; -fx-border-color: rgba(220,38,38,0.4); -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
                         lblAuctionStatus.setVisible(true);
                         lblAuctionStatus.setManaged(true);
                     } else if ("FINISHED".equals(auctionStatus)) {
-                        // Đã đấu giá xong: disable nút, hiện badge xanh
+                        // Trạng thái Đã kết thúc: Nút màu xám tối, badge viền xanh mờ
                         btnOpenAuction.setDisable(true);
-                        btnOpenAuction.setStyle("-fx-background-color: #94A3B8; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6;");
+                        btnOpenAuction.setStyle("-fx-background-color: #333333; -fx-text-fill: #888888; -fx-font-weight: bold; -fx-background-radius: 8;");
                         btnOpenAuction.setText("Đã kết thúc");
                         lblAuctionStatus.setText("✅ ĐÃ ĐẤU GIÁ XONG");
-                        lblAuctionStatus.setStyle("-fx-background-color: #F0FDF4; -fx-text-fill: #16A34A; -fx-border-color: #BBF7D0; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
+                        lblAuctionStatus.setStyle("-fx-background-color: rgba(22,163,74,0.1); -fx-text-fill: #4CAF50; -fx-border-color: rgba(22,163,74,0.4); -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
                         lblAuctionStatus.setVisible(true);
                         lblAuctionStatus.setManaged(true);
                     }
-                    // NONE: giữ nút xanh, cho phép tạo phiên mới bình thường
                 });
             } catch (Exception e) {
                 logger.warn("Không thể kiểm tra auction status cho item {}: {}", item.getId(), e.getMessage());
@@ -200,38 +200,35 @@ public class MyInventoryController {
         return card;
     }
 
-    // --- [MỚI] HÀM 4: TẠO CARD CHO WON AUCTION ---
+    // --- HÀM 4: TẠO CARD CHO WON AUCTION ---
     private VBox createWonAuctionCard(AuctionDetailDTO auction) {
         VBox card = new VBox(8);
         card.setPadding(new Insets(15));
-        card.setStyle("-fx-background-color: #F0FDF4; -fx-border-color: #A7F3D0; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(5,150,105,0.1), 10, 0, 0, 2);");
+        // Thẻ màu xám đen, viền xanh lá Neon mờ để tôn vinh đồ đã thắng
+        card.setStyle("-fx-background-color: #242424; -fx-border-color: rgba(76,175,80,0.5); -fx-border-width: 1.5; -fx-border-radius: 12; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 4);");
         card.setPrefWidth(220);
 
-        // Tên sản phẩm
         Label lblName = new Label("🏆 " + (auction.getItemName() != null ? auction.getItemName() : "Item #" + auction.getItemId()));
         lblName.setFont(Font.font("System", FontWeight.BOLD, 15));
-        lblName.setStyle("-fx-text-fill: #064E3B;");
+        lblName.setStyle("-fx-text-fill: #F5F5F5;"); // Chữ trắng sáng
         lblName.setWrapText(true);
 
-        // Giá thắng
         String winPrice = auction.getCurrentPrice() != null
                 ? currencyFormat.format(auction.getCurrentPrice()) + " VND"
                 : "---";
         Label lblPrice = new Label("Giá thắng: " + winPrice);
         lblPrice.setFont(Font.font("System", FontWeight.BOLD, 13));
-        lblPrice.setStyle("-fx-text-fill: #059669;");
+        lblPrice.setStyle("-fx-text-fill: #D4AF37;"); // Giá tiền vẫn bám theo tone Vàng Gold
 
-        // Tên người thắng (chính là user hiện tại)
         Label lblWinner = new Label("Người thắng: " + (auction.getHighestBidderName() != null ? auction.getHighestBidderName() : "Bạn"));
-        lblWinner.setStyle("-fx-text-fill: #047857; -fx-font-size: 12px;");
+        lblWinner.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
-        // Loại sản phẩm
         Label lblType = new Label("Loại: " + (auction.getItemType() != null ? auction.getItemType() : "---"));
-        lblType.setStyle("-fx-text-fill: #6B7280; -fx-font-size: 12px;");
+        lblType.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
-        // Badge "ĐÃ THẮNG"
+        // Badge "ĐÃ THẮNG" xanh lá trên nền tối
         Label lblBadge = new Label("✅ ĐÃ THẮNG");
-        lblBadge.setStyle("-fx-background-color: #ECFDF5; -fx-text-fill: #047857; -fx-border-color: #A7F3D0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
+        lblBadge.setStyle("-fx-background-color: rgba(76,175,80,0.1); -fx-text-fill: #4CAF50; -fx-border-color: rgba(76,175,80,0.4); -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 3 10; -fx-font-weight: bold; -fx-font-size: 11px;");
 
         card.getChildren().addAll(lblName, lblPrice, lblWinner, lblType, lblBadge);
         return card;

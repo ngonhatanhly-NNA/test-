@@ -41,6 +41,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import javafx.event.ActionEvent;
 
 public class ViewLiveAuctions {
 
@@ -88,7 +89,7 @@ public class ViewLiveAuctions {
     private LineChart<String, Number> priceChart;
     @FXML
     private XYChart.Series<String, Number> priceSeries;
-
+	@FXML private VBox auctionListSidebar;
     // === SỔ TAY LƯU TRỮ LỊCH SỬ CỤC BỘ ===
     private Map<Long, List<BidHistoryDTO>> localBidLogs = new HashMap<>();
     
@@ -173,7 +174,7 @@ public class ViewLiveAuctions {
             if (remaining > 0 && remaining < 60000) {
                 remainingLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;"); 
             } else {
-                remainingLabel.setStyle("-fx-text-fill: #7f8c8d;");
+                remainingLabel.setStyle("-fx-text-fill: #A0A0A0;");
             }
         }
 
@@ -533,7 +534,7 @@ public class ViewLiveAuctions {
         }
         if (leaderLabel != null && updateData.getHighestBidderName() != null) {
             leaderLabel.setText("Người dẫn đầu: " + updateData.getHighestBidderName());
-            leaderLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold;");
+            leaderLabel.setStyle("-fx-text-fill: #E0E0E0; -fx-font-weight: bold;");
         }
 
         // === GHI LOG REAL-TIME VÀO SỔ TAY ===
@@ -653,38 +654,54 @@ public class ViewLiveAuctions {
 
     private VBox createAuctionCard(AuctionDetailDTO a) {
         VBox card = new VBox(8);
-        card.setStyle("-fx-border-color: #bdc3c7; -fx-border-radius: 8; -fx-padding: 15; -fx-background-color: #ffffff; -fx-background-radius: 8; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+        // Nhuộm đen nền thẻ, viền vàng nhạt bo góc cực mượt
+        card.setStyle("-fx-background-color: #242424; " +
+                      "-fx-border-color: rgba(212,175,55,0.3); " +
+                      "-fx-border-radius: 12; " +
+                      "-fx-background-radius: 12; " +
+                      "-fx-padding: 15; " +
+                      "-fx-cursor: hand; " +
+                      "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 4);");
         card.setMaxWidth(Double.MAX_VALUE);
 
         Label nameLbl = new Label(a.getItemName() != null ? a.getItemName() : "Item #" + a.getItemId());
-        nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2c3e50;");
+        // Tên vật phẩm màu trắng sáng
+        nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #F5F5F5;");
         nameLbl.setWrapText(true);
 
         Label typeLbl = new Label("Loại: " + (a.getItemType() != null ? a.getItemType() : "GENERAL"));
-        typeLbl.setStyle("-fx-text-fill: #34495e; -fx-font-size: 12px;");
+        typeLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;"); // Xám nhạt
 
         Label specificsLbl = new Label(formatSpecificsPreview(a.getItemSpecifics()));
-        specificsLbl.setStyle("-fx-text-fill: #475569; -fx-font-size: 12px;");
+        specificsLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
         specificsLbl.setWrapText(true);
 
         String sellerName = (a.getSellerName() != null && !a.getSellerName().isBlank()) ? a.getSellerName() : ("Seller_" + a.getSellerId());
         Label sellerLbl = new Label("Người bán: " + sellerName);
-        sellerLbl.setStyle("-fx-text-fill: #475569; -fx-font-size: 12px;");
+        sellerLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
         Label priceLbl = new Label("Giá: " + formatMoney(a.getCurrentPrice()) + " đ");
-        priceLbl.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold; -fx-font-size: 14px;");
+        // Chữ Giá màu Vàng Gold
+        priceLbl.setStyle("-fx-text-fill: #D4AF37; -fx-font-weight: bold; -fx-font-size: 14px;");
 
         Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
+        leaderLbl.setStyle("-fx-text-fill: #E0E0E0;"); // Xám sáng
+
         Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
-        timeLbl.setStyle("-fx-text-fill: #7f8c8d; -fx-font-size: 12px;");
+        timeLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
         Label scheduleInfoLbl = new Label("Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
                                           " | Kết thúc: " + (a.getEndTime() != null ? a.getEndTime() : "—"));
-        scheduleInfoLbl.setStyle("-fx-text-fill: #16a34a; -fx-font-size: 12px; -fx-font-weight: bold;");
+        scheduleInfoLbl.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 12px; -fx-font-weight: bold;"); // Xanh lá sáng để hợp nền đen
         scheduleInfoLbl.setWrapText(true);
 
         Button btnSelect = new Button("Vào đấu giá");
-        btnSelect.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-cursor: hand; -fx-font-weight: bold;");
+        // Nút bấm Gradient vàng đen sang trọng
+        btnSelect.setStyle("-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); " +
+                           "-fx-text-fill: #121212; " +
+                           "-fx-cursor: hand; " +
+                           "-fx-font-weight: bold; " +
+                           "-fx-background-radius: 8;");
         btnSelect.setMaxWidth(Double.MAX_VALUE);
 
         btnSelect.setOnAction(e -> {
@@ -720,13 +737,13 @@ public class ViewLiveAuctions {
         itemSpecificsBox.getChildren().clear();
         if (specifics == null || specifics.isEmpty()) {
             Label empty = new Label("Thuộc tính: -");
-            empty.setStyle("-fx-text-fill: #475569; -fx-font-size: 12px;");
+            empty.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;"); // Đổi thành màu xám nhạt
             itemSpecificsBox.getChildren().add(empty);
             return;
         }
         specifics.forEach((key, value) -> {
             Label line = new Label(key + ": " + (value != null ? value : "-"));
-            line.setStyle("-fx-text-fill: #334155; -fx-font-size: 12px;");
+            line.setStyle("-fx-text-fill: #E0E0E0; -fx-font-size: 12px;"); // Đổi thành màu xám sáng
             line.setWrapText(true);
             itemSpecificsBox.getChildren().add(line);
         });
@@ -796,6 +813,13 @@ public class ViewLiveAuctions {
             WinnerBoardUtil.showWinnerBoard(winnerData, ClientSession.getUserId());
             lockAuctionUI(); 
         }
+    }
+	
+	@FXML
+    private void handleToggleSidebar(ActionEvent event) {
+        boolean isCurrentlyVisible = auctionListSidebar.isVisible();
+        auctionListSidebar.setVisible(!isCurrentlyVisible);
+        auctionListSidebar.setManaged(!isCurrentlyVisible); 
     }
 
     public void lockAuctionUI() {

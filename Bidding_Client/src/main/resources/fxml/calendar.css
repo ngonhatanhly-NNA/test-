@@ -1,0 +1,75 @@
+/* ========================================================
+   CSS ĐỂ STYLE CHO BẢNG LỊCH (DATE PICKER) THÀNH DARK MODE
+   ======================================================== */
+
+/* Màu chữ hiển thị ngay trên thanh DatePicker */
+.dark-date-picker .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: #F5F5F5;
+}
+
+/* Đổi màu Nền của cái bảng lịch xổ xuống */
+.date-picker-popup {
+    -fx-background-color: #181818;
+    -fx-border-color: #D4AF37;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+/* Nền và chữ phần Tháng - Năm ở trên cùng */
+.date-picker-popup .month-year-pane {
+    -fx-background-color: #242424;
+    -fx-background-radius: 6px 6px 0 0;
+}
+.date-picker-popup .month-year-pane .label {
+    -fx-text-fill: #D4AF37;
+    -fx-font-weight: bold;
+}
+
+/* Các mũi tên chuyển tháng (Trái / Phải) */
+.date-picker-popup .month-year-pane .left-button, 
+.date-picker-popup .month-year-pane .right-button {
+    -fx-background-color: transparent;
+}
+.date-picker-popup .month-year-pane .left-button .left-arrow, 
+.date-picker-popup .month-year-pane .right-button .right-arrow {
+    -fx-background-color: #D4AF37;
+}
+
+/* Thanh các ngày trong tuần (T2, T3, T4...) */
+.date-picker-popup .day-name-cell {
+    -fx-text-fill: #A0A0A0;
+    -fx-font-weight: bold;
+}
+
+/* Các ô ngày trong tháng (1, 2, 3...) */
+.date-picker-popup .day-cell {
+    -fx-background-color: #181818;
+    -fx-text-fill: #E0E0E0;
+    -fx-padding: 5;
+}
+/* Ô ngày của tháng khác (làm mờ đi) */
+.date-picker-popup .day-cell:out-of-this-month {
+    -fx-text-fill: #475569;
+}
+
+/* Hover (khi di chuột qua ngày) */
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #FFD700;
+}
+
+/* Ngày hiện tại (Hôm nay) */
+.date-picker-popup .day-cell:today {
+    -fx-border-color: #D4AF37;
+    -fx-border-width: 1.5px;
+}
+
+/* Ngày được chọn (Selected) */
+.date-picker-popup .day-cell:selected, 
+.date-picker-popup .day-cell:selected:hover {
+    -fx-background-color: #D4AF37;
+    -fx-text-fill: #121212;
+    -fx-font-weight: bold;
+}
