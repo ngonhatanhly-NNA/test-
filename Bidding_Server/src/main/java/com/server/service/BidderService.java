@@ -1,0 +1,116 @@
+package com.server.service;
+
+import com.google.gson.Gson;
+import com.server.DAO.BidderRepository;
+import com.server.DAO.IBidderRepository;
+import com.server.model.Bidder;
+import com.shared.network.Response;
+import java.math.BigDecimal;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class BidderService {
+    private final Gson gson = new Gson();
+    private final IBidderRepository bidderRepo;
+    private static final Logger logger = LoggerFactory.getLogger(BidderService.class);
+
+    // Constructor mặc định (dùng trong production)
+    public BidderService() {
+        this.bidderRepo = new BidderRepository();
+    }
+
+    // Constructor để Dependency Injection (dùng trong testing với Mock)
+    public BidderService(IBidderRepository bidderRepo) {
+        this.bidderRepo = bidderRepo;
+    }
+
+    /**
+     * NẠP TIỀN VÀ LƯU DATABASE (Overload 1: với Bidder object)
+     */
+    public String depositMoney(Bidder bidder, double amount) {
+        try {
+            if (amount <= 0) {
+                return gson.toJson(new Response("FAIL", "Số tiền nạp phải lớn hơn 0!", null));
+            }
+
+            BigDecimal depositAmount = BigDecimal.valueOf(amount);
+
+            // 1. Cộng tiền vào Object (RAM)
+            bidder.addFunds(depositAmount);
+
+            // 2. Lưu vào Database (Liên kết thật)
+            boolean isSaved = bidderRepo.updateBalance(bidder.getId(), bidder.getWalletBalance());
+
+            if (isSaved) {
+                return gson.toJson(new Response("SUCCESS", "Nạp tiền thành công! Số dư: " + bidder.getWalletBalance(), bidder));
+            } else {
+                // Rollback Object nếu DB lỗi
+                bidder.setWalletBalance(bidder.getWalletBalance().subtract(depositAmount));
+                logger.error("Lỗi: Không thể cập nhật Database!");
+                return gson.toJson(new Response("ERROR", "Lỗi: Không thể cập nhật Database!", null));
+            }
+        } catch (Exception e) {
+            logger.error("Lỗi: " + e.getMessage());
+            return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * NẠP TIỀN VÀ LƯU DATABASE (Overload 2: với bidderId)
+     * Dùng từ Controller khi chỉ có ID
+     */
+    public String depositMoney(long bidderId, double amount) {
+        try {
+            if (amount <= 0) {
+                return gson.toJson(new Response("FAIL", "Số tiền nạp phải lớn hơn 0!", null));
+            }
+
+            // Lấy Bidder từ DB
+            Bidder bidder = bidderRepo.getBidderById(bidderId);
+            if (bidder == null) {
+                return gson.toJson(new Response("FAIL", "Không tìm thấy Bidder với ID: " + bidderId, null));
+            }
+
+            // Gọi overload 1
+            return depositMoney(bidder, amount);
+        } catch (Exception e) {
+            logger.error("Lỗi nạp tiền cho bidder ID {}: {}", bidderId, e.getMessage());
+            return gson.toJson(new Response("ERROR", "Lỗi: " + e.getMessage(), null));
+        }
+    }
+
+    /**
+     * KIỂM TRA TÀI CHÍNH (Lấy số dư mới nhất từ DB)
+     */
+    public boolean canAffordBid(Bidder bidder, double requiredAmount) {
+        Bidder latest = bidderRepo.getBidderById(bidder.getId());
+        if (latest != null) {
+            bidder.setWalletBalance(latest.getWalletBalance());
+        }
+        return bidder.getWalletBalance().compareTo(BigDecimal.valueOf(requiredAmount)) >= 0;
+    }
+
+    /**
+     * TRỪ TIỀN KHI THẮNG ĐẤU GIÁ
+     */
+    public void settlePayment(Bidder winner, double finalAmount) {
+        BigDecimal amountToDeduct = BigDecimal.valueOf(finalAmount);
+
+        if (winner.deductFunds(amountToDeduct)) {
+            boolean success = bidderRepo.updateBalance(winner.getId(), winner.getWalletBalance());
+            if (success) {
+                logger.info("Đã thanh toán thành công cho: " + winner.getUsername());
+            } else {
+                logger.error("Lỗi DB: Chưa trừ được tiền người thắng!");
+            }
+        }
+    }
+
+    /**
+     * LẤY THÔNG TIN CHI TIẾT BIDDER (dùng cho profile hoặc wallet display)
+     */
+    public Bidder getBidderDetails(long bidderId) {
+        return bidderRepo.getBidderById(bidderId);
+    }
+}

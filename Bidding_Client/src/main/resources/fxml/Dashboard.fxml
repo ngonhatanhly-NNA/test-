@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+
+<StackPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #121212;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.DashboardController">
+    <children>
+
+        <BorderPane fx:id="mainBorderPane" prefHeight="720.0" prefWidth="1280.0" style="-fx-background-color: #121212;">
+            
+            <top>
+               <HBox alignment="CENTER_LEFT" prefHeight="75.0" spacing="20.0" style="-fx-background-color: #181818; -fx-padding: 0 35 0 35; -fx-border-color: #2A2A2A; -fx-border-width: 0 0 1 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 15, 0, 0, 5);" BorderPane.alignment="CENTER">
+                  <children>
+                     <Label style="-fx-effect: dropshadow(gaussian, rgba(212,175,55,0.6), 12, 0, 0, 0);" text="T13 AUCTION SYSTEM" textFill="#D4AF37">
+                        <font>
+                           <Font name="System Bold" size="24.0" />
+                        </font>
+                     </Label>
+                     
+                     <Region HBox.hgrow="ALWAYS" />
+                     
+                     <TextField prefHeight="40.0" promptText="🔍 Search auctions..." style="-fx-background-color: #121212; -fx-text-fill: #F5F5F5; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 20; -fx-border-color: rgba(212,175,55,0.3); -fx-border-radius: 20; -fx-pref-width: 320; -fx-padding: 0 20; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.8), 8, 0, 0, 2);" />
+                     
+                     <Region HBox.hgrow="ALWAYS" />
+                     
+                     <HBox alignment="CENTER" spacing="12.0" style="-fx-background-color: #242424; -fx-padding: 5 15; -fx-background-radius: 30; -fx-border-color: rgba(212,175,55,0.2); -fx-border-radius: 30;">
+                        <children>
+                           <Label fx:id="lblUsername" onMouseClicked="#handleOpenProfile" style="-fx-cursor: hand;" text="admin_team13" textFill="#E0E0E0">
+                              <font>
+                                 <Font name="System Bold" size="14.0" />
+                              </font>
+                           </Label>
+                           <Circle fill="linear-gradient(to bottom right, #D4AF37, #FFD700)" radius="18.0" stroke="#121212" strokeType="INSIDE" strokeWidth="2.0">
+                              <style>
+                                 -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 8, 0, 0, 0);
+                              </style>
+                           </Circle>
+                        </children>
+                     </HBox>
+                     
+                     <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#handleLogout" prefHeight="38.0" style="-fx-background-color: transparent; -fx-border-color: rgba(255,107,107,0.5); -fx-border-width: 1px; -fx-border-radius: 12; -fx-text-fill: #FF6B6B; -fx-cursor: hand; -fx-padding: 0 20;" text="🚪 Log out">
+                        <font>
+                           <Font name="System Bold" size="13.0" />
+                        </font>
+                     </Button>
+                  </children>
+               </HBox>
+            </top>
+
+            <left>
+               <VBox prefWidth="260.0" spacing="12.0" style="-fx-background-color: #181818; -fx-padding: 30 20; -fx-border-color: #2A2A2A; -fx-border-width: 0 1 0 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 20, 0, 5, 0);" BorderPane.alignment="CENTER">
+                  <children>
+                     <Label text="MAIN MENU" textFill="#A0A0A0">
+                        <font>
+                           <Font name="System Bold" size="12.0" />
+                        </font>
+                        <VBox.margin>
+                           <Insets bottom="5.0" left="15.0" />
+                        </VBox.margin>
+                     </Label>
+                     
+                     <Button fx:id="btnDashboard" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnDashboard" prefHeight="45.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 12; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.5), 15, 0, 0, 0);" text="🏠  Dashboard">
+                        <font>
+                           <Font name="System Bold" size="15.0" />
+                        </font>
+                     </Button>
+                     
+                     <Button fx:id="btnLiveAuctions" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnLiveAuctions" prefHeight="45.0" style="-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-background-radius: 12; -fx-cursor: hand;" text="🔨  Live Auctions">
+                        <font>
+                           <Font name="System Bold" size="15.0" />
+                        </font>
+                     </Button>
+                     
+                     <Button fx:id="btnMyInventory" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnMyInventory" prefHeight="45.0" style="-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-background-radius: 12; -fx-cursor: hand;" text="📦  My Inventory">
+                        <font>
+                           <Font name="System Bold" size="15.0" />
+                        </font>
+                     </Button>
+                     
+                     <Button fx:id="btnManagement" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnManagement" prefHeight="45.0" style="-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-background-radius: 12; -fx-cursor: hand;" text="⚙️  Management">
+                        <font>
+                           <Font name="System Bold" size="15.0" />
+                        </font>
+                     </Button>
+                     
+                     <Separator prefWidth="200.0" style="-fx-background-color: transparent; -fx-border-color: rgba(247,231,206,0.15); -fx-border-width: 1 0 0 0;">
+                        <VBox.margin>
+                           <Insets bottom="10.0" top="10.0" />
+                        </VBox.margin>
+                     </Separator>
+                     
+                     <Label text="CATEGORIES" textFill="#A0A0A0">
+                        <font>
+                           <Font name="System Bold" size="12.0" />
+                        </font>
+                        <VBox.margin>
+                           <Insets bottom="5.0" left="15.0" />
+                        </VBox.margin>
+                     </Label>
+                     
+                     <VBox spacing="15.0" style="-fx-padding: 0 0 0 15;">
+                        <CheckBox fx:id="chkElectronics" onAction="#handleCategoryFilter" style="-fx-cursor: hand;" text="Electronics" textFill="#E0E0E0">
+                           <font><Font name="System Bold" size="14.0" /></font>
+                        </CheckBox>
+                        <CheckBox fx:id="chkFineArts" onAction="#handleCategoryFilter" style="-fx-cursor: hand;" text="Fine Arts" textFill="#E0E0E0">
+                           <font><Font name="System Bold" size="14.0" /></font>
+                        </CheckBox>
+                        <CheckBox fx:id="chkVehicles" onAction="#handleCategoryFilter" style="-fx-cursor: hand;" text="Vehicles" textFill="#E0E0E0">
+                           <font><Font name="System Bold" size="14.0" /></font>
+                        </CheckBox>
+                     </VBox>
+                  </children>
+               </VBox>
+            </left>
+        </BorderPane>
+
+        <AnchorPane fx:id="gameLayer" mouseTransparent="true" pickOnBounds="false" prefHeight="720.0" prefWidth="1280.0">
+            <children>
+                <HBox alignment="CENTER" spacing="10.0" style="-fx-background-color: #181818; -fx-background-radius: 30; -fx-padding: 8 20 8 15; -fx-border-color: #D4AF37; -fx-border-width: 1px; -fx-border-radius: 30; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0);" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
+                    <children>
+                        <Circle fill="#D4AF37" radius="16.0" />
+                        <Label fx:id="bidCounter" text="Bids: 0" textFill="#D4AF37">
+                            <font>
+                                <Font name="System Bold" size="18.0" />
+                            </font>
+                        </Label>
+                    </children>
+                </HBox>
+            </children>
+        </AnchorPane>
+        
+    </children>
+</StackPane>
