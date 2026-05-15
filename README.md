@@ -55,31 +55,31 @@ mvn clean install
 ## 📋 Bảng Theo Dõi Tiến Độ Công Việc (Team 13)
 ## Bảng Đánh Giá Chi Tiết Dự Án
 
-| Nội dung đánh giá | Điểm | Mức | Thành viên tham gia | Mức độ đóng góp (%) |
-| :--- | :---: | :---: | :--- | :---: |
-| **1. Thiết kế lớp và cây kế thừa** | | | | |
-| Xác định và triển khai các lớp chính (User, Bidder/Seller/Admin, Item, Auction, BidTransaction,...) | 0.5 | Bắt buộc | Cả nhóm | |
-| Áp dụng đúng các nguyên tắc OOP (Encapsulation, Inheritance, Polymorphism, Abstraction) | 1.0 | Bắt buộc | Cả nhóm | |
-| Áp dụng design pattern phù hợp | 1.0 | Bắt buộc | Cả nhóm | |
-| **2. Chức năng chính** | | | | |
-| Quản lý người dùng, sản phẩm | 1.0 | Bắt buộc | Phong (chính), Tưởng (chính), Vũ (chính), Ánh | |
-| Chức năng đấu giá | 1.0 | Bắt buộc | Ánh (chính), Vũ | |
+| Nội dung đánh giá | Điểm | Mức | Thành viên tham gia                                                                       | Mức độ đóng góp (%) |
+| :--- | :---: | :---: |:------------------------------------------------------------------------------------------| :---: |
+| **1. Thiết kế lớp và cây kế thừa** | | |                                                                                           | |
+| Xác định và triển khai các lớp chính (User, Bidder/Seller/Admin, Item, Auction, BidTransaction,...) | 0.5 | Bắt buộc | Cả nhóm                                                                                   | |
+| Áp dụng đúng các nguyên tắc OOP (Encapsulation, Inheritance, Polymorphism, Abstraction) | 1.0 | Bắt buộc | Cả nhóm                                                                                   | |
+| Áp dụng design pattern phù hợp | 1.0 | Bắt buộc | Cả nhóm                                                                                   | |
+| **2. Chức năng chính** | | |                                                                                           | |
+| Quản lý người dùng, sản phẩm | 1.0 | Bắt buộc | Phong (chính), Tưởng (chính), Vũ (chính), Ánh                                             | |
+| Chức năng đấu giá | 1.0 | Bắt buộc | Ánh (chính), Vũ                                                                           | |
 | Xử lý lỗi & ngoại lệ | 1.0 | Bắt buộc | Phong (chính), Tưởng (chính), Ánh (Auction exception), Vũ (Item - Auction (10%)Exception) | |
-| **3. Kỹ thuật quan trọng & concurrency** | | | | |
-| Xử lý đấu giá đồng thời an toàn (tránh lost update, rollback, race condition) | 1.0 | Bắt buộc | Ánh | |
-| Realtime update (Observer/Socket): thông báo bid mới cho tất cả client | 0.5 | Bắt buộc | Ánh | |
-| **4. Tích hợp, kiến trúc & chất lượng mã** | | | | |
-| Thiết kế kiến trúc Client-Server rõ ràng | 0.5 | Bắt buộc | Ánh | |
-| Áp dụng MVC (JavaFX + FXML cho client, Controller-Model-DAO cho server) | 0.5 | Bắt buộc | Ánh, Vũ (chính), Phong (UI User) | |
-| Sử dụng Maven/Gradle, coding convention tốt, mã nguồn sạch | 0.5 | Bắt buộc | Ánh, Vũ | |
-| Unit Test (JUnit) cho logic quan trọng | 0.5 | Bắt buộc | Phong, Tưởng | |
-| Thiết lập CI/CD cơ bản (GitHub Actions + test tự động) | 0.5 | Bắt buộc | Ánh | |
-| **5. Chức năng nâng cao (tối đa 1.5đ)** | | | | |
-| Auto-Bidding (đấu giá tự động với maxBid, increment, PriorityQueue) | 0.5 | Tùy chọn | Ánh | |
-| Gia hạn phiên đấu giá (Anti-sniping) khi bid cuối | 0.5 | Tùy chọn | Ánh | |
-| Bid History Visualization: biểu đồ đường giá realtime (line chart) | 0.5 | Tùy chọn | Ánh, Vũ | |
-| Các tính năng sáng tạo khác | 0.5 | Tùy chọn | Cả nhóm | |
-| **TỔNG ĐIỂM** | **10 + 1** | | | **100%** |
+| **3. Kỹ thuật quan trọng & concurrency** | | |                                                                                           | |
+| Xử lý đấu giá đồng thời an toàn (tránh lost update, rollback, race condition) | 1.0 | Bắt buộc | Ánh                                                                                       | |
+| Realtime update (Observer/Socket): thông báo bid mới cho tất cả client | 0.5 | Bắt buộc | Ánh                                                                                       | |
+| **4. Tích hợp, kiến trúc & chất lượng mã** | | |                                                                                           | |
+| Thiết kế kiến trúc Client-Server rõ ràng | 0.5 | Bắt buộc | Ánh                                                                                       | |
+| Áp dụng MVC (JavaFX + FXML cho client, Controller-Model-DAO cho server) | 0.5 | Bắt buộc | Ánh, Vũ (chính), Phong (UI User)                                                          | |
+| Sử dụng Maven/Gradle, coding convention tốt, mã nguồn sạch | 0.5 | Bắt buộc | Ánh, Vũ                                                                                   | |
+| Unit Test (JUnit) cho logic quan trọng | 0.5 | Bắt buộc | Phong, Tưởng, Vũ(Refactor một chút)                                                       | |
+| Thiết lập CI/CD cơ bản (GitHub Actions + test tự động) | 0.5 | Bắt buộc | Ánh                                                                                       | |
+| **5. Chức năng nâng cao (tối đa 1.5đ)** | | |                                                                                           | |
+| Auto-Bidding (đấu giá tự động với maxBid, increment, PriorityQueue) | 0.5 | Tùy chọn | Ánh, Vũ (Sửa logic)                                                                       | |
+| Gia hạn phiên đấu giá (Anti-sniping) khi bid cuối | 0.5 | Tùy chọn | Ánh                                                                                       | |
+| Bid History Visualization: biểu đồ đường giá realtime (line chart) | 0.5 | Tùy chọn | Ánh, Vũ                                                                                   | |
+| Các tính năng sáng tạo khác | 0.5 | Tùy chọn | Cả nhóm                                                                                   | |
+| **TỔNG ĐIỂM** | **10 + 1** | |                                                                                           | **100%** |
 
 ## Kiến trúc hệ thống
 

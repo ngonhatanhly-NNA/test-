@@ -15,6 +15,9 @@ import com.client.session.ClientSession;
 import com.client.util.BidHistoryUtil;
 import com.client.util.ToastUtil; 
 import com.client.util.WinnerBoardUtil;
+import com.client.util.event.EventBus;
+import com.client.util.event.AuctionFinishedEvent;
+import com.client.util.event.ConnectionEvent;
 import com.shared.dto.*;
 
 import javafx.animation.Animation;
@@ -58,6 +61,9 @@ public class ViewLiveAuctions {
     public ViewLiveAuctions() { instance = this; }
     public static ViewLiveAuctions getInstance() { return instance; }
     public static ViewLiveAuctions getExistingInstance() { return instance; }
+	public long getCurrentAuctionId() { 
+        return currentAuctionId; 
+    }
 
     @FXML
     public void initialize() {
@@ -96,6 +102,31 @@ public class ViewLiveAuctions {
         countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateCountdownRealtime()));
         countdownTimeline.setCycleCount(Animation.INDEFINITE);
         countdownTimeline.play();
+
+        // ==========================================
+        // ĐĂNG KÝ BẮT SỰ KIỆN TỪ WEBSOCKET
+        // ==========================================
+        EventBus.getInstance().subscribe(AuctionUpdateDTO.class, dto -> {
+            Platform.runLater(() -> updatePriceRealtime(dto));
+        });
+
+        EventBus.getInstance().subscribe(AuctionDetailDTO.class, detail -> {
+            Platform.runLater(() -> addOrUpdateAuctionRealtime(detail));
+        });
+
+        EventBus.getInstance().subscribe(AuctionFinishedEvent.class, event -> {
+            // Truy cập thẳng biến auctionId, không có dấu ()
+            Platform.runLater(() -> handleAuctionFinishedNoWinner(event.auctionId)); 
+        });
+
+        EventBus.getInstance().subscribe(AuctionWinnerDTO.class, winnerData -> {
+            Platform.runLater(() -> showWinnerNotification(winnerData));
+        });
+
+        EventBus.getInstance().subscribe(ConnectionEvent.class, event -> {
+            Platform.runLater(() -> updateConnectionStatus(event.isConnected, event.message)); 
+        });
+        // ==========================================
 
         handleRefreshAuctions();
     }
@@ -158,7 +189,6 @@ public class ViewLiveAuctions {
         
         updateCountdownRealtime();
 
-        // 🚀 BƯỚC 3: DÙNG COMPLETABLE FUTURE TẢI LỊCH SỬ GIÁ CỰC GỌN
         CompletableFuture.supplyAsync(() -> {
             try { return AuctionNetwork.getBidHistory(a.getAuctionId()); } catch (Exception e) { return null; }
         }, actionService.getIoPool()).thenAcceptAsync(history -> {
@@ -240,7 +270,6 @@ public class ViewLiveAuctions {
         });
     }
 
-    // 🚀 BƯỚC 3: HÀM HELPER TẢI CHI TIẾT AUCTION BẰNG COMPLETABLE FUTURE
     private CompletableFuture<AuctionDetailDTO> fetchAuctionDetailAsync(long auctionId) {
         return CompletableFuture.supplyAsync(() -> {
             try { return AuctionNetwork.parseAuctionDetail(AuctionNetwork.parseResponse(AuctionNetwork.getAuctionDetail(auctionId))); } 

@@ -25,6 +25,11 @@ public class BasicBidValidation implements BidValidationStrategy {
             throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND);
         }
 
+        // Ngăn seller đặt giá vào phiên đấu giá do chính mình tạo
+        if (request.getBidderId() == auction.getSellerId()) {
+            throw new AuctionException(AuctionException.ErrorCode.SELF_BID_NOT_ALLOWED);
+        }
+
         if (auction.getStatus() != Auction.AuctionStatus.RUNNING &&
                 auction.getStatus() != Auction.AuctionStatus.OPEN) {
             throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_ACTIVE);

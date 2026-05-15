@@ -56,6 +56,11 @@ public class MyWebSocketClient extends WebSocketClient {
         logger.info("Đã kết nối thành công tới Server!");
         // PHÁT SÓNG SỰ KIỆN KẾT NỐI MẠNG (Observer Pattern)
         EventBus.getInstance().publish(new ConnectionEvent(true, "🟢 Đã kết nối Server Realtime"));
+		long currentId = com.client.controller.dashboard.ViewLiveAuctions.getInstance() != null ? 
+                 com.client.controller.dashboard.ViewLiveAuctions.getInstance().getCurrentAuctionId() : 0;
+		if (currentId > 0) {
+			this.send("JOIN_ROOM:" + currentId);
+		}
     }
 
     @Override

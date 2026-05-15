@@ -10,12 +10,40 @@ public class Vehicle extends Item {
 
 
     public Vehicle(){};
-    public Vehicle(int id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls, int manufactureYear, int mileage, String vinNumber) {
-        super(id, name, description, startingPrice, condition, imageUrls);
-        this.manufactureYear = manufactureYear;
-        this.mileage = mileage;
-        this.vinNumber = vinNumber;
+
+//    public Vehicle(int id, String name, String description, BigDecimal startingPrice, String condition, List<String> imageUrls, int manufactureYear, int mileage, String vinNumber) {
+//        super(id, name, description, startingPrice, condition, imageUrls);
+//        this.manufactureYear = manufactureYear;
+//        this.mileage = mileage;
+//        this.vinNumber = vinNumber;
+//    }
+
+    //Constructor Art include Builder Obj
+    private Vehicle(Builder builder) {
+        super(builder);
+        this.manufactureYear = builder.manufactureYear;
+        this.vinNumber = builder.vinNumber;
+        this.mileage = builder.mileage;
     }
+
+    //Vehicle.Builder
+    public static class Builder extends Item.Builder<Builder> {
+        private int manufactureYear;
+        private String vinNumber;
+        private int mileage;
+
+        @Override
+        protected Builder self() {return this;}
+
+        public Builder manufactureYear(int manufactureYear) {this.manufactureYear = manufactureYear; return this;}
+        public Builder vinNumber(String vinNumber) {this.vinNumber = vinNumber; return this;}
+        public Builder mileage(int mileage) {this.mileage = mileage; return this;}
+
+        @Override
+        public Vehicle build() {return new Vehicle(this);}
+
+    }
+
 
     public int getManufactureYear() { return manufactureYear; }
     public String getVinNumber() { return vinNumber; }

@@ -25,6 +25,7 @@ public class AuctionException extends Exception {
         // [THÊM MỚI] Lỗi tài chính và người dùng
         USER_NOT_FOUND("Không tìm thấy thông tin tài khoản người dùng."),
         INSUFFICIENT_BALANCE("Số dư trong ví không đủ để thực hiện giao dịch."),
+        SELF_BID_NOT_ALLOWED("Người bán không được phép đặt giá vào phiên đấu giá do chính mình tạo ra."),
 
         // Lỗi hệ thống
         OPERATION_FAILED("Thao tác thất bại do lỗi hệ thống.");

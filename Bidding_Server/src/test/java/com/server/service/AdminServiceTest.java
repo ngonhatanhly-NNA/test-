@@ -53,9 +53,35 @@ class AdminServiceTest {
         sampleBidder.setId(10L);
         sampleBidder.setWalletBalance(new BigDecimal("500"));
 
+
         sampleItems = new ArrayList<>();
-        sampleItems.add(new Electronics(1, "Laptop", "Mới", new BigDecimal("20000"), "Mới", Collections.emptyList(), "Dell", "XPS", 12));
-        sampleItems.add(new Art(2, "Tranh Sơn Dầu", "Cũ", new BigDecimal("5000"), "Cũ", Collections.emptyList(), "Van Gogh", "Sơn dầu", false));
+
+        // Dùng Factory để tạo Item cho Test
+        Map<String, Object> elecProps = Map.of("brand", "Dell", "model", "XPS", "warrantyMonths", 12);
+        sampleItems.add(ItemFactory.createItem(
+                "ELECTRONICS",           // 1. type
+                1,                       // 2. id
+                10,                      // 3. sellerId
+                "Laptop",                // 4. name
+                "Mới",                   // 5. description
+                new BigDecimal("20000"), // 6. startPrice (ĐÃ ĐƯA VỀ ĐÚNG VỊ TRÍ)
+                "Mới",                   // 7. condition (ĐÃ ĐƯA VỀ ĐÚNG VỊ TRÍ)
+                Collections.emptyList(), // 8. imageUrls (ĐÃ ĐƯA VỀ ĐÚNG VỊ TRÍ)
+                elecProps                // 9. extraProps
+        ));
+
+        Map<String, Object> artProps = Map.of("artistName", "Van Gogh", "material", "Sơn dầu", "hasCertificateOfAuthenticity", false);
+        sampleItems.add(ItemFactory.createItem(
+                "ART",                   // 1. type
+                2,                       // 2. id
+                10,                      // 3. sellerId
+                "Tranh",                 // 4. name
+                "Cũ",                    // 5. description
+                new BigDecimal("5000"),  // 6. startPrice (ĐÃ ĐƯA VỀ ĐÚNG VỊ TRÍ)
+                "Cũ",                    // 7. condition (ĐÃ ĐƯA VỀ ĐÚNG VỊ TRÍ)
+                Collections.emptyList(), // 8. imageUrls (ĐÃ ĐƯA VỀ ĐÚNG VỊ TRÍ)
+                artProps                 // 9. extraProps
+        ));
     }
     
     private void setField(Object target, String fieldName, Object value) throws Exception {

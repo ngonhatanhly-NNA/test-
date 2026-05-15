@@ -8,7 +8,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.AnchorPane; 
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.input.MouseEvent;
 
 import java.io.IOException;
@@ -20,16 +20,16 @@ import com.client.session.ClientSession;
 public class DashboardController {
 
     @FXML private BorderPane mainBorderPane;
-    private SwitchPane mainPane; 
+    private SwitchPane mainPane;
 
     @FXML private Button btnDashboard, btnLiveAuctions, btnMyInventory, btnLogout, btnManagement;
     @FXML private Label lblUsername;
     @FXML private TextField searchField;
     @FXML private CheckBox chkElectronics, chkFineArts, chkVehicles;
 
-    @FXML private AnchorPane gameLayer; 
-    @FXML private Label bidCounter;     
-    
+    @FXML private AnchorPane gameLayer;
+    @FXML private Label bidCounter;
+
     private MiniGameManager gameManager; // Đã tách Game logic ra đây!
     public static DashboardController instance;
 
@@ -52,15 +52,15 @@ public class DashboardController {
         }
 
         instance = this;
-        
+
         // Khởi động Game Manager
         if (gameLayer != null) {
             gameManager = new MiniGameManager(gameLayer, bidCounter);
             gameManager.start();
         }
-        
+
         handleBtnDashboard(null);
-        
+
         DashboardNavigation.setOpenLiveAuctions(() -> handleBtnLiveAuctions(null));
         DashboardNavigation.setNavigateToAuctionDetail(auctionId -> handleBtnLiveAuctions(null));
     }
@@ -72,7 +72,7 @@ public class DashboardController {
     }
 
     private void setActiveButton(Button activeButton) {
-        String defaultStyle = "-fx-background-color: transparent; -fx-text-fill: #333333; -fx-alignment: CENTER_LEFT; -fx-padding: 12; -fx-font-size: 14px;";
+        String defaultStyle = "-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 12; -fx-font-size: 14px;";
         if (btnDashboard != null) btnDashboard.setStyle(defaultStyle);
         if (btnLiveAuctions != null) btnLiveAuctions.setStyle(defaultStyle);
         if (btnMyInventory != null) btnMyInventory.setStyle(defaultStyle);
@@ -113,14 +113,14 @@ public class DashboardController {
     @FXML
     void handleLogout(ActionEvent event) throws IOException {
         ClientSession.clear();
-        SceneController.switchScene(event, "AuctionMenu.fxml"); 
+        SceneController.switchScene(event, "AuctionMenu.fxml");
     }
 
     @FXML
     void handleCategoryFilter(ActionEvent event) {
         handleNewBidEvent(); // Gọi sang GameManager
     }
-    
+
     @FXML
     void handleOpenProfile (MouseEvent event) {
         mainPane.loadView("UserProfile.fxml");

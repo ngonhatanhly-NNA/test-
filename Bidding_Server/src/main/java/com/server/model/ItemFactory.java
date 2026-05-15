@@ -18,36 +18,64 @@ public class ItemFactory {
     // Registry lưu trữ các bộ khởi tạo
     private static final Map<String, ItemCreator> registry = new HashMap<>();
 
-    // Khối static Đăng ký Creator
+    // Khối static Đăng ký Creator (Đóng vai trò Director điều phối các Builder)
     static {
         registry.put("ELECTRONICS", (id, sellerId, name, desc, price, cond, imgs, props) -> {
-            String brand = asString(props.get("brand"));
-            String model = asString(props.get("model"));
-            int warranty = asInt(props.get("warrantyMonths"), 0);
-            Electronics e = new Electronics(id, name, desc, price, cond, imgs, brand, model, warranty);
-            e.setSellerId(sellerId);
-            return e;
+            // Thay vì gọi new Electronics(id, name, desc...) dài ngoằng
+            // Ta gọi Electronics.Builder() và bắt đầu chuỗi (chaining) Lắp ráp.
+            // Các thuộc tính chung (id, name...) được nối mượt mà với thuộc tính riêng (brand, model...)
+            return new Electronics.Builder()
+                    .id(id) // Lắp ID (Thuộc tính của lớp Cha)
+                    .sellerId(sellerId) // Lắp ID người bán (Thuộc tính của lớp Cha)
+                    .name(name) // Lắp Tên (Thuộc tính của lớp Cha)
+                    .description(desc) // Lắp Mô tả
+                    .startingPrice(price) // Lắp Giá khởi điểm
+                    .condition(cond) // Lắp Tình trạng
+                    .imageUrls(imgs) // Lắp danh sách Ảnh
+                    // Bắt đầu lắp các thuộc tính ĐẶC THÙ của lớp Con (Electronics)
+                    .brand(asString(props.get("brand")))
+                    .model(asString(props.get("model")))
+                    .warrantyMonths(asInt(props.get("warrantyMonths"), 0))
+                    // Lệnh CHỐT: Gọi build() để thợ xây trả về sản phẩm hoàn thiện
+                    .build();
         });
 
         registry.put("VEHICLE", (id, sellerId, name, desc, price, cond, imgs, props) -> {
-            int manufactureYear = asInt(props.get("manufactureYear"), 2000);
-            int mileage = asInt(props.get("mileage"), 0);
-            String vinNumber = asString(props.get("vinNumber"));
-            Vehicle v = new Vehicle(id, name, desc, price, cond, imgs, manufactureYear, mileage, vinNumber);
-            v.setSellerId(sellerId);
-            return v;
+            return new Vehicle.Builder()
+                    .id(id)
+                    .sellerId(sellerId)
+                    .name(name)
+                    .description(desc)
+                    .startingPrice(price)
+                    .condition(cond)
+                    .imageUrls(imgs)
+                    .manufactureYear(asInt(props.get("manufactureYear"), 2000))
+                    .mileage(asInt(props.get("mileage"), 0))
+                    .vinNumber(asString(props.get("vinNumber")))
+                    .build();
         });
 
         registry.put("ART", (id, sellerId, name, desc, price, cond, imgs, props) -> {
-            String artistName = asString(props.get("artistName"));
-            String material = asString(props.get("material"));
-            boolean hasCertificate = asBoolean(props.get("hasCertificateOfAuthenticity"), false);
-            Art a = new Art(id, name, desc, price, cond, imgs, artistName, material, hasCertificate);
-            a.setSellerId(sellerId);
-            return a;
+            // =====================================================================
+            // [NHIỆM VỤ CỦA HAWKIE]: Tự tay gõ lại đoạn này bằng Art.Builder()
+            // Cẩn thận kiểu boolean của hasCertificateOfAuthenticity
+            // Gợi ý: .hasCertificateOfAuthenticity(asBoolean(props.get("hasCertificateOfAuthenticity"), false))
+            // =====================================================================
+
+            return new Art.Builder()
+                    .id(id)
+                    .sellerId(sellerId)
+                    .name(name)
+                    .description(desc)
+                    .startingPrice(price)
+                    .condition(cond)
+                    .imageUrls(imgs)
+                    .artistName(asString(props.get("artist")))
+                    .material(asString(props.get("material")))
+                    .hasCertificateOfAuthenticity(asBoolean(props.get("hasCertificateOfAuthenticity"), false))
+                    .build();
         });
     }
-
 
     // Sau này có type goị: ItemFactory.registerCreator("REAL_ESTATE", creatorLambda);
     public static void registerCreator(String type, ItemCreator creator) {

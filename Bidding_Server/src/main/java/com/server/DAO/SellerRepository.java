@@ -1,13 +1,7 @@
 package com.server.DAO;
 
 import com.server.config.DBConnection;
-import com.server.model.Art;
-import com.server.model.Electronics;
-import com.server.model.Item;
-import com.server.model.Role;
-import com.server.model.Seller;
-import com.server.model.Status;
-import com.server.model.Vehicle;
+import com.server.model.*;
 import com.shared.dto.TransferHistoryDTO;
 
 import java.math.BigDecimal;
@@ -269,11 +263,16 @@ public class SellerRepository implements ISellerRepository {
     }
 
     /**
-     * Map ResultSet -> Item (Electronics / Art / Vehicle).
+     * Map ResultSet -> Item (Sử dụng Factory Method kết hợp Builder Pattern)
      */
     private Item mapResultSetToItem(ResultSet rs) throws SQLException {
+        // [ĐÃ SỬA]: Lấy ĐẦY ĐỦ các thuộc tính chung từ ResultSet
         String itemType = rs.getString("item_type");
         int id = rs.getInt("id");
+
+        // BỔ SUNG DÒNG NÀY: Móc cột seller_id từ Database ra để truyền cho Factory!
+        int sellerId = rs.getInt("seller_id");
+
         String name = rs.getString("name");
         String description = rs.getString("description");
         BigDecimal startingPrice = rs.getBigDecimal("startingPrice");
@@ -285,17 +284,51 @@ public class SellerRepository implements ISellerRepository {
             imgList = java.util.Arrays.asList(imgString.split(","));
         }
 
-        if ("Electronics".equals(itemType)) {
-            return new Electronics(id, name, description, startingPrice, condition, imgList,
-                    rs.getString("brand"), rs.getString("model"), rs.getInt("warrantyMonths"));
-        } else if ("Art".equals(itemType)) {
-            return new Art(id, name, description, startingPrice, condition, imgList,
-                    rs.getString("artistName"), rs.getString("material"),
-                    rs.getBoolean("hasCertificateOfAuthenticity"));
-        } else if ("Vehicle".equals(itemType)) {
-            return new Vehicle(id, name, description, startingPrice, condition, imgList,
-                    rs.getInt("manufactureYear"), rs.getInt("mileage"), rs.getString("vinNumber"));
-        }
-        return null;
+        //        //Thay thế Constructor cứng ngắc bằng Builder Pattern linh hoạt
+//        if ("Electronics".equals(itemType)) {
+//            return new Electronics.Builder()
+//                    .id(id).name(name).description(description).startingPrice(startingPrice).condition(condition).imageUrls(imgList)
+//                    .brand(rs.getString("brand"))
+//                    .model(rs.getString("model"))
+//                    .warrantyMonths(rs.getInt("warrantyMonths"))
+//                    .build();
+//        } else if ("Art".equals(itemType)) {
+//            return new Art.Builder()
+//                    .id(id).name(name).description(description).startingPrice(startingPrice).condition(condition).imageUrls(imgList)
+//                    .artistName(rs.getString("artistName"))
+//                    .material(rs.getString("material"))
+//                    .hasCertificateOfAuthenticity(rs.getBoolean("hasCertificateOfAuthenticity"))
+//                    .build();
+//        } else if ("Vehicle".equals(itemType)) {
+//            return new Vehicle.Builder()
+//                    .id(id).name(name).description(description).startingPrice(startingPrice).condition(condition).imageUrls(imgList)
+//                    .manufactureYear(rs.getInt("manufactureYear"))
+//                    .mileage(rs.getInt("mileage"))
+//                    .vinNumber(rs.getString("vinNumber"))
+//                    .build();
+//        }
+//        return null;
+
+        // Tống tất cả các cột thuộc tính riêng vào cái "Giỏ Đi Chợ" (Map)
+        Map<String, Object> extraProps = new HashMap<>();
+        extraProps.put("brand", rs.getString("brand"));
+        extraProps.put("model", rs.getString("model"));
+        extraProps.put("warrantyMonths", rs.getInt("warrantyMonths"));
+        extraProps.put("artistName", rs.getString("artistName"));
+        extraProps.put("material", rs.getString("material"));
+        extraProps.put("hasCertificateOfAuthenticity", rs.getBoolean("hasCertificateOfAuthenticity"));
+        extraProps.put("manufactureYear", rs.getInt("manufactureYear"));
+        extraProps.put("vinNumber", rs.getString("vinNumber"));
+        extraProps.put("mileage", rs.getInt("mileage"));
+
+        // Chuẩn hóa chữ "Electronics" thành "ELECTRONICS" để khớp với Registry trong Factory
+        String normalizedType = normalizeItemType(itemType);
+
+        // Giao việc nặn Object cho Factory. Truyền đầy đủ sellerId vừa moi ra từ DB!
+        return ItemFactory.createItem(normalizedType, id, sellerId, name, description, startingPrice, condition, imgList, extraProps);
+    }
+
+    private String normalizeItemType(String itemType) {
+        return (itemType == null) ? "" : itemType.trim().toUpperCase();
     }
 }

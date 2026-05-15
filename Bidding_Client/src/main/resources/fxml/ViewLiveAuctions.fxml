@@ -41,7 +41,7 @@
             </Label>
         </VBox>
         <Region HBox.hgrow="ALWAYS" />
-        
+
         <HBox spacing="15.0">
             <Button onAction="#handleToggleSidebar" style="-fx-background-color: transparent; -fx-border-color: rgba(212,175,55,0.6); -fx-border-width: 1.5; -fx-border-radius: 8; -fx-background-radius: 8; -fx-text-fill: #D4AF37; -fx-cursor: hand; -fx-padding: 10 20;" text="👁 Toggle List">
                 <font>
@@ -77,7 +77,7 @@
                 </Label>
             </HBox>
             <Separator style="-fx-background-color: transparent; -fx-border-color: #2A2A2A; -fx-border-width: 1.5 0 0 0;" />
-            
+
             <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #181818; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
                 <content>
                     <VBox fx:id="auctionsContainer" spacing="12.0" style="-fx-background-color: #181818; -fx-padding: 4;" />
@@ -87,7 +87,7 @@
 
 
         <VBox prefWidth="320.0" spacing="20.0" style="-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.2); -fx-border-width: 1.5; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 15, 0, 0, 5);">
-            
+
             <StackPane prefHeight="260.0" style="-fx-background-color: #242424; -fx-background-radius: 12; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 12; -fx-border-width: 1; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.6), 15, 0, 0, 5);">
                 <ImageView fx:id="itemImageView" fitHeight="230.0" fitWidth="280.0" pickOnBounds="true" preserveRatio="true">
                     <image>
@@ -151,7 +151,7 @@
                         <Label style="-fx-letter-spacing: 1.5px;" text="CURRENT HIGHEST BID" textFill="#A0A0A0">
                             <font><Font name="System Bold" size="13.0" /></font>
                         </Label>
-                        
+
                         <Label fx:id="currentPriceLabel" text="0.0 VNĐ">
                             <font><Font name="System Bold" size="44.0" /></font>
                             <textFill>
@@ -166,7 +166,7 @@
                                 <DropShadow color="#000000" offsetY="4.0" radius="5.0" />
                             </effect>
                         </Label>
-                        
+
                         <Label fx:id="leaderLabel" style="-fx-background-color: rgba(255,255,255,0.05); -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 12; -fx-padding: 5 15; -fx-background-radius: 12;" text="Current Winner: No bids" textFill="#3B82F6">
                             <font><Font name="System Bold" size="14.0" /></font>
                         </Label>
@@ -181,11 +181,11 @@
                         <tooltip><Tooltip text="Xem danh sách các lượt đặt giá chi tiết" /></tooltip>
                     </Button>
 
-                    <VBox spacing="10.0">
+                    <VBox fx:id="bidSectionBox" spacing="10.0">
                         <HBox spacing="12.0">
                             <TextField fx:id="bidAmountField" prefHeight="50.0" promptText="EX: 1.600.000 VNĐ" style="-fx-background-color: rgba(0,0,0,0.2); -fx-text-fill: #F5F5F5; -fx-prompt-text-fill: #64748B; -fx-background-radius: 10; -fx-border-color: rgba(212,175,55,0.4); -fx-border-width: 1.5; -fx-border-radius: 10; -fx-padding: 0 15; -fx-font-size: 15px; -fx-font-weight: bold; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.8), 8, 0, 0, 3);" HBox.hgrow="ALWAYS" />
-                            
-                            <Button onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="150.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0);" text="PLACE BID">
+
+                            <Button fx:id="placeBidBtn" onAction="#handlePlaceBid" prefHeight="50.0" prefWidth="150.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0);" text="PLACE BID">
                                 <font><Font name="System ExtraBold" size="15.0" /></font>
                             </Button>
                         </HBox>
@@ -194,24 +194,31 @@
                         </Label>
                     </VBox>
 
-                    <VBox spacing="15.0" style="-fx-background-color: #242424; -fx-border-color: rgba(255,255,255,0.05); -fx-border-width: 1.5; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 20;">
+                    <Label fx:id="selfAuctionNoticeLabel" managed="false" visible="false"
+                           text="⚠️ Bạn là người tạo phiên đấu giá này — không thể đặt giá."
+                           textFill="#F59E0B" wrapText="true"
+                           style="-fx-background-color: rgba(245,158,11,0.1); -fx-background-radius: 8; -fx-border-color: rgba(245,158,11,0.4); -fx-border-radius: 8; -fx-padding: 10 15;">
+                        <font><Font name="System Bold" size="13.0" /></font>
+                    </Label>
+
+                    <VBox fx:id="autoBidSectionBox" spacing="15.0" style="-fx-background-color: #242424; -fx-border-color: rgba(255,255,255,0.05); -fx-border-width: 1.5; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 20;">
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                             <Label text="🤖 Activate Auto-bid" textFill="#E0E0E0">
                                 <font><Font name="System Bold" size="15.0" /></font>
                             </Label>
                             <Region HBox.hgrow="ALWAYS" />
                             <Label fx:id="autoBidStatusLabel" style="-fx-background-color: rgba(255,255,255,0.1); -fx-padding: 4 12; -fx-background-radius: 6; -fx-border-color: transparent;" text="Inactive" textFill="#A0A0A0">
-                                 <font><Font name="System Bold" size="12.0" /></font>
+                                <font><Font name="System Bold" size="12.0" /></font>
                             </Label>
                         </HBox>
-                        
+
                         <CheckBox fx:id="enableAutoBidCheckBox" text="Highest limit" textFill="#A0A0A0">
                             <font><Font name="System Bold" size="13.0" /></font>
                         </CheckBox>
-                        
+
                         <TextField fx:id="maxAutoBidField" prefHeight="42.0" promptText="Enter maximum auto-bid price..." style="-fx-background-color: #121212; -fx-text-fill: #E0E0E0; -fx-prompt-text-fill: #64748B; -fx-background-radius: 8; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 8; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.5), 6, 0, 0, 2);" />
                         <TextField fx:id="customStepPriceField" prefHeight="42.0" promptText="Enter custom step price (Optional)..." style="-fx-background-color: #121212; -fx-text-fill: #E0E0E0; -fx-prompt-text-fill: #64748B; -fx-background-radius: 8; -fx-border-color: rgba(255,255,255,0.1); -fx-border-radius: 8; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.5), 6, 0, 0, 2);" />
-                        
+
                         <HBox alignment="CENTER_LEFT" spacing="12.0">
                             <Button onAction="#handleUpdateAutoBid" prefHeight="40.0" style="-fx-background-color: #334155; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 0 30;" text="Save">
                                 <font><Font name="System Bold" size="13.0" /></font>
@@ -221,7 +228,7 @@
                             </Button>
                         </HBox>
                     </VBox>
-                    
+
                 </VBox>
             </content>
         </ScrollPane>

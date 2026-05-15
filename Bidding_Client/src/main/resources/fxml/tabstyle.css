@@ -11,7 +11,7 @@
    2. STYLE CHO TAB BÌNH THƯỜNG (Nền xám đen, viền vàng mờ)
    ======================================================== */
 .tab-pane .tab {
-    -fx-background-color: #242424; /* Nền tệp với Dark Mode */
+    -fx-background-color: #242424;
     -fx-background-radius: 20;
     -fx-border-radius: 20;
     -fx-border-color: rgba(212, 175, 55, 0.3); /* Viền vàng kim nhạt */
@@ -22,9 +22,9 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 8, 0, 0, 3); /* Bóng tối đổ nhẹ */
 }
 
-/* Màu chữ xám nhạt cho nút bình thường */
+/* Màu chữ sáng cho nút bình thường (phù hợp nền tối) */
 .tab-pane .tab .tab-label {
-    -fx-text-fill: #A0A0A0;
+    -fx-text-fill: #E0E0E0;
     -fx-font-weight: bold;
     -fx-font-size: 14px;
 }
@@ -33,28 +33,28 @@
    3. HIỆU ỨNG KHI DI CHUỘT VÀO (Sáng nền, viền vàng rực hơn)
    ======================================================== */
 .tab-pane .tab:hover {
-    -fx-background-color: #333333; /* Sáng hơn màu nền 1 tông */
-    -fx-border-color: rgba(212, 175, 55, 0.8); /* Viền vàng sáng lên */
-    -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.25), 10, 0, 0, 0); /* Ánh glow mờ */
+    -fx-background-color: #2E2E2E;
+    -fx-border-color: rgba(212, 175, 55, 0.7);
+    -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.35), 10, 0, 0, 3);
 }
 
 .tab-pane .tab:hover .tab-label {
-    -fx-text-fill: #F5F5F5; /* Chữ sáng lên */
+    -fx-text-fill: #FFD700;
 }
 
 /* ========================================================
    4. STYLE CHO NÚT ĐANG ĐƯỢC CHỌN (Gradient Vàng - Chữ Đen)
    ======================================================== */
 .tab-pane .tab:selected {
-    -fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); /* Tone vàng đồng bộ với app */
-    -fx-border-color: #FFD700; 
+    -fx-background-color: linear-gradient(to right, #2A2200, #1A1500);
+    -fx-border-color: #D4AF37; /* Vàng kim nguyên bản */
     -fx-border-width: 2;
     -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.65), 15, 0, 0, 0); /* Glow vàng rực rỡ */
 }
 
 /* Màu chữ Đen quyền lực cho nút đang chọn */
 .tab-pane .tab:selected .tab-label {
-    -fx-text-fill: #121212; 
+    -fx-text-fill: #FFD700;
     -fx-font-weight: 900;
 }
 
@@ -131,99 +131,94 @@
 .input-block .text-area .content {
     -fx-background-color: transparent;
 }
-
 /* ========================================================
-   STYLE CHO TABLE VIEW (BẢNG DỮ LIỆU) - DARK MODE
+   CSS CHO TABLEVIEW - DARK MODE
    ======================================================== */
+
+/* Nền tổng thể của bảng */
 .table-view {
-    -fx-background-color: #181818; /* Nền tổng thể tối */
-    -fx-border-color: rgba(212, 175, 55, 0.3); /* Viền mờ vàng kim */
-    -fx-border-width: 1.5px;
-    -fx-border-radius: 12px;
-    -fx-background-radius: 12px;
+    -fx-background-color: transparent;
+    -fx-control-inner-background: #1A1A1A;
+    -fx-control-inner-background-alt: #202020;
+    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 0;
 }
 
-/* Vùng chứa tiêu đề cột (Header Background) */
+/* Placeholder khi bảng trống */
+.table-view .placeholder .label {
+    -fx-text-fill: #A0A0A0;
+}
+
+/* Header row */
 .table-view .column-header-background {
     -fx-background-color: #121212;
-    -fx-background-radius: 10px 10px 0 0;
-    -fx-border-color: transparent transparent #D4AF37 transparent; /* Gạch dưới viền vàng */
-    -fx-border-width: 2px;
+    -fx-background-radius: 10 10 0 0;
 }
 
-/* Từng ô tiêu đề cột */
-.table-view .column-header, .table-view .filler {
-    -fx-background-color: transparent;
-    -fx-size: 45px; /* Tăng độ cao header cho sang trọng */
+.table-view .column-header,
+.table-view .filler {
+    -fx-background-color: #121212;
+    -fx-border-color: transparent rgba(212, 175, 55, 0.2) transparent transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-size: 44;
 }
 
-/* Chữ của tiêu đề cột */
 .table-view .column-header .label {
-    -fx-text-fill: #D4AF37; /* Chữ Vàng Gold */
+    -fx-text-fill: #D4AF37;
     -fx-font-weight: bold;
-    -fx-font-size: 14px;
-    -fx-alignment: center;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER;
 }
 
-/* Từng dòng dữ liệu (Row) */
+/* Các row dữ liệu */
 .table-row-cell {
-    -fx-background-color: #242424;
-    -fx-border-color: transparent transparent rgba(255,255,255,0.05) transparent; /* Kẻ vạch ngang siêu mờ */
-    -fx-text-background-color: #E0E0E0; /* Màu chữ mặc định cho ô */
-    -fx-padding: 5px 0; /* Cho các dòng cách xa nhau ra một tí */
+    -fx-background-color: #1A1A1A;
+    -fx-border-color: transparent transparent rgba(255,255,255,0.04) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-cell-size: 46px;
 }
 
-/* Hiệu ứng ngựa vằn (Zebra stripe) xen kẽ 2 màu tối cho dễ đọc */
 .table-row-cell:odd {
-    -fx-background-color: #1E1E1E;
+    -fx-background-color: #202020;
 }
 
-/* Khi di chuột vào dòng (Hover) */
 .table-row-cell:hover {
-    -fx-background-color: #333333;
+    -fx-background-color: #2A2200;
+    -fx-border-color: transparent transparent rgba(212,175,55,0.2) transparent;
 }
 
-/* Khi bấm chọn dòng (Selected) */
 .table-row-cell:selected {
-    -fx-background-color: rgba(212, 175, 55, 0.15); /* Ám vàng kim */
-    -fx-border-color: transparent transparent #D4AF37 transparent;
-}
-.table-row-cell:selected .text {
-    -fx-fill: #FFD700; /* Chữ tự động đổi sang Vàng rực khi click */
+    -fx-background-color: rgba(212, 175, 55, 0.15);
+    -fx-border-color: rgba(212, 175, 55, 0.4);
 }
 
-/* Xóa cái ô vuông trắng thừa ở góc trên cùng bên phải của Header */
-.table-view .corner {
-    -fx-background-color: transparent;
-}
-
-/* ========================================================
-   STYLE CHO TEXT AREA (KHỐI SYSTEM REVENUE)
-   ======================================================== */
-.text-area {
-    -fx-background-color: transparent; /* Xóa nền trắng mặc định của khung ngoài */
-    -fx-text-fill: #E0E0E0; /* Chữ xám sáng */
-    -fx-font-family: "Consolas", monospace; /* Dùng phông chữ chuẩn cho hiển thị Log/Báo cáo */
+/* Chữ trong cell */
+.table-row-cell .table-cell {
+    -fx-text-fill: #E0E0E0;
     -fx-font-size: 14px;
+    -fx-border-color: transparent;
+    -fx-padding: 0 10;
 }
 
-/* Phần nền thực sự chứa nội dung */
-.text-area .content {
-    -fx-background-color: #181818; /* Đẩy xuống màu đen nhánh */
-    -fx-background-radius: 12px;
-    -fx-border-color: rgba(212, 175, 55, 0.3); /* Viền vàng nhạt */
-    -fx-border-width: 1.5px;
-    -fx-border-radius: 12px;
-    -fx-padding: 15px; /* Tăng lề bên trong cho dễ nhìn */
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: #FFD700;
 }
 
-/* Khi được focus (Click chuột vào) */
-.text-area:focused .content {
-    -fx-border-color: #D4AF37; /* Sáng viền vàng rõ ràng */
-    -fx-effect: dropshadow(gaussian, rgba(212, 175, 55, 0.4), 15, 0, 0, 0); /* Tỏa bóng vàng */
+/* Scrollbar bên trong TableView */
+.table-view .scroll-bar:vertical,
+.table-view .scroll-bar:horizontal {
+    -fx-background-color: #1A1A1A;
 }
 
-/* Xóa viền bao ngoài mặc định của Focus JavaFX */
-.text-area:focused {
-    -fx-background-color: transparent; 
+.table-view .scroll-bar:vertical .thumb,
+.table-view .scroll-bar:horizontal .thumb {
+    -fx-background-color: rgba(212, 175, 55, 0.4);
+    -fx-background-radius: 4;
+}
+
+.table-view .scroll-bar:vertical .thumb:hover,
+.table-view .scroll-bar:horizontal .thumb:hover {
+    -fx-background-color: rgba(212, 175, 55, 0.7);
 }
