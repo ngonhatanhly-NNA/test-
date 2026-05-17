@@ -38,19 +38,27 @@ Dự án sử dụng mô hình Client-Server, do đó bạn cần khởi chạy 
 1. Mở MySQL Workbench hoặc CLI.
 2. Tạo một schema mới cho dự án.
 3. Chạy file script SQL được đính kèm trong source code: `script_db.sql` để tự động tạo cấu trúc các bảng (`Users`, `Bidder`, `Seller`, `Admin`, `Items`,...).
-4. Mở file `Bidding_Server/src/main/java/com/server/config/DBConnection.java` và điều chỉnh lại `URL`, `USERNAME`, `PASSWORD` sao cho khớp với MySQL cục bộ của bạn.
-
+4. Chạy file TEST để tạo tài khoản và các dữ liệu thử ban đầu
+5. Tạo file application.properties trong Bidding Server và ghi các thông tin về tài khoản sql của bạn
 ### 3. Build Dự án với Maven
 Mở terminal tại thư mục gốc của dự án (nơi chứa file `pom.xml` tổng) và chạy lệnh:
 ```bash
 mvn clean install
-
-
-
 ```
  Server sẽ chạy ở:
 - REST: http://localhost:7070
 - WebSocket: ws://localhost:8080
+`
+### 4. Cách khởi động Server và Client
+1. Mở cmd or git bash:
+   ```
+   mvn exec:java -pl Bidding_Server -Dexec.mainClass="com.server.ServerApp"
+   ```
+ 2. Để chạy client, có thể tạo ra nhiều client khác nhau:
+```
+
+mvn exec:java -pl Bidding_Client -Dexec.mainClass="com.client.Launcher"
+```
 
 ## 📋 Bảng Theo Dõi Tiến Độ Công Việc (Team 13)
 ## Bảng Đánh Giá Chi Tiết Dự Án

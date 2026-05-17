@@ -4,8 +4,11 @@ import com.google.gson.Gson;
 import com.server.DAO.BidderRepository;
 import com.server.DAO.IBidderRepository;
 import com.server.model.Bidder;
+import com.shared.dto.WalletTransactionDTO;
 import com.shared.network.Response;
+
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,7 @@ public class BidderService {
 
     /**
      * NẠP TIỀN VÀ LƯU DATABASE (Overload 1: với Bidder object)
+     * Sau khi nạp thành công, ghi log giao dịch vào wallet_transactions.
      */
     public String depositMoney(Bidder bidder, double amount) {
         try {
@@ -39,10 +43,14 @@ public class BidderService {
             // 1. Cộng tiền vào Object (RAM)
             bidder.addFunds(depositAmount);
 
-            // 2. Lưu vào Database (Liên kết thật)
+            // 2. Lưu vào Database
             boolean isSaved = bidderRepo.updateBalance(bidder.getId(), bidder.getWalletBalance());
 
             if (isSaved) {
+                // 3. Ghi log giao dịch nạp tiền
+                String description = String.format("Nạp tiền vào ví: +%,.0f VNĐ", amount);
+                bidderRepo.logTransaction(bidder.getId(), depositAmount, "DEPOSIT", description);
+
                 return gson.toJson(new Response("SUCCESS", "Nạp tiền thành công! Số dư: " + bidder.getWalletBalance(), bidder));
             } else {
                 // Rollback Object nếu DB lỗi
@@ -58,7 +66,7 @@ public class BidderService {
 
     /**
      * NẠP TIỀN VÀ LƯU DATABASE (Overload 2: với bidderId)
-     * Dùng từ Controller khi chỉ có ID
+     * Dùng từ Controller khi chỉ có ID.
      */
     public String depositMoney(long bidderId, double amount) {
         try {
@@ -92,19 +100,48 @@ public class BidderService {
     }
 
     /**
-     * TRỪ TIỀN KHI THẮNG ĐẤU GIÁ
+     * TRỪ TIỀN KHI THẮNG ĐẤU GIÁ.
+     * Sau khi trừ thành công, ghi log giao dịch vào wallet_transactions.
+     *
+     * @param winner      Bidder thắng đấu giá
+     * @param finalAmount Số tiền cần thanh toán
+     * @param itemName    Tên sản phẩm đấu giá (để ghi vào mô tả)
      */
-    public void settlePayment(Bidder winner, double finalAmount) {
+    public void settlePayment(Bidder winner, double finalAmount, String itemName) {
         BigDecimal amountToDeduct = BigDecimal.valueOf(finalAmount);
 
         if (winner.deductFunds(amountToDeduct)) {
             boolean success = bidderRepo.updateBalance(winner.getId(), winner.getWalletBalance());
             if (success) {
+                // Ghi log giao dịch trừ tiền
+                String description = String.format("Thanh toán đấu giá thành công: %s (-%,.0f VNĐ)",
+                        itemName != null ? itemName : "Không rõ", finalAmount);
+                bidderRepo.logTransaction(winner.getId(), amountToDeduct, "DEDUCT", description);
                 logger.info("Đã thanh toán thành công cho: " + winner.getUsername());
             } else {
                 logger.error("Lỗi DB: Chưa trừ được tiền người thắng!");
             }
         }
+    }
+
+    /**
+     * TRỪ TIỀN KHI THẮNG ĐẤU GIÁ (phiên bản tương thích ngược, không có itemName).
+     * Được giữ lại để không phá vỡ code cũ đang gọi phương thức này.
+     */
+    public void settlePayment(Bidder winner, double finalAmount) {
+        settlePayment(winner, finalAmount, null);
+    }
+
+    /**
+     * LẤY LỊCH SỬ GIAO DỊCH VÍ của người dùng.
+     * Bao gồm cả nạp tiền và trừ tiền khi thắng đấu giá.
+     *
+     * @param userId ID người dùng
+     * @return Response chứa danh sách WalletTransactionDTO
+     */
+    public Response getWalletTransactions(long userId) {
+        List<WalletTransactionDTO> transactions = bidderRepo.getWalletTransactions(userId);
+        return new Response("SUCCESS", "Lấy lịch sử giao dịch ví thành công.", transactions);
     }
 
     /**

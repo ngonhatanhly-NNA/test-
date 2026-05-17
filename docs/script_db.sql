@@ -136,3 +136,23 @@ CREATE TABLE auto_bids (
 ALTER TABLE bidders ADD COLUMN reserved_amount DECIMAL(19, 2) DEFAULT 0.00;
 -- Tiền đang "giữ lại" do các bid hiện tại (chưa thanh toán)
 ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) DEFAULT NULL;
+
+
+
+USE auction_db;
+
+-- Xóa bảng cũ nếu tồn tại
+DROP TABLE IF EXISTS wallet_transactions;
+
+-- Tạo lại đúng cấu trúc (user_id dùng INT để khớp với users.id)
+CREATE TABLE wallet_transactions (
+                                     id          INT AUTO_INCREMENT PRIMARY KEY,
+                                     user_id     INT NOT NULL,
+                                     amount      DECIMAL(15, 2) NOT NULL,
+                                     type        VARCHAR(20) NOT NULL,
+                                     description VARCHAR(255) NOT NULL,
+                                     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                     INDEX idx_wallet_tx_user_id (user_id),
+                                     INDEX idx_wallet_tx_created_at (created_at),
+                                     CONSTRAINT fk_wallet_tx_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

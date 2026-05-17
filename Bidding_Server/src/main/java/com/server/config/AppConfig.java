@@ -64,12 +64,15 @@ public class AppConfig {
         UserService userService = new UserService();
         BidderService bidderService = new BidderService();
         SellerService sellerService = new SellerService(sellerRepo);
-        
+
+        // [SỬA] Truyền thêm bidderRepoReal vào AuctionService để AuctionScheduler
+        // có thể trừ tiền tự động khi người thắng đấu giá
         AuctionService auctionService = new AuctionService(
                 auctionRepo, bidRepo, autoBidRepo, itemService, userRepo,
+                bidderRepoReal,  // [SỬA] thêm dòng này
                 validator, new DefaultAntiSnipingStrategy(), manualProc, autoProc
         );
-        
+
         // Gắn broadcaster để gửi real-time updates qua WebSocket
         auctionService.setEventListener(broadcaster);
 
@@ -83,11 +86,11 @@ public class AppConfig {
         ImageController imageController = new ImageController();
 
         // Khởi tạo Router (Controllers)
-		CommandFactory commandFactory = new CommandFactory(auctionService, itemService, userService);
+        CommandFactory commandFactory = new CommandFactory(auctionService, itemService, userService);
         ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController,
-			bidderController, sellerController, itemService, auctionService, jwtUtil, 
-			userController, imageController, 
-			commandFactory); 
+                bidderController, sellerController, itemService, auctionService, jwtUtil,
+                userController, imageController,
+                commandFactory);
 
         return new AppComponents(apiRouter, auctionService);
     }

@@ -40,7 +40,7 @@ public class BidderController {
                 return;
             }
 
-            // Gọi service để xử lý nạp tiền
+            // Gọi service để xử lý nạp tiền (service sẽ tự ghi log giao dịch)
             String result = bidderService.depositMoney(bidderId, depositRequest.getDepositAmount().doubleValue());
 
             // Parse response từ service
@@ -114,6 +114,27 @@ public class BidderController {
     }
 
     /**
+     * GET /api/bidders/{bidderId}/wallet-transactions
+     * Lấy lịch sử giao dịch ví của người dùng.
+     * Bao gồm: nạp tiền vào ví và trừ tiền khi thắng đấu giá.
+     */
+    public void getWalletTransactions(Context ctx) {
+        try {
+            long bidderId = Long.parseLong(ctx.pathParam("bidderId"));
+            Response response = bidderService.getWalletTransactions(bidderId);
+            ctx.json(response);
+            logger.info("Lấy lịch sử giao dịch ví cho user ID {}", bidderId);
+
+        } catch (NumberFormatException e) {
+            logger.warn("User ID không hợp lệ khi lấy lịch sử giao dịch ví");
+            ctx.status(400).json(new Response("FAIL", "User ID không hợp lệ", null));
+        } catch (Exception e) {
+            logger.error("Lỗi lấy lịch sử giao dịch ví: {}", e.getMessage(), e);
+            ctx.status(500).json(new Response("ERROR", "Lỗi server: " + e.getMessage(), null));
+        }
+    }
+
+    /**
      * Helper class để trả về thông tin ví
      */
     public static class WalletInfo {
@@ -129,4 +150,3 @@ public class BidderController {
         public String getCreditCardInfo() { return creditCardInfo; }
     }
 }
-

@@ -13,17 +13,26 @@
       xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.client.controller.dashboard.TransferHistoryPopupController">
 
-    <Label text="Lịch sử chuyển tiền" textFill="#D4AF37">
+    <Label text="Lịch sử giao dịch ví" textFill="#D4AF37">
         <font><Font name="System Bold" size="24.0" /></font>
     </Label>
 
     <TableView fx:id="tableTransferHistory" VBox.vgrow="ALWAYS"
                style="-fx-background-color: transparent; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 10; -fx-background-radius: 10; -fx-font-size: 14px;">
         <columns>
-            <TableColumn fx:id="colTransferBuyerName" prefWidth="150" text="Tên người mua" />
-            <TableColumn fx:id="colTransferAmount" prefWidth="120" text="Số tiền" style="-fx-alignment: CENTER_RIGHT;" />
-            <TableColumn fx:id="colTransferTime" prefWidth="180" text="Thời gian" style="-fx-alignment: CENTER;" />
-            <TableColumn fx:id="colTransferItem" prefWidth="200" text="Sản phẩm đấu giá" />
+            <!-- Loại giao dịch: Nạp tiền / Trừ tiền -->
+            <TableColumn fx:id="colTransferType" prefWidth="130" text="Loại giao dịch" />
+
+            <!-- Số tiền: +/- -->
+            <TableColumn fx:id="colTransferAmount" prefWidth="160" text="Số tiền"
+                         style="-fx-alignment: CENTER_RIGHT;" />
+
+            <!-- Thời gian -->
+            <TableColumn fx:id="colTransferTime" prefWidth="180" text="Thời gian"
+                         style="-fx-alignment: CENTER;" />
+
+            <!-- Mô tả chi tiết -->
+            <TableColumn fx:id="colTransferDescription" prefWidth="320" text="Mô tả" />
         </columns>
         <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

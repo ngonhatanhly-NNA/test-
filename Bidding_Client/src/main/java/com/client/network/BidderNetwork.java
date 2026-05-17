@@ -3,7 +3,6 @@ package com.client.network;
 import com.google.gson.Gson;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
@@ -111,6 +110,24 @@ public class BidderNetwork {
      */
     public CompletableFuture<Response> getWalletBalance(long bidderId) {
         HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/" + bidderId + "/wallet"))
+                .GET()
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(
+                response -> gson.fromJson(response.body(), Response.class)
+        );
+    }
+
+    /**
+     * LẤY LỊCH SỬ GIAO DỊCH VÍ (Wallet Transaction History)
+     * Bao gồm các lần nạp tiền và trừ tiền khi thắng đấu giá.
+     *
+     * @param userId ID của người dùng (bidder hoặc seller)
+     * @return Response chứa danh sách WalletTransactionDTO
+     */
+    public CompletableFuture<Response> getWalletTransactions(long userId) {
+        HttpRequest request = NetworkClient.newRequestBuilder(
+                        URI.create(BASE_URL + "/" + userId + "/wallet-transactions"))
                 .GET()
                 .build();
 

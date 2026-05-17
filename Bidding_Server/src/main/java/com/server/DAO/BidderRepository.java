@@ -2,8 +2,13 @@ package com.server.DAO;
 
 import com.server.config.DBConnection;
 import com.server.model.*;
+import com.shared.dto.WalletTransactionDTO;
+
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,5 +126,65 @@ public class BidderRepository implements IBidderRepository {
         }
         return null;
     }
-}
 
+    /**
+     * Ghi một giao dịch ví vào bảng wallet_transactions.
+     * Được gọi sau khi nạp tiền thành công hoặc trừ tiền khi thắng đấu giá.
+     *
+     * @param userId      ID người dùng
+     * @param amount      Số tiền giao dịch (luôn dương)
+     * @param type        "DEPOSIT" hoặc "DEDUCT"
+     * @param description Mô tả giao dịch
+     * @return true nếu ghi thành công
+     */
+    @Override
+    public boolean logTransaction(long userId, BigDecimal amount, String type, String description) {
+        String sql = "INSERT INTO wallet_transactions (user_id, amount, type, description, created_at) " +
+                "VALUES (?, ?, ?, ?, NOW())";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            pstmt.setBigDecimal(2, amount);
+            pstmt.setString(3, type);
+            pstmt.setString(4, description);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            logger.error("Lỗi DB: Không thể ghi giao dịch ví cho user {}: {}", userId, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Lấy lịch sử giao dịch ví của người dùng, sắp xếp mới nhất trước.
+     *
+     * @param userId ID người dùng
+     * @return danh sách các giao dịch
+     */
+    @Override
+    public List<WalletTransactionDTO> getWalletTransactions(long userId) {
+        List<WalletTransactionDTO> list = new ArrayList<>();
+        String sql = "SELECT id, amount, type, description, created_at " +
+                "FROM wallet_transactions " +
+                "WHERE user_id = ? " +
+                "ORDER BY created_at DESC";
+        try (Connection conn = DBConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    long id = rs.getLong("id");
+                    BigDecimal amount = rs.getBigDecimal("amount");
+                    String type = rs.getString("type");
+                    String description = rs.getString("description");
+                    LocalDateTime createdAt = rs.getTimestamp("created_at") != null
+                            ? rs.getTimestamp("created_at").toLocalDateTime()
+                            : LocalDateTime.now();
+                    list.add(new WalletTransactionDTO(id, amount, type, description, createdAt));
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Lỗi DB: Không thể lấy lịch sử giao dịch ví cho user {}: {}", userId, e.getMessage(), e);
+        }
+        return list;
+    }
+}

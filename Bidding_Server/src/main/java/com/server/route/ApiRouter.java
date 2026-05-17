@@ -146,6 +146,10 @@ public class ApiRouter {
         app.get("/api/bidders/{bidderId}/wallet", ctx -> bidderController.getWalletBalance(ctx));
         app.get("/api/bidders/{bidderId}/profile", ctx -> bidderController.getBidderProfile(ctx));
 
+        // *** ROUTE MỚI: Lịch sử giao dịch ví cho Bidder ***
+        app.get("/api/bidders/{bidderId}/wallet-transactions",
+                ctx -> bidderController.getWalletTransactions(ctx));
+
         // Nhóm Seller
         app.put("/api/sellers/{sellerId}/deposit", ctx -> bidderController.depositMoney(ctx));
         app.get("/api/sellers/{sellerId}/wallet", ctx -> bidderController.getWalletBalance(ctx));
@@ -153,6 +157,10 @@ public class ApiRouter {
         app.get("/api/sellers/{sellerId}/items", ctx -> sellerController.getSellerItems(ctx));
         app.get("/api/sellers/{sellerId}/statistics", ctx -> sellerController.getSellerStatistics(ctx));
         app.get("/api/sellers/{sellerId}/transfer-history", ctx -> sellerController.getTransferHistory(ctx));
+
+        // *** ROUTE MỚI: Lịch sử giao dịch ví cho Seller (dùng chung endpoint của Bidder) ***
+        app.get("/api/sellers/{sellerId}/wallet-transactions",
+                ctx -> bidderController.getWalletTransactions(ctx));
     }
 
     // ==============================================================

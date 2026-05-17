@@ -1,8 +1,8 @@
 package com.client.controller.dashboard;
 
-import com.client.network.SellerNetwork;
+import com.client.network.BidderNetwork;
 import com.client.session.ClientSession;
-import com.shared.dto.TransferHistoryDTO;
+import com.shared.dto.WalletTransactionDTO;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializer;
@@ -27,15 +27,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Controller cho popup Lịch sử giao dịch ví.
+ * Hiển thị lịch sử nạp tiền và trừ tiền khi thắng đấu giá của người dùng hiện tại.
+ */
 public class TransferHistoryPopupController {
 
-    @FXML private TableView<TransferHistoryDTO> tableTransferHistory;
-    @FXML private TableColumn<TransferHistoryDTO, String> colTransferBuyerName;
-    @FXML private TableColumn<TransferHistoryDTO, String> colTransferAmount;
-    @FXML private TableColumn<TransferHistoryDTO, String> colTransferTime;
-    @FXML private TableColumn<TransferHistoryDTO, String> colTransferItem;
+    @FXML private TableView<WalletTransactionDTO> tableTransferHistory;
+    @FXML private TableColumn<WalletTransactionDTO, String> colTransferType;
+    @FXML private TableColumn<WalletTransactionDTO, String> colTransferAmount;
+    @FXML private TableColumn<WalletTransactionDTO, String> colTransferTime;
+    @FXML private TableColumn<WalletTransactionDTO, String> colTransferDescription;
 
-    private final SellerNetwork sellerNetwork = new SellerNetwork();
+    // Dùng BidderNetwork vì endpoint wallet-transactions nằm ở /api/bidders/{id}/wallet-transactions
+    // (Seller cũng được map vào cùng endpoint này ở server)
+    private final BidderNetwork bidderNetwork = new BidderNetwork();
 
     // Gson với TypeAdapter cho LocalDateTime — đọc cả dạng chuỗi ISO lẫn mảng số
     private final Gson gson = new GsonBuilder()
@@ -58,67 +64,76 @@ public class TransferHistoryPopupController {
             .create();
 
     private final NumberFormat currencyFormat = NumberFormat.getNumberInstance(Locale.of("vi", "VN"));
-    private final ObservableList<TransferHistoryDTO> transferHistoryList = FXCollections.observableArrayList();
+    private final ObservableList<WalletTransactionDTO> transactionList = FXCollections.observableArrayList();
 
     @FXML
     public void initialize() {
         setupTableColumns();
-        loadTransferHistory();
+        loadWalletTransactions();
     }
 
     private void setupTableColumns() {
-        colTransferBuyerName.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getBuyerName()));
-
-        colTransferAmount.setCellValueFactory(data -> {
-            BigDecimal amount = data.getValue().getAmount();
-            return new SimpleStringProperty(currencyFormat.format(amount) + " VND");
+        // Cột loại giao dịch: DEPOSIT = Nạp tiền, DEDUCT = Trừ tiền
+        colTransferType.setCellValueFactory(data -> {
+            String type = data.getValue().getType();
+            String display = "DEPOSIT".equals(type) ? "⬆ Nạp tiền" : "⬇ Trừ tiền";
+            return new SimpleStringProperty(display);
         });
 
+        // Cột số tiền (màu xanh nếu nạp, đỏ nếu trừ)
+        colTransferAmount.setCellValueFactory(data -> {
+            BigDecimal amount = data.getValue().getAmount();
+            String type = data.getValue().getType();
+            String prefix = "DEPOSIT".equals(type) ? "+" : "-";
+            return new SimpleStringProperty(prefix + currencyFormat.format(amount) + " VNĐ");
+        });
+
+        // Cột thời gian
         colTransferTime.setCellValueFactory(data -> {
-            LocalDateTime time = data.getValue().getTransferTime();
+            LocalDateTime time = data.getValue().getCreatedAt();
             if (time == null) return new SimpleStringProperty("N/A");
             return new SimpleStringProperty(time.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")));
         });
 
-        colTransferItem.setCellValueFactory(data ->
-                new SimpleStringProperty(data.getValue().getItemName()));
+        // Cột mô tả giao dịch
+        colTransferDescription.setCellValueFactory(data ->
+                new SimpleStringProperty(data.getValue().getDescription()));
 
-        tableTransferHistory.setItems(transferHistoryList);
-        tableTransferHistory.setPlaceholder(new Label("Chưa có giao dịch chuyển tiền nào."));
+        tableTransferHistory.setItems(transactionList);
+        tableTransferHistory.setPlaceholder(new Label("Chưa có giao dịch nào."));
     }
 
     @FXML
-    private void loadTransferHistory() {
-        long sellerId = ClientSession.getUserId();
-        sellerNetwork.getTransferHistory(sellerId)
+    private void loadWalletTransactions() {
+        long userId = ClientSession.getUserId();
+        bidderNetwork.getWalletTransactions(userId)
                 .thenAccept(response -> Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
                         try {
                             String dataJson = gson.toJson(response.getData());
-                            Type listType = new TypeToken<List<TransferHistoryDTO>>() {}.getType();
-                            List<TransferHistoryDTO> history = gson.fromJson(dataJson, listType);
+                            Type listType = new TypeToken<List<WalletTransactionDTO>>() {}.getType();
+                            List<WalletTransactionDTO> transactions = gson.fromJson(dataJson, listType);
 
-                            transferHistoryList.clear();
-                            if (history != null && !history.isEmpty()) {
-                                transferHistoryList.addAll(history);
+                            transactionList.clear();
+                            if (transactions != null && !transactions.isEmpty()) {
+                                transactionList.addAll(transactions);
                             }
                         } catch (Exception e) {
-                            System.err.println("Lỗi parse lịch sử chuyển tiền: " + e.getMessage());
+                            System.err.println("Lỗi parse lịch sử giao dịch ví: " + e.getMessage());
                         }
                     } else {
-                        System.err.println("Lỗi lấy lịch sử chuyển tiền: " + response.getMessage());
+                        System.err.println("Lỗi lấy lịch sử giao dịch ví: " + response.getMessage());
                     }
                 }))
                 .exceptionally(e -> {
-                    System.err.println("Lỗi kết nối lấy lịch sử chuyển tiền: " + e.getMessage());
+                    System.err.println("Lỗi kết nối lấy lịch sử giao dịch ví: " + e.getMessage());
                     return null;
                 });
     }
 
     @FXML
     private void handleRefresh(ActionEvent event) {
-        loadTransferHistory();
+        loadWalletTransactions();
     }
 
     @FXML
