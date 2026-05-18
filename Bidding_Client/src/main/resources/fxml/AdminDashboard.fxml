@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.AdminDashboardController">
+<BorderPane style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.dashboard.AdminDashboardController">
 
     <top>
         <HBox alignment="CENTER_RIGHT" prefHeight="60.0" spacing="15.0" style="-fx-padding: 10 30 10 30;">
@@ -136,7 +136,7 @@
                             <Button onAction="#loadRevenueData" prefHeight="45.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0); -fx-padding: 0 25;" text="DOWNLOAD REPORT" />
                         </HBox>
 
-                        <TextArea fx:id="textAreaRevenue" editable="false" promptText="Nhấn 'DOWNLOAD REPORT' để tải báo cáo tài chính..." style="-fx-font-family: 'Consolas'; -fx-font-size: 15px; -fx-background-color: rgba(0,0,0,0.3); -fx-control-inner-background: rgba(0,0,0,0.3); -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15; -fx-text-fill: #E0E0E0;" wrapText="true" VBox.vgrow="ALWAYS" />
+                        <TextArea fx:id="textAreaRevenue" editable="false" promptText="Click 'DOWNLOAD REPORT' not working" style="-fx-font-family: 'Consolas'; -fx-font-size: 15px; -fx-background-color: rgba(0,0,0,0.3); -fx-control-inner-background: rgba(0,0,0,0.3); -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15; -fx-text-fill: #E0E0E0;" wrapText="true" VBox.vgrow="ALWAYS" />
                     
                     </VBox>
                 </VBox>
