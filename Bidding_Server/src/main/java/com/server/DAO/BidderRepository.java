@@ -45,12 +45,12 @@ public class BidderRepository implements IBidderRepository {
 
     // --- THÊM MỚI: CẬP NHẬT CẢ VÍ CHÍNH VÀ VÍ ĐÓNG BĂNG CÙNG LÚC ---
     @Override
-    public boolean updateWalletBalances(long bidderId, BigDecimal mainBalance, BigDecimal tempBalance) {
-        String sql = "UPDATE bidders SET walletBalance = ?, tempBalance = ? WHERE user_id = ?";
+    public boolean updateWalletBalances(long bidderId, BigDecimal mainBalance, BigDecimal reservedAmount) {
+        String sql = "UPDATE bidders SET walletBalance = ?, reserved_amount = ? WHERE user_id = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setBigDecimal(1, mainBalance);
-            pstmt.setBigDecimal(2, tempBalance);
+            pstmt.setBigDecimal(2, reservedAmount);
             pstmt.setLong(3, bidderId);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -63,7 +63,7 @@ public class BidderRepository implements IBidderRepository {
     @Override
     public Bidder getBidderByUsername(String username) {
         // Vì dữ liệu nằm ở 2 bảng (users và bidders) nên dùng JOIN để gộp lại lấy 1 lần cho nhanh
-        String sql = "SELECT u.*, b.walletBalance, b.creditCardInfo " +
+        String sql = "SELECT u.*, b.walletBalance, b.reserved_amount, b.creditCardInfo " +
                 "FROM users u JOIN bidders b ON u.id = b.user_id " +
                 "WHERE u.username = ?";
 
@@ -88,6 +88,7 @@ public class BidderRepository implements IBidderRepository {
                         Status.valueOf(rs.getString("status").toUpperCase()),
                         Role.valueOf(rs.getString("role").toUpperCase()),
                         rs.getBigDecimal("walletBalance"), // Lấy số dư kiểu tiền tệ
+                        rs.getBigDecimal("reserved_amount"), // Lấy số tiền đóng băng
                         rs.getString("creditCardInfo")
                 );
             }
@@ -101,7 +102,7 @@ public class BidderRepository implements IBidderRepository {
     @Override
     public Bidder getBidderById(long id) {
         // Tương tự như tìm theo Username, nhưng dùng ID làm chìa khóa tìm kiếm
-        String sql = "SELECT u.*, b.walletBalance, b.creditCardInfo " +
+        String sql = "SELECT u.*, b.walletBalance, b.reserved_amount, b.creditCardInfo " +
                 "FROM users u JOIN bidders b ON u.id = b.user_id " +
                 "WHERE u.id = ?";
 
@@ -118,7 +119,7 @@ public class BidderRepository implements IBidderRepository {
                         rs.getString("email"), rs.getString("fullName"), rs.getString("phoneNumber"),
                         rs.getString("address"), Status.valueOf(rs.getString("status")),
                         Role.valueOf(rs.getString("role")), rs.getBigDecimal("walletBalance"),
-                        rs.getString("creditCardInfo")
+                        rs.getBigDecimal("reserved_amount"), rs.getString("creditCardInfo")
                 );
             }
         } catch (SQLException e) {

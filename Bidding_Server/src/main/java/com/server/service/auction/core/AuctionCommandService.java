@@ -100,6 +100,17 @@ public class AuctionCommandService {
                 registerAutoBid(request);
             }
 
+            // [FIX RACE CONDITION] RELOAD auction từ DB sau manual bid để đảm bảo có data mới nhất
+            // Điều này khiến auto-bid processor thấy version được cập nhật bởi manual bid
+            // và có thể detect optimistic lock conflict nếu có concurrent update từ process khác
+            Auction auctionLatest = auctionRepository.getById(request.getAuctionId());
+            if (auctionLatest != null) {
+                logger.debug("Reloaded auction {} from DB after manual bid. Version: {} -> {}",
+                        request.getAuctionId(), auction.getVersion(), auctionLatest.getVersion());
+                auction = auctionLatest;
+                sharedState.auctionCache.put(request.getAuctionId(), auction);
+            }
+
             processAutoBidsFromOtherUsers(auction);
 
             AuctionUpdateDTO update = createUpdateDTO(auction);
@@ -111,8 +122,11 @@ public class AuctionCommandService {
             return update;
 
         } catch (AuctionException e) {
-            logger.error("Lỗi khi đặt giá cho phiên đấu giá {}: {}", request.getAuctionId(), e.getMessage());
+            logger.error("Error in placing bid {}: {}", request.getAuctionId(), e.getMessage());
             throw e;
+        } catch (RuntimeException e) {
+            logger.error("Error in Auction {}: {}", request.getAuctionId(), e.getMessage(), e);
+            throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Lỗi khi xử lý đặt giá: " + e.getMessage());
         } finally {
             lock.unlock();
         }
@@ -276,12 +290,15 @@ public class AuctionCommandService {
     }
 	
 	/**
-     * Xử lý tự động đặt giá cho các người dùng khác có auto-bid
-     * Được gọi sau khi một đơn đặt giá thủ công thành công
-     */
-    private void processAutoBidsFromOtherUsers(Auction auction) {
-        autoBidProcessor.process(auction, sharedState.bidQueue);
-    }
+	 * Xử lý tự động đặt giá cho các người dùng khác có auto-bid
+	 * Được gọi sau khi một đơn đặt giá thủ công thành công
+	 * [FIX RACE CONDITION] Không cần lock lại vì caller (placeBid) đã hold lock rồi
+	 * Đây là ReentrantLock nên cùng thread có thể acquire nhiều lần, nhưng dễ gây deadlock risk
+	 */
+	private void processAutoBidsFromOtherUsers(Auction auction) {
+		// Just call directly - caller (placeBid) already holds the lock
+		autoBidProcessor.process(auction, sharedState.bidQueue);
+	}
 
     private AuctionUpdateDTO createUpdateDTO(Auction auction) {
         String bidderName = auction.getWinnerId() != null

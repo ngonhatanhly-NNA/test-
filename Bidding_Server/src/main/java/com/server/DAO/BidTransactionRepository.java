@@ -27,7 +27,7 @@ public class BidTransactionRepository {
             pstmt.setLong(1, bid.getAuctionId());
             pstmt.setLong(2, bid.getBidderId());
 
-            // ĐÃ SỬA: Dùng chuẩn setBigDecimal cho tiền tệ
+            // Đã sửa: Dùng chuẩn setBigDecimal cho tiền tệ
             pstmt.setBigDecimal(3, bid.getBidAmount());
 
             pstmt.setTimestamp(4, Timestamp.valueOf(bid.getTimestamp()));
@@ -35,8 +35,11 @@ public class BidTransactionRepository {
             pstmt.setTimestamp(6, Timestamp.valueOf(bid.getCreatedAt()));
 
             pstmt.executeUpdate();
+            logger.info("Bid transaction saved to DB: Auction {}, Bidder {}, Amount {}",
+                    bid.getAuctionId(), bid.getBidderId(), bid.getBidAmount());
         } catch (SQLException e) {
             logger.error("Error saving bid for auction {}: {}", bid.getAuctionId(), e.getMessage(), e);
+            throw new RuntimeException("Failed to save bid transaction for auction " + bid.getAuctionId(), e);
         }
     }
 

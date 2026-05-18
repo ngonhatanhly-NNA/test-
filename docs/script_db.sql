@@ -156,3 +156,5 @@ CREATE TABLE wallet_transactions (
                                      INDEX idx_wallet_tx_created_at (created_at),
                                      CONSTRAINT fk_wallet_tx_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+ALTER TABLE auctions ADD COLUMN version INT DEFAULT 0;

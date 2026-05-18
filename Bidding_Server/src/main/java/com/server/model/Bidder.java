@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 public class Bidder extends User {
     private static final Logger logger = LoggerFactory.getLogger(Bidder.class);
     private BigDecimal walletBalance;
+    private BigDecimal reservedAmount;
     private String creditCardInfo;
 
     public Bidder() {}
@@ -16,11 +17,13 @@ public class Bidder extends User {
         // TRUYỀN TRỰC TIẾP ENUM: Status.ACTIVE và Role.BIDDER
         super(0L, username, passwordHash, email, fullname, null, null, Status.ACTIVE, Role.BIDDER);
         this.walletBalance = BigDecimal.ZERO;
+        this.reservedAmount = BigDecimal.ZERO;
     }
 
     public Bidder(long id, String username, String passwordHash, String email, String fullName, String phoneNumber, String address, Status status, String creditCardInfo) {
         super(id, username, passwordHash, email, fullName, phoneNumber, address, status, Role.BIDDER);
         this.walletBalance = BigDecimal.ZERO;
+        this.reservedAmount = BigDecimal.ZERO;
         this.creditCardInfo = creditCardInfo;
     }
 
@@ -30,12 +33,26 @@ public class Bidder extends User {
                   BigDecimal walletBalance, String creditCardInfo) {
         super(id, username, passwordHash, email, fullName, phoneNumber, address, status, role);
         this.walletBalance = walletBalance;
+        this.reservedAmount = BigDecimal.ZERO;
+        this.creditCardInfo = creditCardInfo;
+    }
+
+    // Constructor with reserved_amount (for full database retrieval)
+    public Bidder(long id, String username, String passwordHash, String email, String fullName,
+                  String phoneNumber, String address, Status status, Role role,
+                  BigDecimal walletBalance, BigDecimal reservedAmount, String creditCardInfo) {
+        super(id, username, passwordHash, email, fullName, phoneNumber, address, status, role);
+        this.walletBalance = walletBalance;
+        this.reservedAmount = reservedAmount != null ? reservedAmount : BigDecimal.ZERO;
         this.creditCardInfo = creditCardInfo;
     }
 
     // --- GETTERS & SETTERS ---
     public BigDecimal getWalletBalance() { return walletBalance; }
     public void setWalletBalance(BigDecimal walletBalance) { this.walletBalance = walletBalance; }
+
+    public BigDecimal getReservedAmount() { return reservedAmount; }
+    public void setReservedAmount(BigDecimal reservedAmount) { this.reservedAmount = reservedAmount != null ? reservedAmount : BigDecimal.ZERO; }
 
     public String getCreditCardInfo() { return creditCardInfo; }
     public void setCreditCardInfo(String creditCardInfo) { this.creditCardInfo = creditCardInfo; }

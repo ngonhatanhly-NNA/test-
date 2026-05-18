@@ -13,6 +13,8 @@ public class Auction extends Entity {
     private BigDecimal stepPrice;
     private BigDecimal currentHighestBid;
     private Long winnerId;
+    // optimistic locking version
+    private int version = 0;
     private AuctionStatus status;
     private List<BidTransaction> bidHistory = new ArrayList<>();
 
@@ -49,6 +51,9 @@ public class Auction extends Entity {
     public BigDecimal getStepPrice() { return stepPrice; }
     public void setStepPrice(BigDecimal stepPrice) { this.stepPrice = stepPrice; }
     public BigDecimal getCurrentHighestBid() { return currentHighestBid; }
+
+    public int getVersion() { return version; }
+    public void setVersion(int version) { this.version = version; }
 
     public Long getWinnerId() { return winnerId; }
     public void setWinnerId(Long winnerId) { this.winnerId = winnerId; }

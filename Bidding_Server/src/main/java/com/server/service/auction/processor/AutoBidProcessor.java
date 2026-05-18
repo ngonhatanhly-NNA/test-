@@ -110,15 +110,24 @@ public class AutoBidProcessor {
                             if (oldWinner != null) {
                                 BigDecimal oldMain = oldWinner.getWalletBalance();
                                 // Trả lại số tiền currentBid (là tiền cọc của nó) về ví chính
-                                bidderRepository.updateWalletBalances(oldWinner.getId(), oldMain.add(currentBid), BigDecimal.ZERO);
-                                logger.info("Auto-bid: Đã hoàn trả cọc {} cho kẻ thua cuộc {}", currentBid, oldWinner.getUsername());
+                                boolean refundOk = bidderRepository.updateWalletBalances(oldWinner.getId(), oldMain.add(currentBid), BigDecimal.ZERO);
+                                if (!refundOk) {
+                                    logger.error("Auto-bid: Cannot refunf for {}. Ignore me.", oldWinner.getUsername());
+                                    continue; // skip this auto-bid attempt
+                                }
+                                logger.info("Auto-bid: Refunded {} to losers {}", currentBid, oldWinner.getUsername());
                             }
                         }
 
                         // [THÊM LOGIC TIỀN TỆ] Trừ tiền ví chính của đứa Top 1 mới (Đóng băng tiền cọc)
                         BigDecimal main = botOwner.getWalletBalance();
                         // Tiền thực bị trừ đi autoBidAmount, và autoBidAmount đó chuyển sang ví Tạm
-                        bidderRepository.updateWalletBalances(botOwner.getId(), main.subtract(autoBidAmount), autoBidAmount);
+                        boolean freezeOk = bidderRepository.updateWalletBalances(botOwner.getId(), main.subtract(autoBidAmount), autoBidAmount);
+                        if (!freezeOk) {
+                            logger.error("Auto-bid: Cannot freeze money for {}. Stop Auto-bid.", botOwner.getUsername());
+                            // Try to refund old winner already processed above was done; nothing more to do here
+                            continue;
+                        }
                         logger.info("Auto-bid: Đã đóng băng cọc {} của kẻ chiến thắng mới {}", autoBidAmount, botOwner.getUsername());
 
                         // CẬP NHẬT Trạng thái phiên đấu giá
@@ -128,9 +137,28 @@ public class AutoBidProcessor {
                         // [QUAN TRỌNG] Lưu ngay kẻo lỡ - Ghi đè trạng thái Auction xuống Database
                         try {
                             auctionRepository.save(auction);
-                        } catch (Exception e) {
-                            logger.error("Lỗi chí mạng: Không lưu được giá Auto-bid xuống DB: {}", e.getMessage());
-                            throw new RuntimeException("DB từ chối lưu Auto-bid: " + e.getMessage());
+                        } catch (RuntimeException e) {
+                            // [FIX RACE CONDITION] Detect optimistic lock failure
+                            if (e.getMessage() != null && e.getMessage().contains("Optimistic lock failure")) {
+                                logger.warn("Auto-bid: Optimistic lock conflict detected for auction {}. Likely manual bid updated it. Reload and abort this auto-bid round.", auction.getId());
+                                // Reload auction from DB to get fresh version
+                                Auction auctionReloaded = auctionRepository.getById(auction.getId());
+                                if (auctionReloaded != null) {
+                                    auction = auctionReloaded;
+                                    logger.debug("Auto-bid: Reloaded auction version from {} to {}", auction.getVersion() - 1, auction.getVersion());
+                                }
+                                // Abort and let next placeBid attempt reload auto-bid
+                                throw new RuntimeException("Auto-bid aborted due to manual bid interference. Retry needed.");
+                            } else {
+                                // Other runtime errors - rollback wallet
+                                logger.error("Lỗi chí mạng: Không lưu được giá Auto-bid xuống DB: {}", e.getMessage());
+                                try {
+                                    bidderRepository.updateWalletBalances(botOwner.getId(), botOwner.getWalletBalance(), BigDecimal.ZERO);
+                                } catch (Exception ex) {
+                                    logger.warn("Không thể revert ví bot {} sau khi save thất bại: {}", botOwner.getUsername(), ex.getMessage());
+                                }
+                                throw e;
+                            }
                         }
 
                         // Viết "Sổ thiên tào": Đẩy lịch sử giao dịch vào hàng đợi để thread khác lưu từ từ

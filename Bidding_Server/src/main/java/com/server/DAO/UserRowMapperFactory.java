@@ -33,7 +33,7 @@ class SellerRowMapper implements UserRowMapper {
         Seller seller = new Seller(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
                 rs.getString("fullName"), rs.getString("phoneNumber"), rs.getString("address"),
                 Status.valueOf(rs.getString("status").toUpperCase()), Role.valueOf(rs.getString("role").toUpperCase()),
-                rs.getBigDecimal("walletBalance"), rs.getString("creditCardInfo"), rs.getString("shopName"),
+                rs.getBigDecimal("walletBalance"), rs.getBigDecimal("reserved_amount"), rs.getString("creditCardInfo"), rs.getString("shopName"),
                 rs.getString("bankAccountNumber"), rs.getDouble("rating"), rs.getInt("totalReviews"), rs.getBoolean("isVerified"));
         
         seller.setAvatarUrl(rs.getString("avatar_url"));
@@ -48,8 +48,8 @@ class BidderRowMapper implements UserRowMapper {
         Bidder bidder = new Bidder(rs.getLong("id"), rs.getString("username"), rs.getString("passwordHash"), rs.getString("email"),
                 rs.getString("fullName"), rs.getString("phoneNumber"), rs.getString("address"),
                 Status.valueOf(rs.getString("status").toUpperCase()), Role.valueOf(rs.getString("role").toUpperCase()),
-                rs.getBigDecimal("walletBalance"), rs.getString("creditCardInfo"));
-        
+                rs.getBigDecimal("walletBalance"), rs.getBigDecimal("reserved_amount"), rs.getString("creditCardInfo"));
+
         bidder.setAvatarUrl(rs.getString("avatar_url"));
         
         return bidder;

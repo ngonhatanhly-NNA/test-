@@ -96,7 +96,7 @@ public class SellerRepository implements ISellerRepository {
         // DB schema: users(camelCase), bidders(camelCase), sellers(camelCase + bidder_id PK)
         String sql = "SELECT u.id, u.username, u.passwordHash, u.email, u.fullName, u.phoneNumber, " +
                 "u.address, u.status, u.role, " +
-                "b.walletBalance, b.creditCardInfo, " +
+                "b.walletBalance, b.reserved_amount, b.creditCardInfo, " +
                 "s.shopName, s.bankAccountNumber, s.rating, s.totalReviews, s.isVerified " +
                 "FROM users u " +
                 "JOIN bidders b ON u.id = b.user_id " +
@@ -250,6 +250,7 @@ public class SellerRepository implements ISellerRepository {
         Status status = Status.valueOf(rs.getString("status"));
         Role role = Role.valueOf(rs.getString("role"));
         BigDecimal walletBalance = rs.getBigDecimal("walletBalance");
+        BigDecimal reservedAmount = rs.getBigDecimal("reserved_amount");
         String creditCardInfo = rs.getString("creditCardInfo");
         String shopName = rs.getString("shopName");
         String bankAccountNumber = rs.getString("bankAccountNumber");
@@ -258,7 +259,7 @@ public class SellerRepository implements ISellerRepository {
         boolean isVerified = rs.getBoolean("isVerified");
 
         return new Seller(id, username, passwordHash, email, fullName, phoneNumber, address,
-                status, role, walletBalance, creditCardInfo,
+                status, role, walletBalance, reservedAmount, creditCardInfo,
                 shopName, bankAccountNumber, rating, totalReviews, isVerified);
     }
 

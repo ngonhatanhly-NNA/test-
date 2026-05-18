@@ -49,19 +49,35 @@ public class ManualBidProcessor implements BidProcessor {
 
         // 1. Đóng băng tiền người mới (Lấy toàn bộ số tiền newHighestPrice)
         Bidder newBidder = bidderRepository.getBidderById(request.getBidderId());
+        BigDecimal newBidderPrevMain = null;
         if (newBidder != null) {
             BigDecimal main = newBidder.getWalletBalance();
-            bidderRepository.updateWalletBalances(newBidder.getId(), main.subtract(newHighestPrice), newHighestPrice);
+            newBidderPrevMain = main;
+            boolean freezeOk = bidderRepository.updateWalletBalances(newBidder.getId(), main.subtract(newHighestPrice), newHighestPrice);
+            if (!freezeOk) {
+                logger.error("Không thể đóng băng tiền cho Bidder {}. Hủy bid.", newBidder.getUsername());
+                throw new RuntimeException("Không thể đóng băng tiền. Vui lòng thử lại.");
+            }
             logger.info("Đã đóng băng {} của Bidder {}", newHighestPrice, newBidder.getUsername());
         }
 
         // 2. Hoàn tiền người cũ (Outbid)
+        Bidder oldWinner = null;
+        BigDecimal oldWinnerPrevMain = null;
         if (auction.getWinnerId() != null && auction.getWinnerId() > 0 && auction.getWinnerId() != request.getBidderId()) {
-            Bidder oldWinner = bidderRepository.getBidderById(auction.getWinnerId());
+            oldWinner = bidderRepository.getBidderById(auction.getWinnerId());
             if (oldWinner != null) {
-                BigDecimal oldMain = oldWinner.getWalletBalance();
+                oldWinnerPrevMain = oldWinner.getWalletBalance();
                 // Hoàn lại số tiền currentHighestBid (giá cao nhất trước đó)
-                bidderRepository.updateWalletBalances(oldWinner.getId(), oldMain.add(currentHighestBid), BigDecimal.ZERO);
+                boolean refundOk = bidderRepository.updateWalletBalances(oldWinner.getId(), oldWinnerPrevMain.add(currentHighestBid), BigDecimal.ZERO);
+                if (!refundOk) {
+                    // If refund fails, revert new bidder freeze and abort
+                    if (newBidder != null && newBidderPrevMain != null) {
+                        bidderRepository.updateWalletBalances(newBidder.getId(), newBidderPrevMain, BigDecimal.ZERO);
+                    }
+                    logger.error("Không thể hoàn tiền cho người cũ {}. Hủy bid.", oldWinner.getUsername());
+                    throw new RuntimeException("Không thể hoàn tiền cho người cũ. Hủy bid.");
+                }
                 logger.info("Đã hoàn trả {} cho Bidder {}", currentHighestBid, oldWinner.getUsername());
             }
         }
@@ -74,6 +90,17 @@ public class ManualBidProcessor implements BidProcessor {
         try {
             auctionRepository.save(auction);
         } catch (Exception e) {
+            // rollback wallet changes
+            logger.error("Không thể lưu giá đấu vào database. Revert wallet balance.", e);
+            if (newBidder != null && newBidderPrevMain != null) {
+                bidderRepository.updateWalletBalances(newBidder.getId(), newBidderPrevMain, BigDecimal.ZERO);
+                logger.warn("Đã revert ví cho Bidder {} do lỗi lưu auction", newBidder.getUsername());
+            }
+            if (oldWinner != null && oldWinnerPrevMain != null) {
+                // attempt to restore oldWinner's tempBalance? we set temp to zero earlier
+                bidderRepository.updateWalletBalances(oldWinner.getId(), oldWinnerPrevMain.subtract(currentHighestBid), currentHighestBid);
+                logger.warn("Đã revert ví cho Old Winner {} do lỗi lưu auction", oldWinner.getUsername());
+            }
             throw new RuntimeException("Không thể lưu giá đấu vào database: " + e.getMessage());
         }
 

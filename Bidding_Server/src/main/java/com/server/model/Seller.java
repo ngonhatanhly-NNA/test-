@@ -42,6 +42,20 @@ public class Seller extends Bidder {
         this.isVerified = isVerified;
     }
 
+    // Constructor DÀNH RIÊNG CHO DATABASE (với reserved_amount)
+    public Seller(long id, String username, String passwordHash, String email, String fullName,
+                  String phoneNumber, String address, Status status, Role role,
+                  BigDecimal walletBalance, BigDecimal reservedAmount, String creditCardInfo,
+                  String shopName, String bankAccountNumber, double rating, int totalReviews, boolean isVerified) {
+
+        super(id, username, passwordHash, email, fullName, phoneNumber, address, status, role, walletBalance, reservedAmount, creditCardInfo);
+        this.shopName = shopName;
+        this.bankAccountNumber = bankAccountNumber;
+        this.rating = rating;
+        this.totalReviews = totalReviews;
+        this.isVerified = isVerified;
+    }
+
     // --- GETTERS & SETTERS ---
     public String getShopName() { return shopName; }
     public void setShopName(String shopName) { this.shopName = shopName; }
