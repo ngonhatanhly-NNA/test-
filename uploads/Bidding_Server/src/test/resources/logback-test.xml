@@ -1,0 +1,39 @@
+<configuration>
+    <property name="LOG_DIR" value="logs/test/server" />
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" />
+
+    <!-- Console appender for tests -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- File appender for test logs -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/test.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/test.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>5MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>100MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Logger levels for tests -->
+    <logger name="com.server" level="DEBUG" />
+    <logger name="com.shared" level="DEBUG" />
+    <logger name="org.java_websocket" level="WARN" />
+    <logger name="com.zaxxer.hikari" level="WARN" />
+
+    <!-- Root logger for tests -->
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>
+

@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  bidding-db:
+    image: mysql:8.0
+    container_name: bidding_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE:  # Đổi tên thành DB thật của bạn
+    ports:
+      - "3306:3306"
+    volumes:
+      # Map thư mục chứa file SQL của bạn vào thư mục tự chạy của MySQL
+      # Khi container bật lên, nó sẽ tự quét và import 2 file này!
+      - ./docs/script_db.sql:/docker-entrypoint-initdb.d/1_script_db.sql
+      - ./docs/TEST_DATA.sql:/docker-entrypoint-initdb.d/2_TEST_DATA.sql

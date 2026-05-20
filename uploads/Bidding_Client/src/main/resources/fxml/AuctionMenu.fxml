@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.paint.LinearGradient?>
+<?import javafx.scene.paint.Stop?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="720.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.client.controller.auth.ClientApp">
+   <children>
+      <ImageView fx:id="pikachu" fitHeight="720.0" fitWidth="1280.0" focusTraversable="true" pickOnBounds="true" preserveRatio="false">
+         <image>
+            <Image url="@../images/Hall.png" />
+         </image>
+      </ImageView>
+
+      <Label alignment="CENTER" layoutX="340.0" layoutY="40.0" prefWidth="600.0" text="AUCTION HALL" textAlignment="CENTER">
+         <font>
+            <Font name="Times New Roman Bold" size="65.0" />
+         </font>
+         <textFill>
+            <LinearGradient endX="1.0" endY="1.0">
+               <stops>
+                  <Stop color="#FFDF73" /> <Stop color="#D4AF37" offset="1.0" /> </stops>
+            </LinearGradient>
+         </textFill>
+         <effect>
+            <DropShadow height="15.0" radius="7.0" width="15.0">
+               <color>
+                  <Color opacity="0.9" />
+               </color>
+            </DropShadow>
+         </effect>
+      </Label>
+
+      <ImageView fx:id="imgAnimatedCharacter" layoutX="675.0" layoutY="445.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../images/AIPOM.png" />
+         </image>
+      </ImageView>
+      <ImageView fx:id="Img1" fitHeight="226.0" fitWidth="314.0" layoutX="540.0" layoutY="445.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../images/Pikachu.png" />
+         </image>
+      </ImageView>
+      <ImageView fx:id="Img2" fitHeight="226.0" fitWidth="244.0" layoutX="427.0" layoutY="445.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../images/Gardevoir.png" />
+         </image>
+      </ImageView>
+      <ImageView fx:id="Img3" fitHeight="219.0" fitWidth="300.0" layoutX="482.0" layoutY="448.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../images/MorpekoHappy.png" />
+         </image>
+      </ImageView>
+      <ImageView fx:id="Img4" fitHeight="210.0" fitWidth="256.0" layoutX="730.0" layoutY="445.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../images/Spheal.png" />
+         </image>
+      </ImageView>
+      <ImageView fx:id="Img5" fitHeight="219.0" fitWidth="270.0" layoutX="775.0" layoutY="448.0" pickOnBounds="true" preserveRatio="true">
+         <image>
+            <Image url="@../images/ABSOL.png" />
+         </image>
+      </ImageView>
+
+      <VBox alignment="CENTER" layoutX="490.0" layoutY="217.0" prefHeight="240.0" prefWidth="300.0" style="-fx-background-color: rgba(0, 0, 0, 0.75); -fx-background-radius: 15; -fx-border-color: #FFDF73; -fx-border-width: 2; -fx-border-radius: 15;">
+         <children>
+            <Button fx:id="btnLogin" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#switchLogin" prefHeight="45.0" style="-fx-background-color: linear-gradient(to bottom, #FFDF73, #D4AF37); -fx-background-radius: 8; -fx-text-fill: #1A1A1A; -fx-font-weight: bold; -fx-cursor: hand;" text="LOG IN">
+               <font>
+                  <Font name="Times New Roman Bold" size="18.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="20.0" left="30.0" right="30.0" top="10.0" />
+               </VBox.margin>
+            </Button>
+
+            <Button fx:id="btnRegister" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#switchRegister" prefHeight="45.0" style="-fx-background-color: transparent; -fx-border-color: #FFDF73; -fx-border-width: 2; -fx-border-radius: 8; -fx-text-fill: #FFDF73; -fx-font-weight: bold; -fx-cursor: hand;" text="REGISTER">
+               <font>
+                  <Font name="Times New Roman Bold" size="16.0" />
+               </font>
+               <VBox.margin>
+                  <Insets bottom="10.0" left="30.0" right="30.0" />
+               </VBox.margin>
+            </Button>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
