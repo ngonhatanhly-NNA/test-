@@ -96,6 +96,23 @@ public class ItemNetwork {
                 });
     }
 
+    // Hàm xóa sản phẩm của seller
+    public CompletableFuture<Response> deleteItem(long sellerId, long itemId) {
+        String url = "http://localhost:7070/api/sellers/" + sellerId + "/items/" + itemId;
+
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(url))
+                .DELETE()
+                .header("Accept", "application/json")
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> gson.fromJson(response.body(), Response.class))
+                .exceptionally(e -> {
+                    System.out.println("Lỗi mạng khi xóa Item: " + e.getMessage());
+                    return new Response("ERROR", "Mất kết nối mạng!", null);
+                });
+    }
+
     // Hàm gửi yêu cầu tạo sản phẩm lên Server
     public CompletableFuture<Response> createItem(CreateItemRequestDTO itemDTO) {
         String jsonBody = gson.toJson(itemDTO);

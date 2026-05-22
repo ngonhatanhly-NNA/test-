@@ -34,14 +34,14 @@ public class BidHistoryController {
     private VBox listContainer;
 
     public void setBidHistoryData(long auctionId, List<BidHistoryDTO> history) {
-        subtitleLabel.setText("Phiên đấu giá #" + auctionId);
+        subtitleLabel.setText("Auction #" + auctionId);
         listContainer.getChildren().clear();
 
         if (history == null || history.isEmpty()) {
             VBox emptyBox = new VBox();
             emptyBox.setAlignment(Pos.CENTER);
             emptyBox.setPadding(new Insets(40, 0, 0, 0));
-            Label emptyLabel = new Label("Chưa có lượt đặt giá nào \uD83D\uDE22");
+            Label emptyLabel = new Label("No bids placed yet. \uD83D\uDE22");
             emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #64748B; -fx-font-style: italic;");
             emptyBox.getChildren().add(emptyLabel);
             listContainer.getChildren().add(emptyBox);

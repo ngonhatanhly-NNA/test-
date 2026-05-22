@@ -199,9 +199,6 @@ public class AuctionNetwork {
             if (res.getData() == null) {
                 return new ArrayList<>();
             }
-
-            // [GIẢI THÍCH]: Lệnh toJson ở dưới sẽ gọi đến cái JsonSerializer ta vừa dạy ở đầu file.
-            // Nhờ đó nó vượt qua ải an ninh của Java 17 thành công và ép mảng về List mượt mà -> Hỗ trợ LocalDateTime trong lịch sử đấu giá.
             Type listType = new TypeToken<ArrayList<BidHistoryDTO>>(){}.getType();
             String dataJson = gson.toJson(res.getData());
             List<BidHistoryDTO> result = gson.fromJson(dataJson, listType);

@@ -1,15 +1,25 @@
-# 🏷️ Team 13 Bidding System - Enterprise Online Auction Platform
+# 🏷️ Team 13 Bidding System 
 
 Một hệ thống đấu giá trực tuyến được xây dựng dựa trên kiến trúc **N-Tier (Đa tầng)** và **Multi-module Maven**, tuân thủ nghiêm ngặt các nguyên tắc thiết kế phần mềm hướng đối tượng (OOP), SOLID và vận dụng đa dạng các Design Patterns. Dự án tập trung vào khả năng mở rộng, quản lý trạng thái thời gian thực (real-time), và bảo mật luồng dữ liệu.
 
+- Đấu giá realtime đa user, UI hiện kết quả tức thời
+- Đăng nhập/Phân quyền (Bidder - Seller - Admin)
+- Auto-bid, anti-sniping kéo dài phiên khi bid “last minute”
+- Xử lý đồng thời, tránh race condition, rollback chuẩn nghiệp vụ
+- DB script và auto seed data, CI/CD trên GitHub Actions
+- Clean code, áp dụng design pattern, multi-module Maven
+- Tích hợp test cho các nghiệp vụ quan trọng
+
 ## 👥 Thành viên nhóm 13
 
-| STT | Họ và Tên | Mã Sinh Viên | Vai trò (Role) |
-|:---:|:---|:---|:---|
-| 1 | Ngô Nhật Ánh | 25020030 | Main FrontEnd - Backend Auth, Auction, User - DTO net, DB set up and Network setup - Configuration |
-| 2 | Đinh Anh Vũ | 25020432 | Frontend - Backend Item, User - DTO net - DB setup| 
-| 3 | Hoàng Văn Tưởng | 25020383 | Backend Admin - Seller - Bidder |
-| 4 | Mai Thế Phong | 25020310 |Admin FrontEnd -  Backend Admin - Seller - Bidder |
+
+| Thành viên          | Nhiệm vụ chính & Thiết kế | Giải pháp/Kiến trúc thực hiện | Tính năng, chức năng đã hoàn thành thực tế |
+|----------------------|-----------------------|-----------------------------|-------------------------------------|
+| **Ngô Nhật Ánh - 25020030**    | - Thiết kế tổng thể kiến trúc hệ thống (multi-layer, design pattern) <br> - Backend: Đấu giá (Auction), Auth, User, Networking, Security <br> - Set up DB, cấu hình môi trường, CI/CD <br> - Tối ưu concurrency, realtime socket <br> - Viết, tối ưu, review code chính cho các module khó | - Phân lớp N-Tier, chia module rõ ràng: shared/server/client <br> - Áp dụng các design patterns (Command, Observer, Strategy, State, Singleton...) <br> - Đảm nhiệm xây dựng AuctionService, AuthService, WebSocket Broadcaster <br> - Viết/áp dụng Anti-sniping, Auto-bid, xử lý đồng thời, bảo mật JWT | - Hệ thống đấu giá đa phiên: Đặt giá, auto-bid, sniping <br> - Realtime cập nhật giá, broadcast tới nhiều user qua Websocket <br> - Đăng ký/đăng nhập/xác thực tài khoản (Hash mật khẩu, JWT) <br> - Quản lý user, phân quyền (Bidder/Seller/Admin) <br> - CI/CD Github Actions, Unit test chính <br> - Tối ưu truy vấn DB, rollback, kiểm soát race condition |
+| **Đinh Anh Vũ - 25020432**      | - Xây dựng module User, Item <br> - Frontend UI JavaFX, kiểm thử | - Tham gia code UserService, ItemService, code giao diện, refactor data truyền mạng <br> - Đóng gói dữ liệu DTO, xử lý update Profile, xác thực | - CRUD User, Item <br> - Giao diện quản lý sản phẩm, tài khoản <br> - Kiểm thử, seed database, đóng góp cấu hình DB/DTO |
+| **Hoàng Văn Tưởng - 25020383 **  | - Backend Admin, Seller, Bidder <br> - Xử lý logic, review code <br> - Unit test | - Viết các controller và service riêng cho từng loại user <br> - Quản lý, kiểm tra nghiệp vụ phân quyền <br> - Viết Unit test, tham gia review các flow | - Module quản trị: Admin có thể thao tác trên danh sách User/Seller/Bidder <br> - Kiểm soát hành vi user, khóa mở tài khoản, kiểm thử logic phức tạp |
+| **Mai Thế Phong - 25020310**    | - Interface quản trị (Admin), Seller, Bidder <br> - Backend <br> - UI/UX User | - Kết nối UI JavaFX với backend, xử lý giao diện đa vai trò <br> - Code xử lý các chức năng cho admin, seller, bidder trong controller/service <br> - Refactor UI chuyển cảnh | - Màn hình quản trị hiện đại <br> - Giao diện User, Seller, Bidder đầy đủ chức năng <br> - Liên kết mượt giữa UI <-> Service <br> - Quản lý tài khoản & cập nhật thông tin |
+
 
 ---
 
@@ -93,27 +103,39 @@ mvn exec:java -pl Bidding_Client -Dexec.mainClass="com.client.Launcher"
 
 Dự án được chia thành 3 module độc lập để đảm bảo Tách biệt mối quan hệ**:
 
-### 1️⃣ Module `shared` 
-Đóng vai trò là thư viện dùng chung giữa Client và Server.
-* **DTOs & Models:** Định nghĩa các lớp Entity cơ sở. Hệ thống quản lý tài khoản được xây dựng trên một lớp base là `User` (xử lý toàn bộ logic Đăng ký / Đăng nhập), từ đó phân cấp (downcasting) linh hoạt thành các role `Bidder`, `Seller`, và `Admin`.
-* **Network Components:** Chứa các định dạng `Request` và `Response` chuẩn hóa để đóng gói dữ liệu truyền qua Socket/HTTP.
+### 1. 📦 Module `shared` (Thư viện dùng chung)
+* **Chức năng:** Đóng vai trò là một thư viện dùng chung (Common Library) cho cả hai phía Client và Server, đảm bảo tính đồng bộ dữ liệu toàn hệ thống.
+* **Các thành phần chính:**
+  * **DTOs & Models:** * Định nghĩa các lớp thực thể (Entity) cốt lõi như `User`, `Bidder`, `Seller`, `Admin`, v.v.
+    * Thiết lập hệ thống quản lý tài khoản, xử lý đăng ký/đăng nhập và phân cấp đa dạng các vai trò (roles) của người dùng.
+  * **Network Components:** * Đóng gói cấu trúc định dạng Request/Response tiêu chuẩn.
+    * Chuẩn hóa dữ liệu trao đổi giữa Client và Server thông qua các giao thức Socket hoặc HTTP.
+* **💡 Ý nghĩa:** Giúp tối ưu hóa mã nguồn, tránh lặp lại code (DRY - Don't Repeat Yourself). Khi có sự thay đổi về cấu trúc dữ liệu, chỉ cần cập nhật tại module này, giúp hệ thống dễ dàng bảo trì và mở rộng.
 
-### 2️⃣ Module `Bidding_Server` (Backend & Database)
-Trung tâm xử lý nghiệp vụ, giao tiếp với MySQL và quản lý kết nối đồng thời. Tuân thủ mô hình **MVC Server-side**.
-* **Controller (Network Layer):** Nhận luồng byte/JSON từ Socket, phân giải thành Command/DTO và điều hướng.
-* **Service (Business Logic):** Chứa các thuật toán cốt lõi độc lập với DB:
-  * Xử lý đấu giá đồng thời (Concurrent Bidding).
-  * Chống cướp giờ chót (Anti-sniping) và Đấu giá tự động (Auto-Bidding).
-* **Repository/DAO :** Điểm duy nhất chứa SQL. Áp dụng cơ chế kết nối Singleton (`DBConnection`) để tối ưu hóa Connection Pool, chống quá tải hệ thống.
-* **WebSocket/Broadcaster:** Quản lý danh sách Client trong phòng đấu giá, phát sóng (broadcast) trạng thái giá mới nhất theo thời gian thực (Real-time).
-* **Security: JWT, Bcrypt mã hóa token và phiên (mới mã hóa mật khẩu)
-* **Config: Setup hệ thống ban đầu
+---
 
-###  Module `Bidding_Client` (Frontend JavaFX)
-Chịu trách nhiệm hiển thị giao diện và tương tác người dùng theo mô hình **MVC**.
-* **Controller:** Bắt sự kiện UI (`LoginController`, `DashboardController`), xử lý luồng chuyển cảnh (`SceneController`) và hiệu ứng (`SpriteAnimation`).
-* **Session Management:** `UserSession` lưu trữ ID phiên làm việc an toàn tại máy khách, tránh việc phải đăng nhập lại liên tục.
-* **Network/Sender:** Trình đóng gói UI thành JSON, nén thành byte và gửi qua kênh Socket TCP đến Server. Đồng thời lắng nghe WebSocket để tự động cập nhật UI khi có người đặt giá.
+### 2. 🖥️ Module `Bidding_Server` (Backend & Database)
+* **Chức năng:** Chịu trách nhiệm tiếp nhận yêu cầu, xử lý toàn bộ logic nghiệp vụ, tương tác trực tiếp với cơ sở dữ liệu MySQL và điều phối mọi hoạt động phía máy chủ.
+* **Các thành phần chính:**
+  * **Controller (Network Layer):** Tiếp nhận yêu cầu từ Client, thực hiện đọc/gửi dữ liệu định dạng JSON qua kết nối SOCKET, và điều hướng luồng xử lý dữ liệu.
+  * **Service (Business Logic):** Nơi tập trung toàn bộ thuật toán nghiệp vụ cốt lõi, hoạt động độc lập với tầng Controller và DAO. Xử lý các bài toán phức tạp như: vận hành đồng thời nhiều phiên đấu giá (concurrency), thuật toán chống gian lận, hệ thống tự động đặt giá (auto-bidding),...
+  * **Repository / DAO (Data Access Object):** Điểm truy cập duy nhất cho mọi thao tác liên quan tới cơ sở dữ liệu SQL. Áp dụng mẫu thiết kế **Singleton (`DBConnection`)** để tối ưu hóa connection pool, ngăn ngừa tình trạng quá tải và gia tăng hiệu năng hệ thống.
+  * **WebSocket / Broadcaster:** Quản lý và phát sóng (broadcast) trạng thái của các phòng đấu giá theo thời gian thực (Real-time). Đảm bảo mọi Client luôn nhận được mức giá mới nhất một cách liên tục và tức thì.
+  * **Security:** Tích hợp cơ chế mã hóa và băm mật khẩu mạnh mẽ bằng **BCrypt**, đồng thời quản lý và bảo mật token cho các phiên đăng nhập.
+  * **Config:** Lưu trữ các tệp cấu hình hệ thống, thông số kết nối Database và các thiết lập khởi tạo Server ban đầu.
+* **💡 Ý nghĩa:** Được ví như "não bộ" của toàn hệ thống, chịu trách nhiệm vận hành, kiểm soát, ra quyết định và phản hồi thông tin chính xác, kịp thời tới các Client.
+
+---
+
+### 3. 💻 Module `Bidding_Client` (Frontend JavaFX)
+* **Chức năng:** Đảm nhận việc xây dựng giao diện người dùng (UI/UX), hiển thị thông tin trực quan và xử lý các tương tác trực tiếp từ phía người dùng cuối.
+* **Các thành phần chính:**
+  * **Controller (UI):** * Quản lý các màn hình chức năng (Đăng nhập, Đăng ký, Dashboard, Phòng đấu giá...).
+    * Xử lý các hiệu ứng chuyển cảnh động và quản lý hoạt họa đồ họa (ví dụ: `SpriteAnimation`). Điều hướng luồng tương tác của người dùng trên giao diện.
+  * **Session Management:** Lưu trữ thông tin phiên làm việc của người dùng hiện tại qua đối tượng `UserSession`. Giúp duy trì trạng thái đăng nhập và cá nhân hóa trải nghiệm người dùng xuyên suốt ứng dụng.
+  * **Network / Sender:** * Thiết lập kết nối, đóng gói và gửi/nhận các gói dữ liệu JSON thông qua **Socket TCP** tới Server.
+    * Đồng thời, liên tục lắng nghe các tín hiệu cập nhật từ WebSocket để cập nhật giao diện thời gian thực (như khi xuất hiện AI Bidder, bước giá mới, đếm ngược thời gian,...).
+* **💡 Ý nghĩa:** Là nơi người dùng tương tác trực tiếp với hệ thống. Đảm bảo mọi luồng thông tin từ Server được hiển thị mượt mà, trực quan và cập nhật real-time theo từng mili-giây.
 
 ---
 

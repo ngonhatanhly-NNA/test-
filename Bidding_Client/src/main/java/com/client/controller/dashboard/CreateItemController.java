@@ -164,7 +164,7 @@ public class CreateItemController {
                 // TẠM THỜI: Gửi tên file thay vì URL thực tế vì chưa có API upload chuẩn
                 uploadedImageUrls.add(selectedImageFile.getAbsolutePath());
             } else {
-                uploadedImageUrls.add("default-item.png"); // Gắn ảnh mặc định nếu không chọn
+                uploadedImageUrls.add("BasicImage.png"); // Gắn ảnh mặc định nếu không chọn
             }
 
             // Dùng Builder Pattern
@@ -204,7 +204,7 @@ public class CreateItemController {
         } catch (NumberFormatException e) {
             logger.error("Dữ liệu số nhập vào không hợp lệ: {}", e.getMessage());
             Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setContentText("Dữ liệu số nhập vào không hợp lệ!");
+            alert.setContentText("Invalid number format. Please check your input!");
             alert.showAndWait();
         }
     }

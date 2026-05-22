@@ -1,6 +1,9 @@
 package com.server.service;
 
+import com.server.DAO.AuctionRepository;
 import com.server.DAO.ISellerRepository;
+import com.server.DAO.ItemRepository;
+import com.server.model.Auction;
 import com.server.model.Item;
 import com.server.model.Seller;
 import com.server.model.Status;
@@ -20,9 +23,13 @@ import java.util.stream.Collectors;
 public class SellerService {
 
     private final ISellerRepository sellerRepository;
+    private final ItemRepository itemRepo;
+    private final AuctionRepository auctionRepo;
 
     public SellerService(ISellerRepository sellerRepository) {
         this.sellerRepository = sellerRepository;
+        this.itemRepo = new ItemRepository();
+        this.auctionRepo = new AuctionRepository();
     }
 
     /**
@@ -110,6 +117,38 @@ public class SellerService {
     public Response getTransferHistory(long sellerId) {
         List<TransferHistoryDTO> history = sellerRepository.getTransferHistory(sellerId);
         return new Response("SUCCESS", "Lấy lịch sử chuyển tiền thành công.", history);
+    }
+
+    /**
+     * Xóa sản phẩm của seller.
+     * Chỉ cho phép xóa khi item thuộc về đúng seller đó
+     * VÀ chưa có phiên đấu giá nào đang mở hoặc đang chạy.
+     */
+    public Response deleteItem(long sellerId, long itemId) {
+        // Kiểm tra item có thuộc seller này không
+        List<Item> myItems = sellerRepository.getItemsBySellerId(sellerId);
+        boolean owned = myItems.stream().anyMatch(item -> item.getId() == itemId);
+        if (!owned) {
+            return new Response("ERROR", "Bạn không có quyền xóa sản phẩm này.", null);
+        }
+
+        // Kiểm tra trạng thái các phiên đấu giá liên quan đến item này
+        List<Auction> auctions = auctionRepo.findByItemId(itemId);
+        boolean hasActiveAuction = auctions.stream().anyMatch(a ->
+                a.getStatus() == Auction.AuctionStatus.SCHEDULED ||
+                        a.getStatus() == Auction.AuctionStatus.OPEN ||
+                        a.getStatus() == Auction.AuctionStatus.RUNNING
+        );
+        if (hasActiveAuction) {
+            return new Response("ERROR", "Không thể xóa sản phẩm đang trong phiên đấu giá. Hãy chờ phiên kết thúc.", null);
+        }
+
+        boolean success = itemRepo.delete(itemId);
+        if (success) {
+            return new Response("SUCCESS", "Xóa sản phẩm thành công.", null);
+        } else {
+            return new Response("ERROR", "Không thể xóa sản phẩm. Vui lòng thử lại.", null);
+        }
     }
 
     /**

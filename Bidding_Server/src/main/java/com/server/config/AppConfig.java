@@ -2,6 +2,7 @@ package com.server.config;
 
 import java.util.Arrays;
 import java.util.List;
+import java.net.InetSocketAddress; // [THÊM MỚI]
 
 import com.server.DAO.*;
 import com.server.controller.*;
@@ -16,26 +17,24 @@ import com.server.service.auction.strategy.BasicBidValidation;
 import com.server.service.auction.strategy.BidValidationChain;
 import com.server.service.auction.strategy.BidValidationStrategy;
 import com.server.service.auction.strategy.MinimumIncrementValidation;
-import com.server.service.auction.strategy.OptimisticLockValidation;
 import com.server.websocket.Broadcaster;
 
 public class AppConfig {
 
-    /**
-     * Class để gom các thành phần cần thiết mang về ServerApp
-     */
     public static class AppComponents {
         public final ApiRouter apiRouter;
         public final AuctionService auctionService;
+        public final Broadcaster broadcaster; // [THÊM MỚI] Gói thêm Broadcaster
 
-        public AppComponents(ApiRouter apiRouter, AuctionService auctionService) {
+        public AppComponents(ApiRouter apiRouter, AuctionService auctionService, Broadcaster broadcaster) {
             this.apiRouter = apiRouter;
             this.auctionService = auctionService;
+            this.broadcaster = broadcaster;
         }
     }
 
     public static AppComponents buildDependencies() {
-        // Repositories (DAOs)
+        // ... (Khởi tạo DAO giữ nguyên) ...
         UserRepository userRepo = new UserRepository();
         ItemRepository itemRepo = new ItemRepository();
         AuctionRepository auctionRepo = new AuctionRepository();
@@ -44,39 +43,34 @@ public class AppConfig {
         SellerRepository sellerRepo = new SellerRepository();
         BidderRepository bidderRepoReal = new BidderRepository();
 
-        // Utilities & Chuỗi Validate (Chain of Responsibility)
         JwtUtil jwtUtil = JwtUtil.fromEnvironment();
-        List<BidValidationStrategy> rules = Arrays.asList(
-                new BasicBidValidation(),
-                new MinimumIncrementValidation()
-        );
+        List<BidValidationStrategy> rules = Arrays.asList(new BasicBidValidation(), new MinimumIncrementValidation());
         BidValidationChain validator = new BidValidationChain(rules);
 
-        // Processors & Broadcaster
         ManualBidProcessor manualProc = new ManualBidProcessor(auctionRepo, bidderRepoReal);
         AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo, auctionRepo, bidderRepoReal);
-        Broadcaster broadcaster = new Broadcaster();
+        
+        //  Khởi tạo WebSocket ở Cổng 8080
+        Broadcaster broadcaster = new Broadcaster(new InetSocketAddress("localhost", 8080));
 
-        // Services
         AuthService authService = new AuthService(userRepo);
         ItemService itemService = new ItemService(itemRepo);
         AdminService adminService = new AdminService();
         UserService userService = new UserService();
         BidderService bidderService = new BidderService();
         SellerService sellerService = new SellerService(sellerRepo);
-
-        // [SỬA] Truyền thêm bidderRepoReal vào AuctionService để AuctionScheduler
-        // có thể trừ tiền tự động khi người thắng đấu giá
+        
+        //Nhớ truyền bidderRepo
         AuctionService auctionService = new AuctionService(
-                auctionRepo, bidRepo, autoBidRepo, itemService, userRepo,
-                bidderRepoReal,  // [SỬA] thêm dòng này
+                auctionRepo, bidRepo, autoBidRepo, itemService, userRepo, bidderRepoReal,
                 validator, new DefaultAntiSnipingStrategy(), manualProc, autoProc
         );
+        
+        // Circular wiring)
+        auctionService.setEventListener(broadcaster); // 1. Auction gửi event cho Webscoket
+        broadcaster.setAuctionService(auctionService); // 2. Websocket gửi lệnh ngược lại cho Auction
 
-        // Gắn broadcaster để gửi real-time updates qua WebSocket
-        auctionService.setEventListener(broadcaster);
-
-        // Controllers
+        // ... (Controllers & Route giữ nguyên) ...
         AuthController authController = new AuthController(authService, jwtUtil);
         AuctionController auctionController = new AuctionController(auctionService);
         AdminController adminController = new AdminController(adminService);
@@ -85,13 +79,12 @@ public class AppConfig {
         SellerController sellerController = new SellerController(sellerService);
         ImageController imageController = new ImageController();
 
-        // Khởi tạo Router (Controllers)
         CommandFactory commandFactory = new CommandFactory(auctionService, itemService, userService);
         ApiRouter apiRouter = new ApiRouter(authController, auctionController, adminController,
-                bidderController, sellerController, itemService, auctionService, jwtUtil,
-                userController, imageController,
-                commandFactory);
+            bidderController, sellerController, itemService, auctionService, jwtUtil, 
+            userController, imageController, commandFactory); 
 
-        return new AppComponents(apiRouter, auctionService);
+        // [CẬP NHẬT] Trả về 3 tham số
+        return new AppComponents(apiRouter, auctionService, broadcaster);
     }
 }

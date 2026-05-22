@@ -89,4 +89,22 @@ public class SellerController {
             ctx.status(500).json(new Response("ERROR", "Lỗi server: " + e.getMessage(), null));
         }
     }
+
+    /**
+     * DELETE /api/sellers/{sellerId}/items/{itemId}
+     * Xóa sản phẩm của seller (chỉ khi chưa có phiên đấu giá đang chạy).
+     */
+    public void deleteItem(Context ctx) {
+        try {
+            long sellerId = Long.parseLong(ctx.pathParam("sellerId"));
+            long itemId = Long.parseLong(ctx.pathParam("itemId"));
+            Response response = sellerService.deleteItem(sellerId, itemId);
+            ctx.json(response);
+        } catch (NumberFormatException e) {
+            ctx.status(400).json(new Response("ERROR", "ID không hợp lệ", null));
+        } catch (Exception e) {
+            logger.error("Lỗi xóa item của seller: {}", e.getMessage(), e);
+            ctx.status(500).json(new Response("ERROR", "Lỗi server: " + e.getMessage(), null));
+        }
+    }
 }

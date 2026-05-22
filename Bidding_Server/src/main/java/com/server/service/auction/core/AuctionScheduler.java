@@ -1,5 +1,7 @@
 package com.server.service.auction.core;
 
+import com.server.service.auction.processor.AutoBidProcessor;
+import com.shared.dto.AuctionUpdateDTO;
 import com.server.DAO.AuctionRepository;
 import com.server.DAO.IBidderRepository;
 import com.server.DAO.ItemRepository;
@@ -7,6 +9,7 @@ import com.server.DAO.UserRepository;
 import com.server.model.Auction;
 import com.server.model.Bidder;
 import com.server.model.User;
+import com.server.model.BidTransaction;
 import com.server.websocket.AuctionEventListener;
 import com.shared.dto.AuctionWinnerDTO;
 import org.slf4j.Logger;
@@ -21,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.ArrayList;
 
 public class AuctionScheduler {
     private static final Logger logger = LoggerFactory.getLogger(AuctionScheduler.class);
@@ -28,40 +32,36 @@ public class AuctionScheduler {
     private final AuctionSharedState sharedState;
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
-    private final IBidderRepository bidderRepository; // [SỬA] Thêm BidderRepository để trừ tiền winner
-    private final ItemRepository itemRepository;      // [THÊM] Để lấy tên sản phẩm ghi lịch sử
-
+    private final IBidderRepository bidderRepository;
+    private final ItemRepository itemRepository;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
     private AuctionEventListener eventListener;
     private final AuctionQueryService queryService;
+    private final AutoBidProcessor autoBidProcessor;
 
-    // [SỬA] Constructor thêm tham số IBidderRepository
     public AuctionScheduler(AuctionSharedState sharedState, AuctionRepository auctionRepository,
                             UserRepository userRepository, AuctionQueryService queryService,
-                            IBidderRepository bidderRepository) {
+                            IBidderRepository bidderRepository, AutoBidProcessor autoBidProcessor) {
         this.sharedState = sharedState;
         this.auctionRepository = auctionRepository;
         this.userRepository = userRepository;
         this.queryService = queryService;
         this.bidderRepository = bidderRepository;
         this.itemRepository = new ItemRepository();
+        this.autoBidProcessor = autoBidProcessor;
     }
 
     public void setEventListener(AuctionEventListener listener) {
         this.eventListener = listener;
     }
 
-    /**
-     * Khởi tạo service: Tải các phiên đấu giá đang hoạt động từ DB vào cache.
-     * Đảm bảo không bị mất dữ liệu khi server restart.
-     */
     public void init() {
         try {
             List<Auction> auctions = auctionRepository.findByStatusIn(
                     List.of(Auction.AuctionStatus.SCHEDULED, Auction.AuctionStatus.OPEN, Auction.AuctionStatus.RUNNING));
 
             for (Auction auction : auctions) {
-                sharedState.cacheAuction(auction); // Cache tất cả
+                sharedState.cacheAuction(auction);
                 if (auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
                     scheduleAuctionStart(auction);
                 } else if (auction.getStatus() == Auction.AuctionStatus.OPEN || auction.getStatus() == Auction.AuctionStatus.RUNNING) {
@@ -74,17 +74,11 @@ public class AuctionScheduler {
         }
     }
 
-    /**
-     * Thêm phiên đấu giá vào cache và lên lịch kết thúc (chỉ cho OPEN/RUNNING)
-     */
     public void cacheAndScheduleAuction(Auction auction) {
         sharedState.cacheAuction(auction);
         scheduleAuctionEnd(auction);
     }
 
-    /**
-     * Lên lịch bắt đầu phiên đấu giá
-     */
     public void scheduleAuctionStart(Auction auction) {
         long delay = Duration.between(LocalDateTime.now(), auction.getStartTime()).toMillis();
         if (delay > 0) {
@@ -98,9 +92,6 @@ public class AuctionScheduler {
         }
     }
 
-    /**
-     * Lên lịch kết thúc phiên đấu giá
-     */
     public void scheduleAuctionEnd(Auction auction) {
         long delay = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         if (delay > 0) {
@@ -119,10 +110,9 @@ public class AuctionScheduler {
         }
     }
 
-    /**
-     * Bắt đầu phiên đấu giá: chuyển status từ SCHEDULED sang OPEN và cache, cache lưu trữ sẽ hỗ trợ
-     */
     private void startAuction(long auctionId) {
+        ReentrantLock lock = sharedState.auctionLocks.computeIfAbsent(auctionId, k -> new ReentrantLock());
+        lock.lock();
         try {
             Auction auction = auctionRepository.findById(auctionId).orElse(null);
             if (auction != null && auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
@@ -134,17 +124,34 @@ public class AuctionScheduler {
                 if (eventListener != null) {
                     eventListener.onAuctionCreated(queryService.toDetailDto(auction));
                 }
+
+                List<BidTransaction> initialAutoBids = new ArrayList<>();
+                autoBidProcessor.process(auction, initialAutoBids);
+
+                if (!initialAutoBids.isEmpty()) {
+                    sharedState.bidQueue.offer(new BidPersistenceBatch(auction.getId(), initialAutoBids));
+                }
+
+                if (eventListener != null && auction.getWinnerId() != null) {
+                    String bidderName = sharedState.resolveUserDisplayName(auction.getWinnerId(), "User");
+                    long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
+
+                    AuctionUpdateDTO update = new AuctionUpdateDTO(
+                            auction.getId(),
+                            auction.getCurrentHighestBid(),
+                            bidderName,
+                            Math.max(0, remaining)
+                    );
+                    eventListener.onAuctionUpdate(update);
+                }
             }
         } catch (Exception e) {
             logger.error("Error in starting auction {}: {}", auctionId, e.getMessage());
+        } finally {
+            lock.unlock();
         }
     }
 
-    /**
-     * Kết thúc phiên đấu giá và LƯU VÀO DATABASE.
-     * Đảm bảo winner_id và status=FINISHED được persist để không mất khi restart.
-     * [SỬA] Tự động trừ tiền của người thắng đấu giá sau khi kết thúc.
-     */
     private void finishAuction(long auctionId) {
         ReentrantLock lock = sharedState.auctionLocks.get(auctionId);
         if (lock != null) {
@@ -162,9 +169,9 @@ public class AuctionScheduler {
                             auction.getWinnerId() != null ? auction.getWinnerId() : "None",
                             auction.getCurrentHighestBid());
 
-                    // [SỬA] Trừ tiền người thắng đấu giá
                     if (auction.getWinnerId() != null && auction.getCurrentHighestBid() != null) {
                         deductWinnerBalance(auction.getWinnerId(), auction.getCurrentHighestBid(), auctionId);
+                        creditSellerBalance(auction.getSellerId(), auction.getCurrentHighestBid(), auctionId, auction.getItemId());
                     }
 
                     if (auction.getWinnerId() != null && eventListener != null) {
@@ -195,14 +202,6 @@ public class AuctionScheduler {
         }
     }
 
-    /**
-     * [SỬA - THÊM MỚI] Trừ tiền ví của người thắng đấu giá.
-     * Lấy Bidder từ DB → trừ số tiền đấu giá → lưu lại DB → ghi lịch sử giao dịch.
-     *
-     * @param winnerId     ID của người thắng
-     * @param finalAmount  Số tiền cần trừ (giá đấu giá cao nhất)
-     * @param auctionId    ID của phiên đấu giá (dùng cho log)
-     */
     private void deductWinnerBalance(long winnerId, BigDecimal finalAmount, long auctionId) {
         try {
             Bidder winner = bidderRepository.getBidderById(winnerId);
@@ -223,7 +222,6 @@ public class AuctionScheduler {
                 logger.info("Auction {}: Đã trừ {} từ ví Bidder ID {}. Số dư còn lại: {}",
                         auctionId, finalAmount, winnerId, winner.getWalletBalance());
 
-                // [THÊM] Lấy tên sản phẩm để ghi vào mô tả lịch sử giao dịch
                 Auction auction = auctionRepository.findById(auctionId).orElse(null);
                 String itemName = "Phiên đấu giá #" + auctionId;
                 if (auction != null) {
@@ -237,7 +235,6 @@ public class AuctionScheduler {
                     }
                 }
 
-                // [THÊM] Ghi lịch sử giao dịch trừ tiền vào bảng wallet_transactions
                 String description = String.format(
                         "Thanh toán đấu giá thành công: %s (-%,.0f VNĐ)", itemName, finalAmount.doubleValue());
                 boolean logged = bidderRepository.logTransaction(winnerId, finalAmount, "DEDUCT", description);
@@ -255,9 +252,46 @@ public class AuctionScheduler {
         }
     }
 
-    /*
-     * Tắt hệ thống
-     */
+    private void creditSellerBalance(long sellerId, BigDecimal finalAmount, long auctionId, long itemId) {
+        try {
+            Bidder seller = bidderRepository.getBidderById(sellerId);
+            if (seller == null) {
+                logger.error("Auction {}: Không tìm thấy Seller ID {} để cộng tiền!", auctionId, sellerId);
+                return;
+            }
+
+            BigDecimal newBalance = seller.getWalletBalance().add(finalAmount);
+            boolean saved = bidderRepository.updateBalance(sellerId, newBalance);
+            if (saved) {
+                logger.info("Auction {}: Đã cộng {} vào ví Seller ID {}. Số dư mới: {}",
+                        auctionId, finalAmount, sellerId, newBalance);
+
+                String itemName = "Phiên đấu giá #" + auctionId;
+                try {
+                    String name = itemRepository.findItemNameByItemId(itemId);
+                    if (name != null && !name.isBlank()) {
+                        itemName = name;
+                    }
+                } catch (Exception ex) {
+                    logger.warn("Auction {}: Không lấy được tên sản phẩm: {}", auctionId, ex.getMessage());
+                }
+
+                String description = String.format(
+                        "Thu tiền đấu giá thành công: %s (+%,.0f VNĐ)", itemName, finalAmount.doubleValue());
+                boolean logged = bidderRepository.logTransaction(sellerId, finalAmount, "DEPOSIT", description);
+                if (logged) {
+                    logger.info("Auction {}: Đã ghi lịch sử giao dịch cộng tiền cho Seller ID {}", auctionId, sellerId);
+                } else {
+                    logger.error("Auction {}: Ghi lịch sử giao dịch thất bại cho Seller ID {}", auctionId, sellerId);
+                }
+            } else {
+                logger.error("Auction {}: Lỗi khi lưu DB khi cộng tiền cho Seller ID {}!", auctionId, sellerId);
+            }
+        } catch (Exception e) {
+            logger.error("Auction {}: Lỗi khi cộng tiền Seller ID {}: {}", auctionId, sellerId, e.getMessage(), e);
+        }
+    }
+
     public void shutdown() {
         scheduler.shutdown();
         try {

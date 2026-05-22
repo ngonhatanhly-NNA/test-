@@ -44,7 +44,7 @@ public class DashboardController {
                 btnManagement.setManaged(false);
             }
         } else {
-            lblUsername.setText("Khách");
+            lblUsername.setText("Guest");
             if (btnManagement != null) {
                 btnManagement.setVisible(false);
                 btnManagement.setManaged(false);

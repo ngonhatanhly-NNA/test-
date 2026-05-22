@@ -2,6 +2,7 @@ package com.client.controller.dashboard;
 
 import com.client.network.AuctionNetwork;
 import com.client.session.ClientSession;
+import com.client.util.ToastUtil;
 import com.google.gson.Gson;
 import com.shared.dto.CreateAuctionDTO;
 import com.shared.dto.AuctionDetailDTO;
@@ -37,6 +38,14 @@ public class CreateAuctionController {
 
     private long currentItemId;
 
+    // [THÊM VÀO] Hàm initialize chạy ngay khi FXML được load
+    @FXML
+    public void initialize() {
+        // Set dòng chữ mờ mờ hướng dẫn người dùng nhập đúng định dạng
+        txtStartTime.setPromptText("HH:mm");
+        txtEndTime.setPromptText("HH:mm");
+    }
+
     public void initData(long itemId) {
         this.currentItemId = itemId;
         logger.info("Mở Popup tạo Auction cho Item ID: {}", this.currentItemId);
@@ -56,7 +65,10 @@ public class CreateAuctionController {
             LocalDateTime endDateTime = combineDateTime(dpEndDate.getValue(), txtEndTime.getText());
 
             if (endDateTime.isBefore(startDateTime)) {
+                // LOG CHO DEV (Tiếng Việt)
                 logger.error("Thời gian kết thúc không thể trước thời gian bắt đầu!");
+                // UI CHO USER (Tiếng Anh)
+                ToastUtil.showError("End time cannot be before start time!");
                 return;
             }
 
@@ -102,22 +114,39 @@ public class CreateAuctionController {
                                     sellerView.addOrUpdateAuctionRealtime(createdAuction);
                                 }
                             }
+
+                            // LOG CHO DEV (Tiếng Việt)
                             logger.info("Đưa sản phẩm lên Sàn Đấu Giá THÀNH CÔNG! Đóng popup.");
+                            // UI CHO USER (Tiếng Anh)
+                            ToastUtil.showSuccess("Auction created successfully!");
                             handleCancel(null);
                         } else {
                             // Lấy thông báo lỗi từ Server (nếu có)
                             logger.error("Lỗi Server khi tạo Auction: {}", response.getMessage());
+                            // UI CHO USER (Lấy thông điệp từ server nếu có, không thì hiện mặc định)
+                            ToastUtil.showError(response.getMessage() != null ? response.getMessage() : "Failed to create auction!");
                         }
                     });
                 } catch (Exception e) {
-                    Platform.runLater(() -> logger.error("Lỗi kết nối mạng: {}", e.getMessage()));
+                    Platform.runLater(() -> {
+                        logger.error("Lỗi kết nối mạng: {}", e.getMessage());
+                        ToastUtil.showError("Connection failed! Please try again.");
+                    });
                 }
             });
 
+            // ================= CÁC KHỐI CATCH BẮT LỖI GIAO DIỆN =================
         } catch (DateTimeParseException | NullPointerException e) {
+            // LOG CHO DEV
             logger.error("Lỗi định dạng ngày/giờ. Vui lòng nhập giờ dạng HH:mm (VD: 14:30)");
+            // UI CHO USER
+            ToastUtil.showError("Invalid date or time! Please use HH:mm format.");
+
         } catch (NumberFormatException e) {
+            // LOG CHO DEV
             logger.error("Lỗi định dạng Step Price: Yêu cầu nhập số.");
+            // UI CHO USER
+            ToastUtil.showError("Invalid step price! Must be a valid number.");
         }
     }
 

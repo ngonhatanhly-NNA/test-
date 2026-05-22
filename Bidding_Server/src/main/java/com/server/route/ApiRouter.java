@@ -170,6 +170,7 @@ public class ApiRouter {
         app.get("/api/items", commandFactory.getAllItems());
         app.post("/api/items", commandFactory.createItem());
         app.get("/api/items/seller/{sellerId}", commandFactory.getItemsBySeller(0));
+        app.delete("/api/sellers/{sellerId}/items/{itemId}", ctx -> sellerController.deleteItem(ctx));
     }
 
     // ==============================================================
@@ -196,6 +197,7 @@ public class ApiRouter {
     // 7. MODULE QUẢN TRỊ VIÊN (ADMIN)
     // ==============================================================
     private void setupAdminRoutes(Javalin app) {
+
         app.get("/api/admin/dashboard", ctx -> adminController.getDashboard(ctx));
         app.get("/api/admin/users", ctx -> adminController.getAllUsers(ctx));
         app.get("/api/admin/users/search/{username}", ctx -> adminController.searchUser(ctx));

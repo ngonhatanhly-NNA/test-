@@ -83,7 +83,7 @@ public class AuctionRepository implements IAuctionRepository {
     @Override
     public void save(Auction auction) {
         // Use optimistic locking: only update when version matches, and increment version on success.
-        String sql = "UPDATE auctions SET current_highest_bid = ?, winner_id = ?, status = ?, end_time = ?, updated_at = NOW(), version = version + 1 WHERE id = ? AND version = ?";
+        String sql = "UPDATE auctions SET current_highest_bid = ?, winner_id = ?, status = ?, end_time = ?, updated_at = NOW() WHERE id = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -102,16 +102,12 @@ public class AuctionRepository implements IAuctionRepository {
             pstmt.setString(3, auction.getStatus().name());
             pstmt.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
             pstmt.setLong(5, auction.getId());
-            pstmt.setInt(6, auction.getVersion());
 
             int affected = pstmt.executeUpdate();
             if (affected == 0) {
-                // concurrent modification detected
-                logger.error("Optimistic lock failure when saving auction {} (version {})", auction.getId(), auction.getVersion());
-                throw new RuntimeException("Optimistic lock failure for auction " + auction.getId());
+                logger.error("Không tìm thấy auction {} để cập nhật", auction.getId());
+                throw new RuntimeException("Không tìm thấy auction " + auction.getId());
             }
-            // On success, increment version in the in-memory object as well
-            auction.setVersion(auction.getVersion() + 1);
         } catch (SQLException e) {
             logger.error("Lỗi update phiên đấu giá {}: {}", auction.getId(), e.getMessage(), e);
             throw new RuntimeException("Database từ chối cập nhật: " + e.getMessage());
@@ -120,8 +116,8 @@ public class AuctionRepository implements IAuctionRepository {
 
     @Override
     public long create(Auction auction) {
-        String sql = "INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, version, created_at, updated_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, created_at, updated_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -134,7 +130,6 @@ public class AuctionRepository implements IAuctionRepository {
             pstmt.setBigDecimal(6, auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO);
             pstmt.setNull(7, Types.BIGINT);
             pstmt.setString(8, auction.getStatus().name());
-            pstmt.setInt(9, auction.getVersion());
 
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
@@ -291,5 +286,5 @@ public class AuctionRepository implements IAuctionRepository {
             logger.error("Lỗi optimistic update price: {}", e.getMessage(), e);
             return false;
         }
-}
+    }
 }

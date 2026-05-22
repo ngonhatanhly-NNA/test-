@@ -1,4 +1,5 @@
 package com.client.controller.auth;
+
 import com.client.network.AuthNetwork;
 import com.client.session.ClientSession;
 import com.client.util.*;
@@ -57,7 +58,7 @@ public class LoginController {
             iconEye.setImage(eyeClosed);
         }
 
-        // [THÊM MỚI] Bắt sự kiện Enter (gọi thẳng hàm handleLogin)
+        // Bắt sự kiện Enter (gọi thẳng hàm handleLogin)
         txtUsername.setOnAction(this::handleLogin);
         txtPassword.setOnAction(this::handleLogin);
         txtPasswordVisible.setOnAction(this::handleLogin); // Cho trường hợp đang hiện password
@@ -91,6 +92,7 @@ public class LoginController {
             txtPassword.positionCaret(txtPassword.getText().length());
         }
     }
+
     //  XỬ LÝ KHI BẤM NÚT ĐĂNG NHẬP
     @FXML
     public void handleLogin(ActionEvent event) {
@@ -100,7 +102,8 @@ public class LoginController {
 
         // Validate dữ liệu cơ bản
         if (username.isEmpty() || password.isEmpty()) {
-            showMessage("⚠️  Vui lòng nhập đầy đủ Tài khoản và Mật khẩu!", Color.web("#e74c3c"));
+            // UI CHO USER (Tiếng Anh)
+            showMessage("⚠️ Please enter both Username and Password!", Color.web("#e74c3c"));
             return;
         }
 
@@ -112,8 +115,8 @@ public class LoginController {
 
         Gson gson = new Gson();
 
-        // Hiển thị thông báo loading
-        lblMessage.setText("⏳ Đang kiểm tra thông tin đăng nhập...");
+        // Hiển thị thông báo loading trên UI (Tiếng Anh)
+        lblMessage.setText("⏳ Checking credentials...");
         lblMessage.setTextFill(Color.web("#3B82F6")); // Màu xanh
 
         authNetwork.login(loginData).thenAccept(res -> {
@@ -130,26 +133,31 @@ public class LoginController {
                                 ClientSession.clear();
                             }
                         } catch (Exception ex) {
+                            // Giữ nguyên dòng in lỗi kỹ thuật
                             ex.printStackTrace();
                             ClientSession.clear();
                         }
                     }
-                    lblMessage.setText("✓ Đăng nhập thành công! Đang vào Dashboard...");
+                    // UI CHO USER (Tiếng Anh)
+                    lblMessage.setText("✓ Login successful! Redirecting to Dashboard...");
                     lblMessage.setTextFill(Color.web("#10B981")); // Màu xanh lá
-                    String role = ClientSession.getRole();
-                    String targetScene = "Dashboard.fxml";
 
+                    String targetScene = "Dashboard.fxml";
                     switchToDashboard(targetScene);
                 } else {
-                    // Hiển thị thông báo lỗi rõ ràng
+                    // Logic xử lý thông báo lỗi từ Server (Có thể message từ server vẫn là tiếng Việt,
+                    // ta dùng logic Contains tiếng Việt nhưng in ra UI bằng tiếng Anh)
                     String errorMessage = res.getMessage();
+
                     if (errorMessage.contains("không tồn tại")) {
-                        showMessage("❌ Tài khoản không tồn tại!", Color.web("#e74c3c"));
+                        showMessage("❌ Account does not exist!", Color.web("#e74c3c"));
                     } else if (errorMessage.contains("Sai mật khẩu")) {
-                        showMessage("❌ Mật khẩu không đúng! Vui lòng thử lại.", Color.web("#e74c3c"));
+                        showMessage("❌ Incorrect password! Please try again.", Color.web("#e74c3c"));
                     } else if (errorMessage.contains("khóa")) {
-                        showMessage("🔒 Tài khoản của bạn đã bị khóa!", Color.web("#EF4444"));
+                        showMessage("🔒 Your account has been banned!", Color.web("#EF4444"));
                     } else {
+                        // Trả nguyên lỗi server nếu không khớp các case trên
+                        // (hoặc nếu server đã nâng cấp trả tiếng Anh thì nó sẽ hiện luôn)
                         showMessage("❌ " + errorMessage, Color.web("#e74c3c"));
                     }
 
@@ -160,8 +168,10 @@ public class LoginController {
             });
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
+                // LOG CHO DEV (Tiếng Việt)
                 logger.error("Lỗi kết nối server: {}", ex.getMessage());
-                showMessage("❌ Không thể kết nối đến server. Vui lòng kiểm tra kết nối!", Color.web("#e74c3c"));
+                // UI CHO USER (Tiếng Anh)
+                showMessage("❌ Connection failed! Please check your network.", Color.web("#e74c3c"));
             });
             return null;
         });
@@ -177,14 +187,14 @@ public class LoginController {
             stage.setScene(scene);
             stage.show();
         } catch (IOException e) {
+            // LOG CHO DEV
             System.err.println("LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);
             e.printStackTrace();
         }
     }
 
 
-    //   CHUYỂN SANG TRANG ĐĂNG KÝ
-
+    // CHUYỂN SANG TRANG ĐĂNG KÝ
     @FXML
     public void switchRegister(ActionEvent event) {
         // Gọi SceneController để đổi màn hình sang file Register.fxml

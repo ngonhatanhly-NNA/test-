@@ -59,13 +59,14 @@ public class CardFactory {
     }
 
     // 4. Thẻ cho MyInventory (Đang bán)
-    public static VBox createInventorySellingCard(ItemResponseDTO item, Class<?> ctx, EventHandler<ActionEvent> onOpen) {
+    public static VBox createInventorySellingCard(ItemResponseDTO item, Class<?> ctx, EventHandler<ActionEvent> onOpen, EventHandler<ActionEvent> onDelete) {
         return new UICardBuilder(ctx)
                 .setCustomStyle("-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.3); -fx-border-width: 1.5;")
                 .setTitle(item.getName(), "#F5F5F5", 16)
                 .addInfoText("Category: " + item.getType(), "#A0A0A0", false)
                 .addInfoText("Start Price: " + formatMoney(item.getStartingPrice()) + " VND", "#D4AF37", true)
                 .setActionButton("Open Auction", "-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700);", onOpen)
+                .setActionButton("Delete", "-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;", onDelete)
                 .setUserData(item.getId())
                 .build();
     }

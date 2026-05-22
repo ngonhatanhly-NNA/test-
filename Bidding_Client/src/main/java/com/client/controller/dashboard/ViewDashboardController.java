@@ -61,7 +61,7 @@ public class ViewDashboardController {
         }));
 
         if (sortCombo != null) {
-            sortCombo.getItems().setAll("Mới nhất (theo ID)", "Giá khởi điểm: thấp → cao", "Giá khởi điểm: cao → thấp", "Tên A → Z");
+            sortCombo.getItems().setAll("Latest (by ID)", "Starting Price: Low → High", "Starting Price: High → Low", "Name A → Z");
             sortCombo.getSelectionModel().selectFirst();
             sortCombo.setOnAction(e -> rebuildCards());
         }
@@ -111,7 +111,7 @@ public class ViewDashboardController {
 
                 if (itemContainer != null) {
                     VBox itemSection = new VBox(15);
-                    Label titleLabel = new Label("📦 Khám Phá Sản Phẩm");
+                    Label titleLabel = new Label("📦 Explore Products");
                     titleLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
                     titleLabel.setStyle("-fx-text-fill: #D4AF37;");
                     itemSection.getChildren().addAll(titleLabel, itemContainer);
@@ -153,9 +153,9 @@ public class ViewDashboardController {
         })).exceptionally(ex -> {
             Platform.runLater(() -> {
                 Alert a = new Alert(Alert.AlertType.ERROR);
-                a.setTitle("Lỗi tải dữ liệu");
+                a.setTitle("Data Load Error");
                 a.setHeaderText(null);
-                a.setContentText("Không tải được danh sách sản phẩm.");
+                a.setContentText("Failed to load product list.");
                 a.showAndWait();
             });
             return null;

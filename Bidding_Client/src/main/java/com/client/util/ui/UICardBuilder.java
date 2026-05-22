@@ -48,7 +48,7 @@ public class UICardBuilder {
         }
         if (cardImg == null) {
              try {
-                 cardImg = new Image(resourceContext.getResource("/images/placeholder.png").toExternalForm());
+                 cardImg = new Image(resourceContext.getResource("/images/BasicImage.png").toExternalForm());
              } catch (Exception e) {}
         }
         if (cardImg != null) imageView.setImage(cardImg);

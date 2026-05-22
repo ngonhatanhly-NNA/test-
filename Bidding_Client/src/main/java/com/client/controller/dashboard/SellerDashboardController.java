@@ -105,9 +105,9 @@ public class SellerDashboardController {
     private void showDefaultActivities() {
         if (listViewActivities != null) {
             ObservableList<String> activities = FXCollections.observableArrayList();
-            activities.add("🔄 Đang tải dữ liệu...");
-            activities.add("✅ Đã đăng nhập thành công");
-            activities.add("⏱ Kết nối lúc: " + java.time.LocalTime.now()
+            activities.add("🔄 Loading data...");
+            activities.add("✅ Successfully logged in");
+            activities.add("⏱ Connection time: " + java.time.LocalTime.now()
                     .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
             listViewActivities.setItems(activities);
         }
@@ -164,12 +164,12 @@ public class SellerDashboardController {
         }
         if (colAction != null) {
             colAction.setCellValueFactory(data ->
-                    new SimpleStringProperty("Xem chi tiết"));
+                    new SimpleStringProperty("Details"));
         }
 
         if (tableItems != null) {
             tableItems.setItems(allItems);
-            tableItems.setPlaceholder(new Label("Chưa có sản phẩm nào"));
+            tableItems.setPlaceholder(new Label("No products"));
         }
     }
 
@@ -180,8 +180,8 @@ public class SellerDashboardController {
         sellerNetwork.getSellerById(sellerId)
                 .thenAccept(response -> Platform.runLater(() -> {
                     ObservableList<String> activities = FXCollections.observableArrayList();
-                    activities.add("✅ Đã đăng nhập thành công");
-                    activities.add("🔄 Dữ liệu đã được tải lúc: " + java.time.LocalTime.now()
+                    activities.add("✅ Successfully logged in");
+                    activities.add("🔄 Data loaded at: " + java.time.LocalTime.now()
                             .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
 
                     if ("SUCCESS".equals(response.getStatus())) {
@@ -192,13 +192,13 @@ public class SellerDashboardController {
                             if (lblRating != null) {
                                 lblRating.setText(String.format("%.1f ★", rating));
                             }
-                            activities.add(0, "📊 Rating hiện tại: " + String.format("%.1f ★ (%d đánh giá)", rating, totalReviews));
+                            activities.add(0, "📊 Current Rating: " + String.format("%.1f ★ (%d reviews)", rating, totalReviews));
                         } catch (Exception e) {
                             System.err.println("Lỗi parse seller info: " + e.getMessage());
-                            activities.add(0, "⚠️ Không thể tải thông tin rating");
+                            activities.add(0, "⚠️ Unable to load rating information");
                         }
                     } else {
-                        activities.add(0, "⚠️ Không thể kết nối server để lấy thông tin seller");
+                        activities.add(0, "⚠️ Unable to connect to the server to fetch seller information");
                     }
 
                     if (listViewActivities != null) {
@@ -210,8 +210,8 @@ public class SellerDashboardController {
                     Platform.runLater(() -> {
                         if (listViewActivities != null) {
                             ObservableList<String> activities = FXCollections.observableArrayList();
-                            activities.add("❌ Lỗi kết nối server");
-                            activities.add("✅ Đã đăng nhập thành công");
+                            activities.add("❌ Server connection error");
+                            activities.add("✅ Successfully logged in");
                             listViewActivities.setItems(activities);
                         }
                     });
@@ -245,10 +245,10 @@ public class SellerDashboardController {
                                 }
                                 if (listViewActivities != null) {
                                     ObservableList<String> current = FXCollections.observableArrayList(listViewActivities.getItems());
-                                    current.removeIf(s -> s.contains("Đang tải dữ liệu"));
-                                    boolean alreadyHasItem = current.stream().anyMatch(s -> s.contains("sản phẩm trong kho"));
+                                    current.removeIf(s -> s.contains("Loading data..."));
+                                    boolean alreadyHasItem = current.stream().anyMatch(s -> s.contains("products in stock"));
                                     if (!alreadyHasItem) {
-                                        current.add(0, "📦 Có " + items.size() + " sản phẩm trong kho");
+                                        current.add(0, "📦 There are " + items.size() + " products in stock");
                                     }
                                     listViewActivities.setItems(current);
                                 }
@@ -305,16 +305,17 @@ public class SellerDashboardController {
                             int totalItems = data.has("totalItems") ? data.get("totalItems").getAsInt() : 0;
 
                             String reportText = "╔══════════════════════════════════════╗\n" +
-                                    "║       BÁO CÁO HIỆU SUẤT BÁN HÀNG     ║\n" +
+                                    "║            SALES PERFORMANCE REPORT  ║\n" +
                                     "╚══════════════════════════════════════╝\n\n" +
-                                    "📦  Tổng số sản phẩm đã đưa ra đấu giá : " + totalItems + "\n\n" +
-                                    "🏷️  Tổng số phiên đấu giá              : " + totalAuctions + "\n" +
-                                    "✅  Phiên đã hoàn thành                : " + completedAuctions + "\n" +
-                                    "🔴  Phiên đang hoạt động               : " + activeAuctions + "\n\n" +
-                                    "💰  Tổng doanh thu ước tính            : " + totalRevenue + " VND\n\n" +
+                                    "📦  Total items listed for auction     : " + totalItems + "\n\n" +
+                                    "🏷️  Total auction sessions              : " + totalAuctions + "\n" +
+                                    "✅  Completed sessions                 : " + completedAuctions + "\n" +
+                                    "🔴  Active sessions                    : " + activeAuctions + "\n\n" +
+                                    "💰  Total estimated revenue            : " + totalRevenue + " VND\n\n" +
                                     "─────────────────────────────────────────\n" +
-                                    "⏱  Cập nhật lúc: " + java.time.LocalDateTime.now()
+                                    "⏱  Updated at: " + java.time.LocalDateTime.now()
                                     .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+
 
                             if (textAreaStatistics != null) {
                                 textAreaStatistics.setText(reportText);
@@ -322,20 +323,20 @@ public class SellerDashboardController {
 
                         } catch (Exception e) {
                             if (textAreaStatistics != null) {
-                                textAreaStatistics.setText("Lỗi khi đọc dữ liệu thống kê: " + e.getMessage());
+                                textAreaStatistics.setText("Failed to read statistics: " + e.getMessage());
                             }
                             System.err.println("Lỗi parse statistics: " + e.getMessage());
                         }
                     } else {
                         if (textAreaStatistics != null) {
-                            textAreaStatistics.setText("Không thể tải thống kê: " + response.getMessage());
+                            textAreaStatistics.setText("Failed to load statistics: " + response.getMessage());
                         }
                     }
                 }))
                 .exceptionally(e -> {
                     Platform.runLater(() -> {
                         if (textAreaStatistics != null) {
-                            textAreaStatistics.setText("Lỗi kết nối server. Hãy kiểm tra server đang chạy.");
+                            textAreaStatistics.setText("Failed to connect to server. Please check if the server is running.");
                         }
                     });
                     return null;
@@ -349,13 +350,13 @@ public class SellerDashboardController {
                     getClass().getResource("/fxml/CreateItemPopup.fxml"));
             javafx.scene.Parent root = loader.load();
             javafx.stage.Stage stage = new javafx.stage.Stage();
-            stage.setTitle("Tạo sản phẩm mới");
+            stage.setTitle("Create new Product");
             stage.setScene(new javafx.scene.Scene(root));
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
             stage.showAndWait();
             loadSellerItems();
         } catch (Exception e) {
-            showAlert("Lỗi", "Không thể mở form tạo sản phẩm: " + e.getMessage());
+            showAlert("Error", "Failed to open product creation form: " + e.getMessage());
         }
     }
 
@@ -417,7 +418,7 @@ public class SellerDashboardController {
         }
         if (lblLeadingBidder != null) {
             lblLeadingBidder.setText(auction.getHighestBidderName() != null
-                    ? auction.getHighestBidderName() : "Chưa có ai đấu giá");
+                    ? auction.getHighestBidderName() : "No bids have been submitted.");
         }
         if (lblTimeRemaining != null) {
             long remaining = auction.getRemainingTime();
@@ -427,7 +428,7 @@ public class SellerDashboardController {
                 long seconds = (remaining % 60000) / 1000;
                 timeStr = String.format("%d phút %d giây", minutes, seconds);
             } else {
-                timeStr = "Đã kết thúc";
+                timeStr = "Time has expired";
             }
             lblTimeRemaining.setText(timeStr);
         }
@@ -488,8 +489,8 @@ public class SellerDashboardController {
                 long remaining = auction.getRemainingTime();
                 String timeStr = remaining > 0
                         ? String.format("%dm %ds", remaining / 60000, (remaining % 60000) / 1000)
-                        : "Kết thúc";
-                String displayText = String.format("[ID: %d] %s | Giá: %s | Còn: %s",
+                        : "End date";
+                String displayText = String.format("[ID: %d] %s | Current: %s | Remaining: %s",
                         auction.getAuctionId(),
                         auction.getItemName(),
                         price,
@@ -498,7 +499,7 @@ public class SellerDashboardController {
             }
             listViewAuctions.setItems(auctionList);
         } else {
-            listViewAuctions.setItems(FXCollections.observableArrayList("Không có phiên đấu giá nào đang diễn ra"));
+            listViewAuctions.setItems(FXCollections.observableArrayList("There are no ongoing auctions at this time"));
         }
     }
 

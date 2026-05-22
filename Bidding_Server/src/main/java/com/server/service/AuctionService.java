@@ -29,7 +29,7 @@ public class AuctionService {
             AutoBidRepository autoBidRepo,
             ItemService itemService,
             UserRepository userRepository,
-            IBidderRepository bidderRepository, // [SỬA] thêm tham số này
+            IBidderRepository bidderRepository, // 
             BidValidationChain validationChain,
             AntiSnipingStrategy antiSnipingStrategy,
             BidProcessor bidProcessor,
@@ -41,7 +41,7 @@ public class AuctionService {
         // Query Service
         this.queryService = new AuctionQueryService(sharedState, auctionRepo, itemService);
         // Scheduler Service — [SỬA] truyền thêm bidderRepository
-        this.scheduler = new AuctionScheduler(sharedState, auctionRepo, userRepository, queryService, bidderRepository);
+        this.scheduler = new AuctionScheduler(sharedState, auctionRepo, userRepository, queryService, bidderRepository, autoBidProcessor);
         this.queryService.setScheduler(this.scheduler);
         // Command Service
         this.commandService = new AuctionCommandService(

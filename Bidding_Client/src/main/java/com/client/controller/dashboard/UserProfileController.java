@@ -97,7 +97,7 @@ public class UserProfileController {
 
         if (loggedInUsername == null || loggedInUsername.trim().isEmpty()) {
             if(lblStatus != null) {
-                lblStatus.setText("Bạn chưa đăng nhập");
+                lblStatus.setText("Please log in to continue.");
                 lblStatus.setStyle("-fx-text-fill: #EF4444;"); 
             }
             return;
@@ -164,47 +164,48 @@ public class UserProfileController {
                         // PHẦN LOAD AVATAR ĐÃ ĐƯỢC CHUẨN HOÁ GỌN GÀNG
                         // ==========================================
                         if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
-                            String avatarUrl = jsonData.get("avatarUrl").getAsString();
-                            System.out.println("=== [1. TỪ DATABASE] Link ảnh là: " + avatarUrl);
+							String avatarUrl = jsonData.get("avatarUrl").getAsString();
+							try {
+								Image imageToDisplay = null;
+								
+								// ---Xử lý URL trả về từ Server ---
+								if (avatarUrl.startsWith("/api/images/")) {
+									
+									String fullServerUrl = "http://localhost:8080" + avatarUrl; 
+									
+									// Tham số 'true' giúp ảnh load ngầm (background loading) không làm đơ giao diện
+									imageToDisplay = new Image(fullServerUrl, true); 
+								} 
+								
+								else {
+									java.io.File localFile = new java.io.File(avatarUrl);
+									if (localFile.exists()) {
+										imageToDisplay = new Image(localFile.toURI().toString(), true);
+									}
+									if (imageToDisplay == null) {
+										String resourcePath = avatarUrl.startsWith("/") ? avatarUrl : "/images/" + avatarUrl;
+										java.net.URL resourceUrl = getClass().getResource(resourcePath);
+										if (resourceUrl != null) {
+											imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
+										}
+									}
+								}
 
-                            if (avatarUrl.startsWith("/api/images/")) {
-                                // ⚠️ LƯU Ý: Nếu server bạn chạy port khác (ví dụ 7070), hãy đổi số 8080 ở dưới nhé!
-                                String serverImageUrl = "http://localhost:8080" + avatarUrl; 
-                                System.out.println("=== [2. GHÉP LINK] Bắt đầu tải từ: " + serverImageUrl);
+								// Ảnh mặc định nếu không load được gì
+								if (imageToDisplay == null || imageToDisplay.isError()) {
+									java.net.URL defaultUrl = getClass().getResource("/images/shopkeeper.png");
+									if (defaultUrl != null) {
+										imageToDisplay = new Image(defaultUrl.toExternalForm(), true);
+									}
+								}
 
-                                try {
-                                    Image netImage = new Image(serverImageUrl, false); 
-                                    
-                                    if (netImage.isError()) {
-                                        System.err.println("=== [3. LỖI MẠNG] Không tải được! Lý do: " + netImage.getException());
-                                        loadDefaultAvatar();
-                                    } else {
-                                        System.out.println("=== [4. THÀNH CÔNG] Đã tải xong ảnh từ Server!");
-                                        if (avatarView != null) avatarView.setImage(netImage);
-                                    }
-                                } catch (Exception e) {
-                                    System.err.println("=== [5. NGOẠI LỆ CỨNG] " + e.getMessage());
-                                    loadDefaultAvatar();
-                                }
-                            } else {
-                                System.out.println("=== [6. LINK CŨ] Đây là đường dẫn ổ đĩa: " + avatarUrl);
-                                try {
-                                    File localFile = new File(avatarUrl);
-                                    if (localFile.exists() && avatarView != null) {
-                                        avatarView.setImage(new Image(localFile.toURI().toString(), false));
-                                    } else {
-                                        System.err.println("=== [7. MẤT FILE] Không tìm thấy file trên máy: " + avatarUrl);
-                                        loadDefaultAvatar();
-                                    }
-                                } catch (Exception e) {
-                                    loadDefaultAvatar();
-                                }
-                            }
-                        } else {
-                            System.out.println("=== [0. TRỐNG] DB gửi về bị NULL hoặc không có trường avatarUrl");
-                            loadDefaultAvatar();
-                        }
-                        // ==========================================
+								if (avatarView != null && imageToDisplay != null) {
+									avatarView.setImage(imageToDisplay);
+								}
+							} catch (Exception e) {
+								System.err.println("Lỗi quét ảnh Profile: " + e.getMessage());
+							}
+						}
 
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
@@ -310,7 +311,7 @@ public class UserProfileController {
         }
 
         if (lblRoleTag != null) {
-            lblRoleTag.setText("Vai trò: " + role);
+            lblRoleTag.setText("Role: " + role);
         }
 
         if ("ADMIN".equals(role)) {
@@ -329,7 +330,7 @@ public class UserProfileController {
     @FXML
     public void handleUpdateProfile() {
         if (lblStatus != null) {
-            lblStatus.setText("Đang lưu thay đổi...");
+            lblStatus.setText("Saving changes...");
             lblStatus.setStyle("-fx-text-fill: #D4AF37;");
         }
 
@@ -345,7 +346,7 @@ public class UserProfileController {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
                     if (lblStatus != null) {
-                        lblStatus.setText("Cập nhật thông tin thành công!");
+                        lblStatus.setText("Profile updated successfully!");
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
                     if (lblHeaderName != null && txtFullName != null) lblHeaderName.setText(txtFullName.getText());
@@ -374,20 +375,20 @@ public class UserProfileController {
         String newPass = txtPassword != null ? txtPassword.getText() : "";
 
         if (oldPass.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Thiếu thông tin", "Vui lòng nhập mật khẩu hiện tại.");
+            showAlert(Alert.AlertType.WARNING, "Missing Information", "Please enter your current password.");
             return;
         }
         if (newPass.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Thiếu thông tin", "Vui lòng nhập mật khẩu mới.");
+            showAlert(Alert.AlertType.WARNING, "Missing Information", "Please enter your new password.");
             return;
         }
         if (newPass.length() < 6) {
-            showAlert(Alert.AlertType.WARNING, "Mật khẩu yếu", "Mật khẩu mới phải có ít nhất 6 ký tự.");
+            showAlert(Alert.AlertType.WARNING, "Weak Password", "The new password must be at least 6 characters long.");
             return;
         }
 
         if (lblStatus != null) {
-            lblStatus.setText("Đang đổi mật khẩu...");
+            lblStatus.setText("Updating password...");
             lblStatus.setStyle("-fx-text-fill: #D4AF37;");
         }
 
@@ -395,7 +396,7 @@ public class UserProfileController {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
                     if (lblStatus != null) {
-                        lblStatus.setText("Đổi mật khẩu thành công!");
+                        lblStatus.setText("Password updated successfully!");
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
                     if (txtOldPassword != null) txtOldPassword.clear();
@@ -410,7 +411,7 @@ public class UserProfileController {
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
                 if (lblStatus != null) {
-                    lblStatus.setText("Lỗi kết nối khi đổi mật khẩu!");
+                    lblStatus.setText("Lost connection while updating password!");
                     lblStatus.setStyle("-fx-text-fill: #EF4444;");
                 }
             });
@@ -422,7 +423,7 @@ public class UserProfileController {
     public void handleRequestSeller(ActionEvent actionEvent) {
         if (upgradeButton != null) upgradeButton.setDisable(true);
         if (lblStatus != null) {
-            lblStatus.setText("Đang gửi yêu cầu...");
+            lblStatus.setText("Sending request...");
             lblStatus.setStyle("-fx-text-fill: #D4AF37;");
         }
 
@@ -430,7 +431,7 @@ public class UserProfileController {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
                     if (lblStatus != null) {
-                        lblStatus.setText("Yêu cầu thành công, đang chờ Admin duyệt!");
+                        lblStatus.setText("Request successfully sent, waiting for Admin approval!");
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
                 } else {
@@ -444,7 +445,7 @@ public class UserProfileController {
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
                 if (lblStatus != null) {
-                    lblStatus.setText("Lỗi kết nối Server khi gửi yêu cầu!");
+                    lblStatus.setText("Lost connection while sending request!");
                     lblStatus.setStyle("-fx-text-fill: #EF4444;");
                 }
                 if (upgradeButton != null) upgradeButton.setDisable(false);
@@ -461,7 +462,7 @@ public class UserProfileController {
             javafx.scene.Parent depositRoot = loader.load();
 
             javafx.stage.Stage depositStage = new javafx.stage.Stage();
-            depositStage.setTitle("Nạp Tiền");
+            depositStage.setTitle("Deposit");
             depositStage.setScene(new javafx.scene.Scene(depositRoot, 550, 650));
             depositStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
             depositStage.setResizable(false);
@@ -470,8 +471,8 @@ public class UserProfileController {
             loadUserDataFromAPI();
 
         } catch (Exception e) {
-            showAlert(javafx.scene.control.Alert.AlertType.ERROR, "Lỗi",
-                    "Không thể mở dialog nạp tiền: " + e.getMessage());
+            showAlert(javafx.scene.control.Alert.AlertType.ERROR, "Error",
+                    "Unable to open deposit dialog:" + e.getMessage());
         }
     }
 
@@ -486,7 +487,7 @@ public class UserProfileController {
 
         if (selectedFile != null) {
             if (selectedFile.length() > 2 * 1024 * 1024) {
-                showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Ảnh quá lớn, vui lòng chọn ảnh dưới 2MB");
+                showAlert(Alert.AlertType.WARNING, "Warning ", "Image size too large. Please select an image under 2MB.");
                 return;
             }
 
@@ -502,7 +503,7 @@ public class UserProfileController {
                 uploadAvatarToServer(base64String);
 
             } catch (Exception e) {
-                showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể thiết lập ảnh: " + e.getMessage());
+                showAlert(Alert.AlertType.ERROR, "Error", " Failed to upload image: " + e.getMessage());
             }
         }
     }
@@ -514,26 +515,26 @@ public class UserProfileController {
             Parent root = loader.load();
 
             Stage stage = new Stage();
-            stage.setTitle("Lịch sử chuyển tiền");
+            stage.setTitle("Transaction Histor");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setResizable(false);
             stage.showAndWait();
         } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể mở cửa sổ lịch sử chuyển tiền: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Error", "Unable to open transaction history window: " + e.getMessage());
         }
     }
 
     private void uploadAvatarToServer(String base64Image) {
         if (lblStatus != null) {
-            lblStatus.setText("Đang tải ảnh lên...");
+            lblStatus.setText("Updating Image...");
             lblStatus.setStyle("-fx-text-fill: #D4AF37;");
         }
         authNetwork.updateAvatar(loggedInUsername, base64Image).thenAccept(response -> {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
                     if (lblStatus != null) {
-                        lblStatus.setText("Cập nhật ảnh đại diện thành công!");
+                        lblStatus.setText("Update avatar successfully!");
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
                 } else {
@@ -546,7 +547,7 @@ public class UserProfileController {
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
                 if (lblStatus != null) {
-                    lblStatus.setText("Lỗi kết nối khi tải ảnh lên!");
+                    lblStatus.setText("Lost connection while updating avatar!");
                     lblStatus.setStyle("-fx-text-fill: #EF4444;");
                 }
             });

@@ -71,7 +71,7 @@ public class StatusCell extends TableCell<Map<String, String>, String> {
         AdminNetwork.banUser(username, "Banned by admin")
                 .thenAccept(response -> Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
-                        showAlert("Thành Công", "Đã khóa tài khoản: " + username);
+                        showAlert("Success", "Account has been locked: " + username);
                         controller.loadAllUsers(); // Reload the table data
                     } else {
                         showAlert("Lỗi", "Không thể khóa tài khoản: " + response.getMessage());
@@ -83,7 +83,7 @@ public class StatusCell extends TableCell<Map<String, String>, String> {
         AdminNetwork.unbanUser(username)
                 .thenAccept(response -> Platform.runLater(() -> {
                     if ("SUCCESS".equals(response.getStatus())) {
-                        showAlert("Thành Công", "Đã mở khóa tài khoản: " + username);
+                        showAlert("Success", "Account has been unlocked: " + username);
                         controller.loadAllUsers(); // Reload the table data
                     } else {
                         showAlert("Lỗi", "Không thể mở khóa tài khoản: " + response.getMessage());

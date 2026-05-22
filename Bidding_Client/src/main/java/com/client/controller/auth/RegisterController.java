@@ -5,7 +5,6 @@ import com.client.util.*;
 import com.shared.network.*;
 import com.shared.dto.*;
 
-
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -26,10 +25,10 @@ public class RegisterController {
     // Label dùng để in ra thông báo lỗi hoặc thành công
     @FXML private Label lblMessage;
 
-    // GOij den network
+    // Gọi đến network
     private AuthNetwork authNetwork = new AuthNetwork();
 
-    // [THÊM MỚI] Hàm khởi tạo để bắt sự kiện Enter
+    // Hàm khởi tạo để bắt sự kiện Enter
     @FXML
     public void initialize() {
         // Gắn sự kiện Enter cho tất cả các ô nhập liệu
@@ -52,57 +51,56 @@ public class RegisterController {
         // Confirm thôi
         String confirmPass = txtConfirmPassword.getText();
 
-        // (Kiểm tra dữ liệu đầu vào)
+        // (Kiểm tra dữ liệu đầu vào - In thông báo bằng tiếng Anh)
         if (username.isEmpty() || fullName.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            showMessage("Vui lòng điền đầy đủ các trường bắt buộc (*)", Color.web("#e74c3c")); // Màu đỏ
+            showMessage("Please fill in all required fields (*)", Color.web("#e74c3c")); // Màu đỏ
             return; // Dừng lại không làm tiếp
         }
         if (!password.equals(confirmPass)) {
-            showMessage("Mật khẩu xác nhận không khớp!", Color.web("#e74c3c"));
+            showMessage("Passwords do not match!", Color.web("#e74c3c"));
             return;
         }
         if (password.length() < 6) {
-            showMessage("Mật khẩu phải có ít nhất 6 ký tự!", Color.web("#e74c3c"));
-            return; // Giới hạn độ đài mật khẩu
+            showMessage("Password must be at least 6 characters!", Color.web("#e74c3c"));
+            return; // Giới hạn độ dài mật khẩu
         }
 
+        // [Connect voi DB] ném vào dto để bắt đầu dịch data sang dạng Json, Đóng gói object truyền đi
+        RegisterRequestDTO dto = new RegisterRequestDTO(username, password, email, fullName);
 
-		// [Connect voi DB] ném vào dto để bắt đầu dịch data sang dạng Json, Đóng gói object truyền đi
-        RegisterRequestDTO dto = new RegisterRequestDTO(username, password, email, fullName); // default regis la Bidder, Admin se duoc tao 1 tai khoan rieng
+        showMessage("Sending registration request...", Color.web("#f39c12"));
 
-        showMessage("Đang gửi API Đăng ký...", Color.web("#f39c12"));
-
-        //  kết nối HTTP đến cổng 7070, giở jsonBody qua HttpClient
+        // kết nối HTTP đến cổng 7070, gửi jsonBody qua HttpClient
         authNetwork.register(dto)
                 .thenAccept(res -> {
                     Platform.runLater(() -> {
                         if ("SUCCESS".equals(res.getStatus())) {
-                            showMessage("Đăng ký thành công!", Color.GREEN);
+                            showMessage("Registration successful!", Color.GREEN);
                             SceneController.switchScene(event, "Login.fxml");
                         } else {
+                            // Lỗi do server trả về, có thể server còn cứng tiếng Việt
+                            // Tạm thời nếu server trả message tiếng Việt thì UI vẫn hiện lên
+                            // (Muốn sạch hẳn thì phải sang tầng Server sửa các AuthException)
                             showMessage(res.getMessage(), Color.RED);
                         }
                     });
                 })
                 .exceptionally(e -> {
-                    Platform.runLater(() -> showMessage("Không kết nối được tới Server!", Color.RED));
+                    Platform.runLater(() -> showMessage("Failed to connect to Server!", Color.RED));
                     return null;
                 });
-		;
     }
 
-
-      // Cac ham chuyen canh va xu li ben UI
-	@FXML
-	public void switchLogin (ActionEvent event) {
-		SceneController.switchScene(event, "Login.fxml");
-	}
-
-	// Hàm phụ trợ đổi màu và nội dung chữ
+    // Các hàm chuyển cảnh và xử lí bên UI
     @FXML
-	private void showMessage(String message, Color color) {
-		lblMessage.setText(message);
-		lblMessage.setTextFill(color);
+    public void switchLogin (ActionEvent event) {
+        SceneController.switchScene(event, "Login.fxml");
+    }
+
+    // Hàm phụ trợ đổi màu và nội dung chữ
+    @FXML
+    private void showMessage(String message, Color color) {
+        lblMessage.setText(message);
+        lblMessage.setTextFill(color);
     }
 }
-

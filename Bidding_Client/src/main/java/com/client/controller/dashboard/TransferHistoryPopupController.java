@@ -76,7 +76,7 @@ public class TransferHistoryPopupController {
         // Cột loại giao dịch: DEPOSIT = Nạp tiền, DEDUCT = Trừ tiền
         colTransferType.setCellValueFactory(data -> {
             String type = data.getValue().getType();
-            String display = "DEPOSIT".equals(type) ? "⬆ Nạp tiền" : "⬇ Trừ tiền";
+            String display = "DEPOSIT".equals(type) ? "⬆ Deposit" : "⬇ Withdraw";
             return new SimpleStringProperty(display);
         });
 
@@ -100,7 +100,7 @@ public class TransferHistoryPopupController {
                 new SimpleStringProperty(data.getValue().getDescription()));
 
         tableTransferHistory.setItems(transactionList);
-        tableTransferHistory.setPlaceholder(new Label("Chưa có giao dịch nào."));
+        tableTransferHistory.setPlaceholder(new Label("No transactions found."));
     }
 
     @FXML

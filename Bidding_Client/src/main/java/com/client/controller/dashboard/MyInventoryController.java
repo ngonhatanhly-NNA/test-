@@ -54,7 +54,7 @@ public class MyInventoryController {
     private void loadMyItems() {
         logger.info("Đang tải danh sách sản phẩm từ Server...");
         long sellerId = ClientSession.getUserId();
-        
+
         itemNetwork.getMyItems(sellerId).thenAccept(items -> {
             Platform.runLater(() -> {
                 sellingItemsContainer.getChildren().clear();
@@ -74,7 +74,7 @@ public class MyInventoryController {
     private void loadWonAuctions() {
         long bidderId = ClientSession.getUserId();
         CompletableFuture.supplyAsync(() -> {
-            try { return AuctionNetwork.getWonAuctions(bidderId); } 
+            try { return AuctionNetwork.getWonAuctions(bidderId); }
             catch (Exception e) { return null; }
         }).thenAcceptAsync(wonAuctions -> {
             if (wonItemsContainer == null) return;
@@ -90,12 +90,19 @@ public class MyInventoryController {
     }
 
     private VBox createItemCard(ItemResponseDTO item) {
-        VBox card = CardFactory.createInventorySellingCard(item, getClass(), e -> openCreateAuctionPopup(item.getId()));
-        Button btnOpenAuction = (Button) card.getChildren().get(card.getChildren().size() - 1);
+        VBox[] cardHolder = new VBox[1];
+        cardHolder[0] = CardFactory.createInventorySellingCard(
+                item,
+                getClass(),
+                e -> openCreateAuctionPopup(item.getId()),
+                e -> handleDeleteItem(item.getId(), cardHolder[0])
+        );
+        VBox card = cardHolder[0];
+        Button btnOpenAuction = (Button) card.getChildren().get(card.getChildren().size() - 2);
 
         // KẾT HỢP BƯỚC 3 (CompletableFuture) và BƯỚC 4 (State Pattern)
         CompletableFuture.supplyAsync(() -> {
-            try { return AuctionNetwork.getAuctionStatusByItemId(item.getId()); } 
+            try { return AuctionNetwork.getAuctionStatusByItemId(item.getId()); }
             catch (Exception e) { return "NONE"; }
         }).thenAcceptAsync(status -> {
             // Thay vì if-else mệt mỏi, ta gọi StateFactory khoác áo cho nút bấm
@@ -105,11 +112,54 @@ public class MyInventoryController {
         return card;
     }
 
+    private void handleDeleteItem(long itemId, VBox card) {
+        // Hiển thị hộp thoại xác nhận trước khi xóa
+        javafx.scene.control.Alert confirm = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Confirm Product Deletion");
+        confirm.setHeaderText("Are you sure you want to delete this product?");
+        confirm.setContentText("This action cannot be undone.");
+
+        java.util.Optional<javafx.scene.control.ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != javafx.scene.control.ButtonType.OK) {
+            return; // Người dùng chọn Cancel, không làm gì
+        }
+
+        long sellerId = ClientSession.getUserId();
+        itemNetwork.deleteItem(sellerId, itemId).thenAccept(response -> Platform.runLater(() -> {
+            if ("SUCCESS".equals(response.getStatus())) {
+                // Xóa card khỏi giao diện ngay lập tức, không cần reload trang
+                sellingItemsContainer.getChildren().remove(card);
+                // Nếu kho trống, hiển thị thông báo
+                if (sellingItemsContainer.getChildren().isEmpty()) {
+                    Label emptyLabel = new Label("No products found in your inventory. Create a new one now!");
+                    emptyLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 14px;");
+                    sellingItemsContainer.getChildren().add(emptyLabel);
+                }
+            } else {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+                alert.setTitle("Lỗi xóa sản phẩm");
+                alert.setHeaderText(null);
+                alert.setContentText(response.getMessage());
+                alert.showAndWait();
+            }
+        })).exceptionally(e -> {
+            Platform.runLater(() -> {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+                alert.setTitle("Connection error");
+                alert.setHeaderText(null);
+                alert.setContentText("Failed to connect to the server");
+                alert.showAndWait();
+            });
+            return null;
+        });
+    }
+
     private void addOrReplaceInventoryItem(ItemResponseDTO item) {
         if (item == null || sellingItemsContainer == null) return;
         sellingItemsContainer.getChildren().removeIf(node -> node.getUserData() instanceof Long id && id == item.getId());
         sellingItemsContainer.getChildren().removeIf(node -> node instanceof Label);
-        sellingItemsContainer.getChildren().add(0, createItemCard(item));
+        VBox newCard = createItemCard(item);
+        sellingItemsContainer.getChildren().add(0, newCard);
     }
 
     private void openCreateAuctionPopup(long itemId) {
@@ -139,7 +189,7 @@ public class MyInventoryController {
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
-            stage.setTitle("Thêm Sản Phẩm Mới");
+            stage.setTitle("Create Product");
             stage.setScene(new Scene(root));
             stage.showAndWait();
 

@@ -220,7 +220,7 @@ public class AdminDashboardController {
                         userData.put("shopName", getJsonString(user, "shopName"));
                         userData.put("rating", getJsonStringAsDouble(user, "rating", 1));
                         if (user.has("isVerified") && !user.get("isVerified").isJsonNull()) {
-                            userData.put("isVerified", user.get("isVerified").getAsBoolean() ? "Đã xác thực" : "Chưa");
+                            userData.put("isVerified", user.get("isVerified").getAsBoolean() ? "Verified" : "Unverified");
                         } else {
                             userData.put("isVerified", "N/A");
                         }
@@ -229,7 +229,7 @@ public class AdminDashboardController {
                     tableUsers.setItems(usersList);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    showAlert("Lỗi Phân Tích", "Không thể phân tích danh sách người dùng: " + e.getMessage());
+                    showAlert("Parsing Error", "Failed to parse user list: " + e.getMessage());
                 }
             }
         }));
@@ -254,16 +254,16 @@ public class AdminDashboardController {
                             for (JsonElement itemElement : itemsArray) {
                                 ItemResponseDTO item = gson.fromJson(itemElement, ItemResponseDTO.class);
                                 if (auctionedItemIds.contains(item.getId())) {
-                                    item.setStatus("Đang đấu giá");
+                                    item.setStatus("In bidding process");
                                 } else {
-                                    item.setStatus("Chưa có phiên đấu giá");
+                                    item.setStatus("No auctions available");
                                 }
                                 itemsList.add(item);
                             }
                             tableItems.setItems(itemsList);
                         } catch (Exception e) {
                             e.printStackTrace();
-                            showAlert("Lỗi Phân Tích", "Không thể phân tích dữ liệu sản phẩm: " + e.getMessage());
+                            showAlert("Parsing Error", "Failed to parse user list: " + e.getMessage());
                         }
                     }
                 }));
