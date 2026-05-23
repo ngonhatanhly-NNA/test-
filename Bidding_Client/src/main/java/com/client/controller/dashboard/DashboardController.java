@@ -27,59 +27,56 @@ public class DashboardController {
     @FXML private TextField searchField;
     @FXML private CheckBox chkElectronics, chkFineArts, chkVehicles;
 
+    // --- LINH VẬT TOÀN CỤC ---
     @FXML private AnchorPane gameLayer;
     @FXML private Label bidCounter;
-
     private MiniGameManager gameManager; 
+    
     public static DashboardController instance;
 
     @FXML
     public void initialize() {
+        instance = this;
         mainPane = new SwitchPane(mainBorderPane);
 
         if (ClientSession.isLoggedIn()) {
             lblUsername.setText(ClientSession.getUsername());
-            if (btnManagement != null && "BIDDER".equalsIgnoreCase(ClientSession.getRole())) {
-                btnManagement.setVisible(false);
-                btnManagement.setManaged(false);
-            }
-        } else {
-            lblUsername.setText("Guest");
-            if (btnManagement != null) {
+            if (btnManagement != null && "SELLER".equalsIgnoreCase(ClientSession.getRole())) {
+                btnManagement.setVisible(true);
+                btnManagement.setManaged(true);
+            } else if (btnManagement != null && "ADMIN".equalsIgnoreCase(ClientSession.getRole())) {
+                btnManagement.setVisible(true);
+                btnManagement.setManaged(true);
+            } else if (btnManagement != null) {
                 btnManagement.setVisible(false);
                 btnManagement.setManaged(false);
             }
         }
 
-        instance = this;
-
-        // Khởi động Game Manager
-        if (gameLayer != null) {
+        // KHỞI TẠO PET TOÀN CỤC
+        if (gameLayer != null && bidCounter != null) {
             gameManager = new MiniGameManager(gameLayer, bidCounter);
-            gameManager.getPet().speak("Hi Welcome to Bidding 13 System!");
+            gameManager.getPet().speak("Welcome to T13 Auction System!");
         }
 
-        handleBtnDashboard(null);
-
-        DashboardNavigation.setOpenLiveAuctions(() -> handleBtnLiveAuctions(null));
-        DashboardNavigation.setNavigateToAuctionDetail(auctionId -> handleBtnLiveAuctions(null));
+        mainPane.loadView("ViewDashboard.fxml");
+        setActiveButton(btnDashboard);
     }
 
-    public void handleNewBidEvent() {
-        if (gameManager != null) {
-            gameManager.triggerCoinFall();
+    // HÀM QUAN TRỌNG: Cho phép các class khác mượn gameManager
+    public MiniGameManager getGameManager() {
+        return gameManager;
+    }
+
+    public void setActiveButton(Button activeButton) {
+        Button[] buttons = {btnDashboard, btnLiveAuctions, btnMyInventory, btnManagement, btnGameCorner};
+        for (Button btn : buttons) {
+            if (btn != null) {
+                btn.setStyle("-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-background-radius: 12; -fx-cursor: hand;");
+            }
         }
-    }
-
-    private void setActiveButton(Button activeButton) {
-        String defaultStyle = "-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 12; -fx-font-size: 14px;";
-        if (btnDashboard != null) btnDashboard.setStyle(defaultStyle);
-        if (btnLiveAuctions != null) btnLiveAuctions.setStyle(defaultStyle);
-        if (btnMyInventory != null) btnMyInventory.setStyle(defaultStyle);
-        if (btnManagement != null) btnManagement.setStyle(defaultStyle);
-
         if (activeButton != null) {
-            activeButton.setStyle("-fx-background-color: #E3B04B; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-padding: 12; -fx-background-radius: 8; -fx-font-weight: bold; -fx-font-size: 14px;");
+            activeButton.setStyle("-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 12; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.5), 15, 0, 0, 0); -fx-font-weight: bold;");
         }
     }
 
@@ -87,16 +84,14 @@ public class DashboardController {
     void handleBtnDashboard(ActionEvent event) {
         mainPane.loadView("ViewDashboard.fxml");
         setActiveButton(btnDashboard);
+        if (gameManager != null) gameManager.getPet().speak("Về trang chủ xem có gì hot không sếp!");
     }
 
     @FXML
     void handleBtnLiveAuctions(ActionEvent event) {
         mainPane.loadView("ViewLiveAuctions.fxml");
         setActiveButton(btnLiveAuctions);
-		
-		if (gameManager != null) {
-        gameManager.getPet().speak("Let's explore some interesting auction :3!");
-    }
+        if (gameManager != null) gameManager.getPet().speak("Let's explore some interesting auction :3!");
     }
 
     @FXML
@@ -106,16 +101,20 @@ public class DashboardController {
         if ("SELLER".equalsIgnoreCase(role)) mainPane.loadView("SellerDashboard.fxml");
         else if ("ADMIN".equalsIgnoreCase(role)) mainPane.loadView("AdminDashboard.fxml");
         setActiveButton(btnManagement);
+        if (gameManager != null) gameManager.getPet().speak("Đang vào khu vực quản lý hệ thống...");
     }
 
     @FXML
     void handleBtnMyInventory(ActionEvent event) {
         mainPane.loadView("ViewMyInventory.fxml");
         setActiveButton(btnMyInventory);
-		
-		if (gameManager != null) {
-        gameManager.getPet().speak("Let's go to our inventory");
+        if (gameManager != null) gameManager.getPet().speak("Let's go to our inventory");
     }
+    
+    @FXML
+    void handleBtnGameCorner(ActionEvent event) {
+        mainPane.loadView("GameCorner.fxml");
+        setActiveButton(btnGameCorner);
     }
 
     @FXML
@@ -126,23 +125,12 @@ public class DashboardController {
 
     @FXML
     void handleCategoryFilter(ActionEvent event) {
-        handleNewBidEvent(); // Gọi sang GameManager
     }
 
     @FXML
-    void handleOpenProfile (MouseEvent event) {
+    void handleOpenProfile(MouseEvent event) {
         mainPane.loadView("UserProfile.fxml");
         setActiveButton(null);
-		
-		if (gameManager != null) {
-			gameManager.getPet().speak("Interesting, your privacy :>");
-		}
+        if (gameManager != null) gameManager.getPet().speak("Interesting, your privacy :>");
     }
-	
-	@FXML
-	void handleBtnGameCorner(ActionEvent event) {
-		// Tải view Game Corner vào vùng BorderPane trung tâm
-		mainPane.loadView("GameCorner.fxml");
-		setActiveButton(btnGameCorner);
-	}
 }

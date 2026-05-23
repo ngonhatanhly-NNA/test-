@@ -11,6 +11,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+import javafx.scene.AnchorPane;
 
 public class BiddingPet {
     private ImageView mascotView;
@@ -47,9 +48,9 @@ public class BiddingPet {
         petContainer.getChildren().addAll(speechBubble, mascotView);
 
         // 4. GHIM VBOX VÀO GÓC DƯỚI BÊN PHẢI
-        if (layer instanceof javafx.scene.layout.AnchorPane) {
-			javafx.scene.layout.AnchorPane.setBottomAnchor(petContainer, 30.0); // Cách lề dưới 30px
-			javafx.scene.layout.AnchorPane.setRightAnchor(petContainer, 30.0);  // Cách lề phải 30px
+        if (layer instanceof AnchorPane) {
+			AnchorPane.setBottomAnchor(petContainer, 30.0);
+			AnchorPane.setRightAnchor(petContainer, 30.0);
 		}
 
 		gameLayer.getChildren().add(petContainer);
