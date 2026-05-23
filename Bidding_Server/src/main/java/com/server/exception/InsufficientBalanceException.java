@@ -13,7 +13,7 @@ public class InsufficientBalanceException extends AppException {
      * Constructor mặc định với thông báo chung.
      */
     public InsufficientBalanceException() {
-        super("INSUFFICIENT_BALANCE", "Số dư trong ví không đủ để thực hiện giao dịch này.", 400);
+        super("INSUFFICIENT_BALANCE", "Insufficient wallet balance to complete this transaction.", 400);
     }
 
     /**
@@ -27,7 +27,7 @@ public class InsufficientBalanceException extends AppException {
         super(
             "INSUFFICIENT_BALANCE",
             String.format(
-                "Giao dịch thất bại. Số dư không đủ. Hiện có: %s, Yêu cầu: %s",
+                    "Transaction failed. Insufficient balance. Available: %s, Required: %s",
                 currentBalance.toPlainString(),
                 requiredAmount.toPlainString()
             ),

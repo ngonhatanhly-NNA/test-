@@ -2,15 +2,6 @@ USE auction_db;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- Xóa dữ liệu cũ
-DELETE FROM auto_bids;
-DELETE FROM bid_transactions;
-DELETE FROM auctions;
-DELETE FROM items;
-DELETE FROM sellers;
-DELETE FROM bidders;
-DELETE FROM admins;
-DELETE FROM users;
 
 -- Reset AUTO_INCREMENT counters
 ALTER TABLE users AUTO_INCREMENT = 1;

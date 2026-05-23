@@ -223,7 +223,7 @@ public class AuctionScheduler {
                         auctionId, finalAmount, winnerId, winner.getWalletBalance());
 
                 Auction auction = auctionRepository.findById(auctionId).orElse(null);
-                String itemName = "Phiên đấu giá #" + auctionId;
+                String itemName = "Auction #" + auctionId; // [ĐÃ ANH-HÓA]
                 if (auction != null) {
                     try {
                         String name = itemRepository.findItemNameByItemId(auction.getItemId());
@@ -235,8 +235,9 @@ public class AuctionScheduler {
                     }
                 }
 
+                // [ĐÃ ANH-HÓA] Lịch sử giao dịch lưu vào DB để Client đọc
                 String description = String.format(
-                        "Thanh toán đấu giá thành công: %s (-%,.0f VNĐ)", itemName, finalAmount.doubleValue());
+                        "Payment for won auction: %s (-%,.0f VND)", itemName, finalAmount.doubleValue());
                 boolean logged = bidderRepository.logTransaction(winnerId, finalAmount, "DEDUCT", description);
                 if (logged) {
                     logger.info("Auction {}: Đã ghi lịch sử giao dịch trừ tiền cho Bidder ID {}", auctionId, winnerId);
@@ -266,7 +267,7 @@ public class AuctionScheduler {
                 logger.info("Auction {}: Đã cộng {} vào ví Seller ID {}. Số dư mới: {}",
                         auctionId, finalAmount, sellerId, newBalance);
 
-                String itemName = "Phiên đấu giá #" + auctionId;
+                String itemName = "Auction #" + auctionId; // [ĐÃ ANH-HÓA]
                 try {
                     String name = itemRepository.findItemNameByItemId(itemId);
                     if (name != null && !name.isBlank()) {
@@ -276,9 +277,9 @@ public class AuctionScheduler {
                     logger.warn("Auction {}: Không lấy được tên sản phẩm: {}", auctionId, ex.getMessage());
                 }
 
+                // [ĐÃ ANH-HÓA] Lịch sử giao dịch lưu vào DB để Client đọc
                 String description = String.format(
-                        "Thu tiền đấu giá thành công: %s (+%,.0f VNĐ)", itemName, finalAmount.doubleValue());
-                boolean logged = bidderRepository.logTransaction(sellerId, finalAmount, "DEPOSIT", description);
+                        "Revenue from sold auction: %s (+%,.0f VND)", itemName, finalAmount.doubleValue());          boolean logged = bidderRepository.logTransaction(sellerId, finalAmount, "DEPOSIT", description);
                 if (logged) {
                     logger.info("Auction {}: Đã ghi lịch sử giao dịch cộng tiền cho Seller ID {}", auctionId, sellerId);
                 } else {

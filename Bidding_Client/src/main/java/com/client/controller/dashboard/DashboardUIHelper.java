@@ -78,12 +78,12 @@ public class DashboardUIHelper {
         nameLabel.setStyle("-fx-text-fill: #F5F5F5;");
         nameLabel.setWrapText(true);
 
-        Label priceLabel = new Label("Giá hiện tại: " + formatCurrency(auction.getCurrentPrice().doubleValue()));
+        Label priceLabel = new Label("Current Price : " + formatCurrency(auction.getCurrentPrice().doubleValue()));
         priceLabel.setStyle("-fx-text-fill: #D4AF37; -fx-font-weight: bold;");
 
         VBox timeBox = new VBox(2);
-        Label startLbl = new Label("📅 Từ: " + formatTimeDisplay(auction.getStartTime()));
-        Label endLbl = new Label("🏁 Đến: " + formatTimeDisplay(auction.getEndTime()));
+        Label startLbl = new Label("📅 From: " + formatTimeDisplay(auction.getStartTime()));
+        Label endLbl = new Label("🏁 To: " + formatTimeDisplay(auction.getEndTime()));
         startLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #A0A0A0;");
         endLbl.setStyle("-fx-font-size: 11px; -fx-text-fill: #E74C3C; -fx-font-weight: bold;");
         timeBox.getChildren().addAll(startLbl, endLbl);
@@ -105,20 +105,20 @@ public class DashboardUIHelper {
         img.setFitWidth(120);
         img.setPreserveRatio(true);
 
-        Label title = new Label(item.getName() != null ? item.getName() : "Sản phẩm #" + item.getId());
+        Label title = new Label(item.getName() != null ? item.getName() : "Product #" + item.getId());
         title.setFont(Font.font("System Bold", 16));
         title.setTextFill(javafx.scene.paint.Color.web("#F5F5F5"));
         title.setWrapText(true);
 
         String priceStr = item.getStartingPrice() != null ? item.getStartingPrice().toPlainString() : "0";
-        Label price = new Label("Giá khởi điểm: " + priceStr + " VNĐ");
+        Label price = new Label("Starting Price: " + priceStr + " VNĐ");
         price.setFont(Font.font("System Bold", 14));
         price.setTextFill(javafx.scene.paint.Color.web("#D4AF37"));
 
-        Label type = new Label("Loại: " + displayType(item.getType()));
+        Label type = new Label("Type: " + displayType(item.getType()));
         type.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 11px;");
 
-        Button goLive = new Button("Tới phòng đấu giá");
+        Button goLive = new Button("Go to Live Auction");
         goLive.setPrefWidth(150);
         goLive.setStyle("-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-font-weight: bold; -fx-background-radius: 8; -fx-cursor: hand;");
         goLive.setOnAction(e -> DashboardNavigation.openLiveAuctions());

@@ -18,27 +18,30 @@ public class SceneController {
      */
     public static void switchScene(ActionEvent event, String fxmlFile) {
         try {
-            // 1. Tải file giao diện (FXML) mới
-            // Nhớ đảm bảo đường dẫn "/fxml/" khớp với thư mục resources của bạn
-            FXMLLoader loader = new FXMLLoader(SceneController.class.getResource("/fxml/" + fxmlFile));
-            Parent root = loader.load();
+			FXMLLoader loader = new FXMLLoader(SceneController.class.getResource("/fxml/" + fxmlFile));
+			Parent root = loader.load();
+			Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+			Scene scene = new Scene(root);
+			stage.setScene(scene);
 
-            // 2. Lấy thông tin Cửa sổ (Stage) hiện tại từ cái nút vừa bị bấm
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+			// --- TỰ ĐỘNG KHÔI PHỤC SIZE CŨ Logout ---
+			if ("Login.fxml".equals(fxmlFile) || "AuctionMenu.fxml".equals(fxmlFile)) {
+				stage.setMaximized(false);
+				// stage.setFullScreen(false); 
+				stage.setResizable(false);
+				stage.setWidth(1280);
+				stage.setHeight(750);
+				stage.centerOnScreen();
+			}
 
-            // 3. Tạo một Cảnh (Scene) mới chứa giao diện vừa tải
-            Scene scene = new Scene(root);
+			stage.show();
 
-            // 4. Đặt Cảnh mới lên Cửa sổ và hiển thị
-            stage.setScene(scene);
-            stage.show();
-
-        } catch (IOException e) {
-            System.err.println("LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);
-            e.printStackTrace(); // In chi tiết lỗi ra Console để dễ tìm
-        } catch (NullPointerException e) {
-            System.err.println("LỖI ĐƯỜNG DẪN: File /fxml/" + fxmlFile + " không tồn tại!");
-            e.printStackTrace();
-        }
+		} catch (IOException e) {
+			System.err.println("LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);
+			e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.err.println("LỖI ĐƯỜNG DẪN: File /fxml/" + fxmlFile + " không tồn tại!");
+			e.printStackTrace();
+		}
     }
 }

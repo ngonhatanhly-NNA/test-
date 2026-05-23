@@ -1,86 +1,93 @@
 package com.client.util;
 
 import javafx.animation.*;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 
 public class BiddingPet {
     private ImageView mascotView;
-    private SpriteAnimation walkAnim;
     private Pane gameLayer;
+    private Label speechBubble;
+	private VBox petContainer;
     
-    // --- BIẾN ĐIỀU KHIỂN ---
-    private boolean moveLeft = false;
-    private boolean moveRight = false;
-    private double speed = 8.0; // Tốc độ chạy của Pet
+    private PauseTransition speechTimer;
 
     public BiddingPet (Pane layer) {
         this.gameLayer = layer;
         
-        Image spriteSheet = new Image(getClass().getResourceAsStream("/images/Pikachu.png"));
+        // 1. TẠO HÌNH ẢNH PIKACHU
+        Image spriteSheet = new Image(getClass().getResourceAsStream("/images/pikachu.png"));
         this.mascotView = new ImageView(spriteSheet);
-        
         int cols = 4; int rows = 4;
         double frameW = spriteSheet.getWidth() / cols;
         double frameH = spriteSheet.getHeight() / rows;
-
         mascotView.setViewport(new Rectangle2D(0, 0, frameW, frameH));
         
-        walkAnim = new SpriteAnimation(mascotView, Duration.millis(600), cols, cols, rows);
-        walkAnim.setCycleCount(Animation.INDEFINITE);
+        speechBubble = new Label();
+        speechBubble.setFont(Font.font("System", FontWeight.BOLD, 14));
+        speechBubble.setStyle(
+            "-fx-background-color: #242424; -fx-text-fill: #D4AF37;" +
+            "-fx-padding: 10px 15px; -fx-background-radius: 15px;" +
+            "-fx-border-color: #D4AF37; -fx-border-radius: 15px;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 5);"
+        );
+        speechBubble.setVisible(false);
         
-        gameLayer.getChildren().add(mascotView);
+        // 3. ĐƯA PIKACHU VÀ BONG BÓNG VÀO VBOX (Cách này giúp chúng luôn dính lấy nhau)
+        petContainer = new VBox(10); // Khoảng cách 10px giữa bong bóng và Pikachu
+        petContainer.setAlignment(Pos.BOTTOM_CENTER); // Căn giữa
+        petContainer.getChildren().addAll(speechBubble, mascotView);
+
+        // 4. GHIM VBOX VÀO GÓC DƯỚI BÊN PHẢI
+        if (layer instanceof javafx.scene.layout.AnchorPane) {
+			javafx.scene.layout.AnchorPane.setBottomAnchor(petContainer, 30.0); // Cách lề dưới 30px
+			javafx.scene.layout.AnchorPane.setRightAnchor(petContainer, 30.0);  // Cách lề phải 30px
+		}
+
+		gameLayer.getChildren().add(petContainer);
+        // 5. EVENT CLICK
+        mascotView.setOnMouseClicked(e -> {
+            jumpCelebrate();
+            speak("Hi! Is there any item you want to get?");
+        });
         
-        // Đặt tọa độ mặc định ở GIỮA màn hình
-        mascotView.setY(layer.getPrefHeight() - frameH - 50); 
-        mascotView.setTranslateX(layer.getPrefWidth() / 2 - frameW / 2);
+        mascotView.setStyle("-fx-cursor: hand;");
     }
 
-    // --- HÀM NHẬN LỆNH TỪ BÀN PHÍM ---
-    public void setMoveLeft(boolean b) { 
-        moveLeft = b; 
-        updateAnimationState(); 
-    }
-    public void setMoveRight(boolean b) { 
-        moveRight = b; 
-        updateAnimationState(); 
-    }
-
-    private void updateAnimationState() {
-        if (moveLeft) mascotView.setScaleX(-1); // Quay mặt trái
-        if (moveRight) mascotView.setScaleX(1); // Quay mặt phải
-        
-        if (moveLeft || moveRight) walkAnim.play();
-        else walkAnim.pause(); // Nhả phím là đứng yên
-    }
-
-    // --- HÀM CẬP NHẬT TỌA ĐỘ (Được gọi liên tục trong Game Loop) ---
-    public void updateMovement() {
-        double currentX = mascotView.getTranslateX();
-        // Không cho chạy tọt ra ngoài mép màn hình
-        if (moveLeft && currentX > 0) {
-            mascotView.setTranslateX(currentX - speed);
+    // --- HÀM TRỢ LÝ ẢO NÓI CHUYỆN ---
+	public void speak(String text) {
+        speechBubble.setText(text);
+        speechBubble.setVisible(true);
+ 
+        if (speechTimer != null) {
+            speechTimer.stop();
         }
-        if (moveRight && currentX < gameLayer.getWidth() - 60) {
-            mascotView.setTranslateX(currentX + speed);
-        }
+ 
+        speechTimer = new PauseTransition(Duration.seconds(7));
+        speechTimer.setOnFinished(e -> speechBubble.setVisible(false));
+        speechTimer.play();
     }
 
-    // --- KIỂM TRA VA CHẠM ---
-    public boolean intersects(ImageView coin) {
-        // Trả về true nếu hình vuông của Pet đè lên hình vuông của Coin
-        return mascotView.getBoundsInParent().intersects(coin.getBoundsInParent());
-    }
 
-    // --- HIỆU ỨNG NHẢY LÊN KHI ĂN ĐIỂM ---
+    // --- HIỆU ỨNG NHẢY LÊN ---
     public void jumpCelebrate() {
-        TranslateTransition jump = new TranslateTransition(Duration.millis(150), mascotView);
+        TranslateTransition jump = new TranslateTransition(Duration.millis(200), petContainer);
         jump.setByY(-30);
         jump.setCycleCount(2);
         jump.setAutoReverse(true);
         jump.play();
+    }
+
+    // --- GETTER CHO MINI GAME MANAGER ---
+    public VBox getContainer() {
+        return petContainer;
     }
 }

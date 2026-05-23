@@ -6,11 +6,11 @@ package com.server.exception;
 public class ItemException extends AppException {
 
     public enum ErrorCode {
-        ITEM_NOT_FOUND("ITEM_001", "Sản phẩm không tồn tại."),
-        ITEM_SAVE_FAILED("ITEM_002", "Lỗi khi lưu sản phẩm vào cơ sở dữ liệu."),
-        ITEM_FETCH_FAILED("ITEM_003", "Lỗi khi lấy danh sách sản phẩm."),
-        INVALID_ITEM_DATA("ITEM_004", "Dữ liệu sản phẩm không hợp lệ."),
-        FACTORY_CREATE_FAILED("ITEM_005", "Lỗi khi đúc sản phẩm tại Factory.");
+        ITEM_NOT_FOUND("ITEM_001", "Item not found."),
+        ITEM_SAVE_FAILED("ITEM_002", "Failed to save item to the database."),
+        ITEM_FETCH_FAILED("ITEM_003", "Failed to retrieve item list."),
+        INVALID_ITEM_DATA("ITEM_004", "Invalid item data."),
+        FACTORY_CREATE_FAILED("ITEM_005", "Failed to create item in Factory.");
 
         private final String code;
         private final String message;

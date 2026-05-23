@@ -82,13 +82,15 @@ public class AuctionCommandService {
     public AuctionUpdateDTO placeBid(BidRequestDTO request) throws AuctionException {
         if (request == null) {
             logger.error("Request không được null");
-            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Request không được null");
+            // [ĐÃ ANH-HÓA]
+            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Request cannot be null.");
         }
 
         ReentrantLock lock = sharedState.auctionLocks.get(request.getAuctionId());
         if (lock == null) {
             logger.error("Phiên đấu giá không tồn tại: {}", request.getAuctionId());
-            throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND);
+            // [ĐÃ ANH-HÓA]
+            throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, "Auction not found.");
         }
 
         lock.lock();
@@ -141,8 +143,8 @@ public class AuctionCommandService {
             throw e;
         } catch (RuntimeException e) {
             logger.error("Error in Auction {}: {}", request.getAuctionId(), e.getMessage(), e);
-            throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Lỗi khi xử lý đặt giá: " + e.getMessage());
-        } finally {
+            // [ĐÃ ANH-HÓA]
+            throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Error processing bid: " + e.getMessage());        } finally {
             lock.unlock();
         }
     }
@@ -156,25 +158,30 @@ public class AuctionCommandService {
                     dto.getItemId(), dto.getSellerId(), dto.getStartTime(), dto.getEndTime(), dto.getStepPrice());
 
             if (dto.getItemId() <= 0 || dto.getSellerId() <= 0) {
-                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "ItemId và SellerId phải lớn hơn 0");
+                // [ĐÃ ANH-HÓA]
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "ItemId and SellerId must be greater than 0.");
             }
             if (dto.getStepPrice() == null || dto.getStepPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Step price phải lớn hơn 0");
+                // [ĐÃ ANH-HÓA]
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Step price must be greater than 0.");
             }
 
             Item item = itemService.getItemById(dto.getItemId());
             if (item == null) {
-                throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item không tồn tại hoặc không đúng subtype");
+                // [ĐÃ ANH-HÓA]
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item does not exist or invalid subtype.");
             }
             if (item.getSellerId() > 0 && item.getSellerId() != dto.getSellerId()) {
-                throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item không thuộc về seller này");
+                // [ĐÃ ANH-HÓA]
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item does not belong to this seller.");
             }
 
             java.time.LocalDateTime startTime = java.time.LocalDateTime.parse(dto.getStartTime());
             java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(dto.getEndTime());
 
             if (endTime.isBefore(startTime)) {
-                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "End time phải sau start time");
+                // [ĐÃ ANH-HÓA]
+                throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "End time must be after start time.");
             }
 
             Auction auction = new Auction();
@@ -194,7 +201,7 @@ public class AuctionCommandService {
 
             long auctionId = auctionRepository.create(auction);
             if (auctionId <= 0) {
-                throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Không thể lưu phiên đấu giá vào Database.");
+                throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Failed to save auction to database.");
             }
             auction.setId(auctionId);
 
@@ -214,7 +221,8 @@ public class AuctionCommandService {
         } catch (AuctionException e) {
             throw e;
         } catch (Exception e) {
-            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Lỗi tạo phiên: " + e.getMessage());
+            // [ĐÃ ANH-HÓA]
+            throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Error creating auction: " + e.getMessage());
         }
     }
     
@@ -235,7 +243,8 @@ public class AuctionCommandService {
      */
     public void updateAutoBidAmount(long auctionId, long bidderId, BigDecimal newMaxAmount, BigDecimal customStepPrice) throws AuctionException {
         if (newMaxAmount == null || newMaxAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new AuctionException(AuctionException.ErrorCode.INVALID_AUTO_BID_CONFIG, "Giá tối đa phải lớn hơn 0");
+            // [ĐÃ ANH-HÓA]
+            throw new AuctionException(AuctionException.ErrorCode.INVALID_AUTO_BID_CONFIG, "Max amount must be greater than 0.");
         }
 
         try {
@@ -275,13 +284,15 @@ public class AuctionCommandService {
                     lock.unlock();
                 }
             } else {
-                throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, "Phiên đấu giá không hoạt động");
+                // [ĐÃ ANH-HÓA]
+                throw new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND, "Auction is not active.");
             }
         } catch (AuctionException e) {
             throw e;
         } catch (Exception e) {
             logger.error("Error in setting auto-bid: ", e);
-            throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Lỗi khi cấu hình auto-bid: " + e.getMessage());
+            // [ĐÃ ANH-HÓA]
+            throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Error configuring auto-bid: " + e.getMessage());
         }
     }
     

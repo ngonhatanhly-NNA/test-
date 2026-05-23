@@ -22,6 +22,6 @@ public class PermissionDeniedException extends AppException {
      * Constructor mặc định với thông báo chung.
      */
     public PermissionDeniedException() {
-        this("Bạn không có quyền thực hiện hành động này.");
+        this("You do not have permission to perform this action.");
     }
 }

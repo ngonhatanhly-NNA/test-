@@ -35,6 +35,8 @@ public class MyInventoryController {
     @FXML private Button btnCreateItem;
     @FXML private FlowPane sellingItemsContainer;
     @FXML private FlowPane wonItemsContainer;
+	@FXML private VBox sellerSection;
+	@FXML private VBox cuteImageSection;
 
     private final ItemNetwork itemNetwork = new ItemNetwork();
 
@@ -45,7 +47,19 @@ public class MyInventoryController {
                 btnCreateItem.setVisible(false);
                 btnCreateItem.setManaged(false);
             }
+			if (sellerSection != null) {
+				sellerSection.setVisible(false);
+				sellerSection.setManaged(false);
+			}
+			if (cuteImageSection != null) {
+				cuteImageSection.setVisible(true);
+				cuteImageSection.setManaged(true);
+			}
         } else {
+			if (cuteImageSection != null) {
+				cuteImageSection.setVisible(false);
+				cuteImageSection.setManaged(false);
+			}
             loadMyItems();
         }
         loadWonAuctions();
@@ -63,7 +77,7 @@ public class MyInventoryController {
                         sellingItemsContainer.getChildren().add(createItemCard(item));
                     }
                 } else {
-                    Label emptyLabel = new Label("Kho đồ của bạn đang trống. Hãy tạo sản phẩm mới!");
+                    Label emptyLabel = new Label("No products found in your inventory. Create a new one now!");
                     emptyLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 14px;");
                     sellingItemsContainer.getChildren().add(emptyLabel);
                 }
@@ -82,7 +96,7 @@ public class MyInventoryController {
             if (wonAuctions != null && !wonAuctions.isEmpty()) {
                 wonAuctions.forEach(auction -> wonItemsContainer.getChildren().add(CardFactory.createInventoryWonCard(auction, getClass())));
             } else {
-                Label emptyLabel = new Label("Bạn chưa thắng phiên đấu giá nào.");
+                Label emptyLabel = new Label("You haven't won any auctions yet. Keep bidding and good luck!");
                 emptyLabel.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 14px;");
                 wonItemsContainer.getChildren().add(emptyLabel);
             }

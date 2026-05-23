@@ -10,8 +10,8 @@ public class DuplicateUserException extends AppException {
      * Enum để xác định cụ thể trường nào bị trùng lặp.
      */
     public enum ErrorCode {
-        USERNAME_EXISTED("Tài khoản đã tồn tại"),
-        EMAIL_EXISTED("Email đã được sử dụng");
+        USERNAME_EXISTED("Username already exists"),
+        EMAIL_EXISTED("Email is already in use");
 
         private final String message;
 

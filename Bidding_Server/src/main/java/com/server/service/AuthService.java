@@ -12,7 +12,6 @@ import com.server.model.Bidder;
 import com.shared.dto.*;
 import org.mindrot.jbcrypt.BCrypt;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,28 +30,28 @@ public class AuthService {
     public void register (RegisterRequestDTO dto){
         if (dto == null) {
             logger.error("Dữ liệu đăng ký không hợp lệ!");
-            throw new AuthValidationException("Dữ liệu đăng ký không hợp lệ!");
+            throw new AuthValidationException("Invalid registration data!");
         }
         if (isBlank(dto.getUsername())) {
             logger.error("Vui lòng nhập tài khoản!");
-            throw new AuthValidationException("Vui lòng nhập tài khoản!");
+            throw new AuthValidationException("Username is required!");
         }
         if (isBlank(dto.getPassword())) {
             logger.error("Vui lòng nhập mật khẩu!");
-            throw new AuthValidationException("Vui lòng nhập mật khẩu!");
+            throw new AuthValidationException("Password is required!");
         }
         if (isBlank(dto.getEmail())) {
             logger.error("Vui lòng nhập email!");
-            throw new AuthValidationException("Vui lòng nhập email!");
+            throw new AuthValidationException("Email is required!");
         }
         if (isBlank(dto.getFullName())) {
             logger.error("Vui lòng nhập họ và tên!");
-            throw new AuthValidationException("Vui lòng nhập họ và tên!");
+            throw new AuthValidationException("Full name is required!");
         }
 
         if (userRepository.getUserByUsername(dto.getUsername()) != null){
             logger.error("Username đã tồn tại: " + dto.getUsername());
-            throw new DuplicateUserException(DuplicateUserException.ErrorCode.USERNAME_EXISTED,dto.getUsername());
+            throw new DuplicateUserException(DuplicateUserException.ErrorCode.USERNAME_EXISTED, dto.getUsername());
         }
         String hashedPassword = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
         Bidder newBidder = new Bidder(dto.getUsername(), hashedPassword, dto.getEmail(), dto.getFullName());
@@ -61,22 +60,22 @@ public class AuthService {
 
         if (!isSaved) {
             logger.error("Đăng ký thất bại do hệ thống!");
-            throw new AppException("REGISTER_FAILED", "Đăng ký thất bại do hệ thống!", 500);
+            throw new AppException("REGISTER_FAILED", "System error: Registration failed!", 500);
         }
     }
 
     public UserProfileResponseDTO login (LoginRequestDTO loginData){
         if (loginData == null) {
             logger.error("Dữ liệu đăng nhập không hợp lệ!");
-            throw new AuthValidationException("Dữ liệu đăng nhập không hợp lệ!");
+            throw new AuthValidationException("Invalid login data!");
         }
         if (isBlank(loginData.getUsername())) {
             logger.error("Vui lòng nhập tài khoản!");
-            throw new AuthValidationException("Vui lòng nhập tài khoản!");
+            throw new AuthValidationException("Username is required!");
         }
         if (isBlank(loginData.getPassword())) {
             logger.error("Vui lòng nhập mật khẩu!");
-            throw new AuthValidationException("Vui lòng nhập mật khẩu!");
+            throw new AuthValidationException("Password is required!");
         }
 
         User userInDb = userRepository.getUserByUsername(loginData.getUsername());
@@ -91,7 +90,7 @@ public class AuthService {
         // ========================================================
         if (userInDb.getStatus() == Status.BANNED) {
             logger.warn("Tài khoản bị khóa đăng nhập: '{}'", loginData.getUsername());
-            throw new AuthValidationException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.");
+            throw new AuthValidationException("Your account has been banned. Please contact the administrator.");
         }
         // ========================================================
 
@@ -106,7 +105,7 @@ public class AuthService {
     public UserProfileResponseDTO getUserProfile(String username) {
         if (isBlank(username)) {
             logger.error("Username không được để trống!");
-            throw new AuthValidationException("Username không được để trống!");
+            throw new AuthValidationException("Username cannot be empty!");
         }
 
         User user = userRepository.getUserByUsername(username);
@@ -121,7 +120,7 @@ public class AuthService {
     public void updateProfile(BaseProfileUpdateDTO updateData) {
         if (updateData == null || updateData.getId() <= 0) {
             logger.error("Dữ liệu cập nhật không hợp lệ!");
-            throw new AuthValidationException("Dữ liệu cập nhật không hợp lệ!");
+            throw new AuthValidationException("Invalid update data!");
         }
 
         User user = userRepository.getUserById(updateData.getId());
@@ -146,7 +145,7 @@ public class AuthService {
         boolean isUpdated = userRepository.updateUser(user);
         if (!isUpdated) {
             logger.error("Cập nhật thông tin thất bại: " + user.getId());
-            throw new AppException("UPDATE_FAILED", "Cập nhật thông tin thất bại!", 500);
+            throw new AppException("UPDATE_FAILED", "Failed to update profile!", 500);
         }
     }
 
@@ -162,7 +161,6 @@ public class AuthService {
         try {
             return BCrypt.checkpw(rawPassword, storedHash);
         } catch (IllegalArgumentException ex) {
-            // Legacy fallback: stored password may be plaintext
             return storedHash.equals(rawPassword);
         } catch (Exception ex) {
             return storedHash.equals(rawPassword);

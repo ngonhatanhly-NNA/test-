@@ -112,21 +112,21 @@ public class ItemService {
 
         // Tự động ép kiểu ngay trong câu lệnh if (Pattern Matching)
         if (item instanceof Vehicle v) {
-            specifics.put("Năm sản xuất", String.valueOf(v.getManufactureYear()));
-            specifics.put("Số KM", v.getMileage() + " km");
-            specifics.put("Số VIN", v.getVinNumber());
-        } 
-        else if (item instanceof Art a) {
-            specifics.put("Tác giả", a.getArtistName());
-            specifics.put("Chất liệu", a.getMaterial());
-            specifics.put("Chứng nhận Auth", a.isHasCertificateOfAuthenticity() ? "Có" : "Không");
-        } 
-        else if (item instanceof Electronics e) {
-            specifics.put("Hãng", e.getBrand());
-            specifics.put("Dòng máy", e.getModel());
-            specifics.put("Bảo hành", e.getWarrantyMonths() + " tháng");
+            specifics.put("Manufacture Year", String.valueOf(v.getManufactureYear()));
+            specifics.put("Mileage", v.getMileage() + " km");
+            specifics.put("VIN", v.getVinNumber());
         }
-        
+        else if (item instanceof Art a) {
+            specifics.put("Artist", a.getArtistName());
+            specifics.put("Material", a.getMaterial());
+            specifics.put("Authenticity", a.isHasCertificateOfAuthenticity() ? "Yes" : "No");
+        }
+        else if (item instanceof Electronics e) {
+            specifics.put("Brand", e.getBrand());
+            specifics.put("Model", e.getModel());
+            specifics.put("Warranty", e.getWarrantyMonths() + " months");
+        }
+
         return specifics;
     }
 

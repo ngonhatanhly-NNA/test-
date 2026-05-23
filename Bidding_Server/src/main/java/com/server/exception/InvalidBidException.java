@@ -36,6 +36,6 @@ public class InvalidBidException extends AppException {
     }
 
     public InvalidBidException(BidError error, BigDecimal currentHighestBid) {
-        super(error.name(), error.getMessage() + " (Giá hiện tại: " + currentHighestBid.toString() + ")", 400);
+        super(error.name(), error.getMessage() + " (Current highest bid: " + currentHighestBid.toString() + ")", 400);
     }
 }

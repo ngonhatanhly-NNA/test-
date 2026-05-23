@@ -210,7 +210,7 @@ public class UserProfileController {
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
                         if (lblStatus != null) {
-                            lblStatus.setText("Lỗi parse dữ liệu từ Server!");
+                            lblStatus.setText("Data parsing error!");
                             lblStatus.setStyle("-fx-text-fill: #EF4444;");
                         }
                         e.printStackTrace();
@@ -218,7 +218,7 @@ public class UserProfileController {
 
                 } else {
                     if (lblStatus != null) {
-                        lblStatus.setText("Lỗi lấy dữ liệu: " + response.getMessage());
+                        lblStatus.setText("Failed to load data: " + response.getMessage());
                         lblStatus.setStyle("-fx-text-fill: #EF4444;");
                     }
                 }
@@ -226,7 +226,7 @@ public class UserProfileController {
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
                 if (lblStatus != null) {
-                    lblStatus.setText("Lỗi kết nối Server!");
+                    lblStatus.setText("Server connection failed!");
                     lblStatus.setStyle("-fx-text-fill: #EF4444;");
                 }
             });
@@ -346,14 +346,14 @@ public class UserProfileController {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
                     if (lblStatus != null) {
-                        lblStatus.setText("Profile updated successfully!");
+                        lblStatus.setText("Profile updated successfully!"); // [ĐÃ SỬA]
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
                     if (lblHeaderName != null && txtFullName != null) lblHeaderName.setText(txtFullName.getText());
                     if (txtPassword != null) txtPassword.clear();
                 } else {
                     if (lblStatus != null) {
-                        lblStatus.setText("Cập nhật thất bại: " + response.getMessage());
+                        lblStatus.setText("Update failed: " + response.getMessage()); // [ĐÃ SỬA]
                         lblStatus.setStyle("-fx-text-fill: #EF4444;");
                     }
                 }
@@ -361,7 +361,7 @@ public class UserProfileController {
         }).exceptionally(ex -> {
             Platform.runLater(() -> {
                 if (lblStatus != null) {
-                    lblStatus.setText("Mất kết nối tới Server!");
+                    lblStatus.setText("Lost connection to server!"); // [ĐÃ SỬA]
                     lblStatus.setStyle("-fx-text-fill: #EF4444;");
                 }
             });
@@ -403,7 +403,7 @@ public class UserProfileController {
                     if (txtPassword != null) txtPassword.clear();
                 } else {
                     if (lblStatus != null) {
-                        lblStatus.setText("Đổi mật khẩu thất bại: " + response.getMessage());
+                        lblStatus.setText("Update password failed: " + response.getMessage());
                         lblStatus.setStyle("-fx-text-fill: #EF4444;");
                     }
                 }
@@ -436,7 +436,7 @@ public class UserProfileController {
                     }
                 } else {
                     if (lblStatus != null) {
-                        lblStatus.setText("Yêu cầu thất bại: " + response.getMessage());
+                        lblStatus.setText("Request failed: " + response.getMessage());
                         lblStatus.setStyle("-fx-text-fill: #EF4444;");
                     }
                     if (upgradeButton != null) upgradeButton.setDisable(false);
@@ -515,7 +515,7 @@ public class UserProfileController {
             Parent root = loader.load();
 
             Stage stage = new Stage();
-            stage.setTitle("Transaction Histor");
+            stage.setTitle("Transaction History");
             stage.setScene(new Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setResizable(false);
@@ -539,7 +539,7 @@ public class UserProfileController {
                     }
                 } else {
                     if (lblStatus != null) {
-                        lblStatus.setText("Cập nhật ảnh thất bại: " + response.getMessage());
+                        lblStatus.setText("Failed to updae avatar: " + response.getMessage());
                         lblStatus.setStyle("-fx-text-fill: #EF4444;");
                     }
                 }

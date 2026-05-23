@@ -100,33 +100,28 @@
                            <Insets bottom="10.0" top="10.0" />
                         </VBox.margin>
                      </Separator>
-                     
-                     <Label text="GAME CORNER" textFill="#A0A0A0">
-                        <font>
-                           <Font name="System Bold" size="12.0" />
-                        </font>
-                        <VBox.margin>
-                           <Insets bottom="5.0" left="15.0" />
-                        </VBox.margin>
-                     </Label>
-                     
-                     <VBox spacing="15.0" style="-fx-padding: 0 0 0 15;">
-                        <CheckBox fx:id="chkElectronics" onAction="#handleCategoryFilter" style="-fx-cursor: hand;" text="A TO MOVE LEFT " textFill="#E0E0E0">
-                           <font><Font name="System Bold" size="14.0" /></font>
-                        </CheckBox>
-                        <CheckBox fx:id="chkFineArts" onAction="#handleCategoryFilter" style="-fx-cursor: hand;" text="CLICK THE BUTTON" textFill="#E0E0E0">
-                           <font><Font name="System Bold" size="14.0" /></font>
-                        </CheckBox>
-                        <CheckBox fx:id="chkVehicles" onAction="#handleCategoryFilter" style="-fx-cursor: hand;" text="D TO MOVE RIGHT " textFill="#E0E0E0">
-                           <font><Font name="System Bold" size="14.0" /></font>
-                        </CheckBox>
-                     </VBox>
+					 
+					 <Label text="GAME CORNER" textFill="#A0A0A0">
+						<font>
+						   <Font name="System Bold" size="12.0" />
+						</font>
+						<VBox.margin>
+						   <Insets bottom="5.0" left="15.0" />
+						</VBox.margin>
+					</Label>
+
+					<Button fx:id="btnGameCorner" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#handleBtnGameCorner" prefHeight="45.0" style="-fx-background-color: transparent; -fx-text-fill: #E0E0E0; -fx-alignment: CENTER_LEFT; -fx-padding: 0 20; -fx-background-radius: 12; -fx-cursor: hand;" text="🎮  Game Corner">
+						<font>
+						   <Font name="System Bold" size="15.0" />
+						</font>
+					</Button>
+                 
                   </children>
                </VBox>
             </left>
         </BorderPane>
-
-        <AnchorPane fx:id="gameLayer" mouseTransparent="true" pickOnBounds="false" prefHeight="720.0" prefWidth="1280.0">
+		
+		<AnchorPane fx:id="gameLayer" pickOnBounds="false" prefHeight="720.0" prefWidth="1280.0">
             <children>
                 <HBox alignment="CENTER" spacing="10.0" style="-fx-background-color: #181818; -fx-background-radius: 30; -fx-padding: 8 20 8 15; -fx-border-color: #D4AF37; -fx-border-width: 1px; -fx-border-radius: 30; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0);" AnchorPane.bottomAnchor="30.0" AnchorPane.leftAnchor="30.0">
                     <children>

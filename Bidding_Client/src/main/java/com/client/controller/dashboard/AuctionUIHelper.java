@@ -21,23 +21,23 @@ public class AuctionUIHelper {
     }
 
     public static String formatRemaining(long millis) {
-        if (millis <= 0) return "Hết giờ đấu giá";
+        if (millis <= 0) return "Auction Ended"; // [ĐÃ SỬA]
         long sec = millis / 1000;
         long h = sec / 3600;
         long m = (sec % 3600) / 60;
         long s = sec % 60;
-        if (h > 0) return h + " giờ " + m + " phút " + s + " giây";
-        if (m > 0) return m + " phút " + s + " giây";
-        return s + " giây";
+        if (h > 0) return h + "h " + m + "m " + s + "s"; // [ĐÃ SỬA]
+        if (m > 0) return m + "m " + s + "s"; // [ĐÃ SỬA]
+        return s + "s"; // [ĐÃ SỬA]
     }
 
     public static String formatSpecificsPreview(Map<String, String> specifics) {
-        if (specifics == null || specifics.isEmpty()) return "Thuộc tính: -";
-        StringBuilder sb = new StringBuilder("Thuộc tính: ");
+        if (specifics == null || specifics.isEmpty()) return "Properties: -"; // [ĐÃ SỬA]
+        StringBuilder sb = new StringBuilder("Properties: "); // [ĐÃ SỬA]
         int count = 0;
         for (Map.Entry<String, String> entry : specifics.entrySet()) {
             if (count > 0) sb.append(" • ");
-            sb.append(entry.getKey()).append("=").append(entry.getValue() != null ? entry.getValue() : "-");
+            sb.append(entry.getKey()).append(": ").append(entry.getValue() != null ? entry.getValue() : "-"); // [ĐÃ SỬA '=' thành ': ']
             count++;
             if (count >= 2) break;
         }
@@ -48,7 +48,7 @@ public class AuctionUIHelper {
         if (itemSpecificsBox == null) return;
         itemSpecificsBox.getChildren().clear();
         if (specifics == null || specifics.isEmpty()) {
-            Label empty = new Label("Thuộc tính: -");
+            Label empty = new Label("Properties: -"); // [ĐÃ SỬA]
             empty.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
             itemSpecificsBox.getChildren().add(empty);
             return;
@@ -60,7 +60,6 @@ public class AuctionUIHelper {
             itemSpecificsBox.getChildren().add(line);
         });
     }
-
     public static void updateItemImage(AuctionDetailDTO a, ImageView itemImageView, Class<?> resourceClass) {
         if (itemImageView == null || a == null) return;
         List<String> candidates = new ArrayList<>();
@@ -84,7 +83,7 @@ public class AuctionUIHelper {
             }
         }
         if (imageToDisplay == null) {
-            URL fallbackUrl = resourceClass.getResource("/images/Gardevoir.png");
+            URL fallbackUrl = resourceClass.getResource("/images/BasicImage.png");
             if (fallbackUrl != null) imageToDisplay = new Image(fallbackUrl.toExternalForm(), true);
         }
         if (imageToDisplay != null) {
@@ -107,7 +106,7 @@ public class AuctionUIHelper {
         nameLbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #F5F5F5;");
         nameLbl.setWrapText(true);
 
-        Label typeLbl = new Label("Loại: " + (a.getItemType() != null ? a.getItemType() : "GENERAL"));
+        Label typeLbl = new Label("Category: " + (a.getItemType() != null ? a.getItemType() : "GENERAL")); // [ĐÃ SỬA]
         typeLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
         Label specificsLbl = new Label(formatSpecificsPreview(a.getItemSpecifics()));
@@ -115,24 +114,24 @@ public class AuctionUIHelper {
         specificsLbl.setWrapText(true);
 
         String sellerName = (a.getSellerName() != null && !a.getSellerName().isBlank()) ? a.getSellerName() : ("Seller_" + a.getSellerId());
-        Label sellerLbl = new Label("Người bán: " + sellerName);
+        Label sellerLbl = new Label("Seller: " + sellerName); // [ĐÃ SỬA]
         sellerLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
-        Label priceLbl = new Label("Giá: " + formatMoney(a.getCurrentPrice()) + " đ");
+        Label priceLbl = new Label("Price: " + formatMoney(a.getCurrentPrice()) + " VND"); // [ĐÃ SỬA]
         priceLbl.setStyle("-fx-text-fill: #D4AF37; -fx-font-weight: bold; -fx-font-size: 14px;");
 
-        Label leaderLbl = new Label("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
+        Label leaderLbl = new Label("Leader: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—")); // [ĐÃ SỬA]
         leaderLbl.setStyle("-fx-text-fill: #E0E0E0;");
 
-        Label timeLbl = new Label("Còn lại: " + formatRemaining(a.getRemainingTime()));
+        Label timeLbl = new Label("Remaining: " + formatRemaining(a.getRemainingTime())); // [ĐÃ SỬA]
         timeLbl.setStyle("-fx-text-fill: #A0A0A0; -fx-font-size: 12px;");
 
-        Label scheduleInfoLbl = new Label("Bắt đầu: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
-                                          " | Kết thúc: " + (a.getEndTime() != null ? a.getEndTime() : "—"));
+        Label scheduleInfoLbl = new Label("Start: " + (a.getStartTime() != null ? a.getStartTime() : "—") +
+                " | End: " + (a.getEndTime() != null ? a.getEndTime() : "—")); // [ĐÃ SỬA]
         scheduleInfoLbl.setStyle("-fx-text-fill: #4CAF50; -fx-font-size: 12px; -fx-font-weight: bold;");
         scheduleInfoLbl.setWrapText(true);
 
-        Button btnSelect = new Button("Vào đấu giá");
+        Button btnSelect = new Button("Enter Auction");
         btnSelect.setStyle("-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); " +
                            "-fx-text-fill: #121212; " +
                            "-fx-cursor: hand; " +
@@ -143,8 +142,8 @@ public class AuctionUIHelper {
         btnSelect.setOnAction(e -> onSelectCallback.accept(a));
 
         card.getChildren().addAll(nameLbl, typeLbl, sellerLbl, specificsLbl, priceLbl, leaderLbl, timeLbl, scheduleInfoLbl, btnSelect);
-        card.setUserData(a.getAuctionId()); 
-        
+        card.setUserData(a.getAuctionId());
+
         card.getProperties().put("endTime", System.currentTimeMillis() + a.getRemainingTime());
         card.getProperties().put("timeLabel", timeLbl);
 

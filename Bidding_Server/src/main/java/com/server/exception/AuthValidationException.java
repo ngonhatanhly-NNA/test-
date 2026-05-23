@@ -10,11 +10,11 @@ public class AuthValidationException extends AppException {
      * Enum nội bộ để định nghĩa các mã lỗi validation một cách rõ ràng.
      */
     public enum ErrorCode {
-        INVALID_REQUEST_DATA("Dữ liệu không hợp lệ."),
-        USERNAME_BLANK("Vui lòng nhập tài khoản."),
-        PASSWORD_BLANK("Vui lòng nhập mật khẩu."),
-        EMAIL_BLANK("Vui lòng nhập email."),
-        FULLNAME_BLANK("Vui lòng nhập họ và tên.");
+        INVALID_REQUEST_DATA("Invalid request data."),
+        USERNAME_BLANK("Username is required."),
+        PASSWORD_BLANK("Password is required."),
+        EMAIL_BLANK("Email is required."),
+        FULLNAME_BLANK("Full name is required.");
 
         private final String message;
 

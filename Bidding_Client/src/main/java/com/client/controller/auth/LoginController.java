@@ -186,6 +186,9 @@ public class LoginController {
             Scene scene = new Scene(root);
             stage.setScene(scene);
             stage.show();
+			
+			stage.setResizable(true); 
+            stage.setMaximized(true);
         } catch (IOException e) {
             // LOG CHO DEV
             System.err.println("LỖI CHUYỂN CẢNH: Không thể tải được file " + fxmlFile);

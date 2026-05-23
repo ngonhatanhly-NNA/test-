@@ -29,6 +29,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.util.Duration;
 
 public class ViewDashboardController {
 
@@ -37,7 +42,17 @@ public class ViewDashboardController {
     @FXML private ComboBox<String> sortCombo;
     @FXML private TextField searchField;
     @FXML private CheckBox chkElectronics, chkArt, chkVehicle;
-
+	@FXML private ImageView adBanner;
+	@FXML private VBox auctionSectionContainer;
+	
+	private final String[] adImages = {
+        "/images/banner.png",
+        "/images/banner1.png",
+        "/images/banner2.png",
+		"/images/banner3.png",
+		"/images/banner4.png"
+    };
+	private int currentImageIndex = 0;
     private final ItemNetwork itemNetwork = new ItemNetwork();
     private List<ItemResponseDTO> allItems = new ArrayList<>();
 
@@ -52,11 +67,14 @@ public class ViewDashboardController {
         instance = this;
         
         loadAuctionsFromServer();
-
+		loadItemsFromServer();
+		
         DashboardSearchBridge.setOnSearch(q -> Platform.runLater(() -> {
             if (searchField != null) {
-                searchField.setText(q);
-                rebuildCards();
+                searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            // Mỗi khi chữ thay đổi, gọi hàm rebuild lại giao diện
+					rebuildCards();
+				});
             }
         }));
 
@@ -70,8 +88,8 @@ public class ViewDashboardController {
         if (chkElectronics != null) chkElectronics.selectedProperty().addListener((o, a, b) -> rebuildCards());
         if (chkArt != null) chkArt.selectedProperty().addListener((o, a, b) -> rebuildCards());
         if (chkVehicle != null) chkVehicle.selectedProperty().addListener((o, a, b) -> rebuildCards());
-
-        loadItemsFromServer();
+		
+		setupBannerSlideshow();
     }
 
     public void syncSidebarCategories(boolean electronics, boolean fineArts, boolean vehicles) {
@@ -86,41 +104,63 @@ public class ViewDashboardController {
         loadItemsFromServer();
     }
 
-    private void loadAuctionsFromServer() {
-        new Thread(() -> {
-            List<AuctionDetailDTO> tempLive = new ArrayList<>();
-            List<AuctionDetailDTO> tempUp = new ArrayList<>();
-            try {
-                tempLive = AuctionNetwork.getActiveAuctions();
-                tempUp = AuctionNetwork.getUpcomingAuctions();
-            } catch (Exception e) {
-                System.out.println("Cảnh báo: Không thể tải phiên đấu giá: " + e.getMessage());
-            }
+	private void loadAuctionsFromServer() {
 
-            final List<AuctionDetailDTO> liveAuctions = tempLive;
-            final List<AuctionDetailDTO> upcomingAuctions = tempUp;
+		new Thread(() -> {
 
-            Platform.runLater(() -> {
-                if (mainScrollPane == null) return;
-                VBox mainContent = new VBox();
-                mainContent.setSpacing(30);
-                mainContent.setPadding(new Insets(20));
+			List<AuctionDetailDTO> tempLive = new ArrayList<>();
+			List<AuctionDetailDTO> tempUp = new ArrayList<>();
 
-                if (!liveAuctions.isEmpty()) mainContent.getChildren().add(createAuctionSection("🔥 Đang Diễn Ra (Live)", liveAuctions));
-                if (!upcomingAuctions.isEmpty()) mainContent.getChildren().add(createAuctionSection("⏰ Sắp Diễn Ra", upcomingAuctions));
+			try {
+				tempLive = AuctionNetwork.getActiveAuctions();
+				tempUp = AuctionNetwork.getUpcomingAuctions();
 
-                if (itemContainer != null) {
-                    VBox itemSection = new VBox(15);
-                    Label titleLabel = new Label("📦 Explore Products");
-                    titleLabel.setFont(Font.font("System", FontWeight.BOLD, 22));
-                    titleLabel.setStyle("-fx-text-fill: #D4AF37;");
-                    itemSection.getChildren().addAll(titleLabel, itemContainer);
-                    mainContent.getChildren().add(itemSection);
-                }
-                mainScrollPane.setContent(mainContent);
-            });
-        }).start();
-    }
+			} catch (Exception e) {
+				System.out.println(
+					"Cảnh báo: Không thể tải phiên đấu giá: "
+					+ e.getMessage()
+				);
+			}
+
+			final List<AuctionDetailDTO> liveAuctions = tempLive;
+			final List<AuctionDetailDTO> upcomingAuctions = tempUp;
+
+			Platform.runLater(() -> {
+
+				if (auctionSectionContainer == null)
+					return;
+
+				auctionSectionContainer
+					.getChildren()
+					.clear();
+
+				if (!liveAuctions.isEmpty()) {
+
+					auctionSectionContainer
+						.getChildren()
+						.add(
+							createAuctionSection(
+								"🔥 Live Auctions",
+								liveAuctions
+							)
+						);
+				}
+
+				if (!upcomingAuctions.isEmpty()) {
+
+					auctionSectionContainer
+						.getChildren()
+						.add(
+							createAuctionSection(
+								"⏰ Upcoming Auctions",
+								upcomingAuctions
+							)
+						);
+				}
+			});
+
+		}).start();
+	}
     
     private VBox createAuctionSection(String title, List<AuctionDetailDTO> auctions) {
         VBox section = new VBox(15);
@@ -212,4 +252,68 @@ public class ViewDashboardController {
             default -> Comparator.comparingLong(ItemResponseDTO::getId).reversed();
         };
     }
+	
+	private void setupBannerSlideshow() {
+    if (adBanner == null)
+        return;
+    try {
+        Image firstImage =
+            new Image(
+                getClass()
+                    .getResourceAsStream(
+                        adImages[0]
+                    )
+            );
+
+        adBanner.setImage(firstImage);
+
+    } catch (Exception e) {
+
+        System.err.println(
+            "Không load được banner đầu tiên"
+        );
+
+        e.printStackTrace();
+    }
+
+    Timeline timeline = new Timeline(
+
+        new KeyFrame(
+            Duration.seconds(3),
+
+            event -> {
+
+                currentImageIndex =
+                    (currentImageIndex + 1)
+                    % adImages.length;
+
+                try {
+
+                    Image nextImage =
+                        new Image(
+                            getClass()
+                                .getResourceAsStream(
+                                    adImages[currentImageIndex]
+                                )
+                        );
+
+                    adBanner.setImage(nextImage);
+
+                } catch (Exception e) {
+
+                    System.err.println(
+                        "Lỗi load ảnh: "
+                        + adImages[currentImageIndex]
+                    );
+                }
+            }
+        )
+    );
+
+    timeline.setCycleCount(
+        Timeline.INDEFINITE
+    );
+
+    timeline.play();
 }
+} 

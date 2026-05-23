@@ -10,7 +10,7 @@ public class InvalidCredentialException extends AppException {
      * Constructor mặc định với thông báo chung.
      */
     public InvalidCredentialException() {
-        super("INVALID_CREDENTIALS", "Tài khoản hoặc mật khẩu không chính xác.", 401);
+        super("INVALID_CREDENTIALS", "Incorrect username or password.", 401);
     }
 
     /**
@@ -19,6 +19,6 @@ public class InvalidCredentialException extends AppException {
      * @param username Tên tài khoản đã được sử dụng để đăng nhập.
      */
     public InvalidCredentialException(String username) {
-        super("INVALID_CREDENTIALS", "Thông tin đăng nhập không hợp lệ cho người dùng: '" + username + "'", 401);
+        super("INVALID_CREDENTIALS", "Invalid credentials for user: '" + username + "'", 401);
     }
 }

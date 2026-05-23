@@ -42,7 +42,7 @@
 
       <ImageView fx:id="imgAnimatedCharacter" layoutX="675.0" layoutY="445.0" pickOnBounds="true" preserveRatio="true">
          <image>
-            <Image url="@../images/AIPOM.png" />
+            <Image url="@../images/Aipom.png" />
          </image>
       </ImageView>
       <ImageView fx:id="Img1" fitHeight="226.0" fitWidth="314.0" layoutX="540.0" layoutY="445.0" pickOnBounds="true" preserveRatio="true">

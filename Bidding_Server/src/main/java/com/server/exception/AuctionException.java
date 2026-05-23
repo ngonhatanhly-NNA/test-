@@ -9,27 +9,26 @@ public class AuctionException extends Exception {
 
     public enum ErrorCode {
         // Lỗi chung về phiên đấu giá
-        AUCTION_NOT_FOUND("Phiên đấu giá không tồn tại hoặc chưa được tải."),
-        AUCTION_NOT_ACTIVE("Phiên đấu giá không ở trạng thái hoạt động."),
-        AUCTION_ALREADY_FINISHED("Phiên đấu giá đã kết thúc."),
+        AUCTION_NOT_FOUND("Auction does not exist or has not been loaded."),
+        AUCTION_NOT_ACTIVE("Auction is not currently active."),
+        AUCTION_ALREADY_FINISHED("Auction has already ended."),
 
         // Lỗi liên quan đến việc đặt giá
-        INVALID_REQUEST("Yêu cầu không hợp lệ hoặc thiếu thông tin."),
-        INVALID_BID_AMOUNT("Giá đặt không hợp lệ (ví dụ: thấp hơn giá khởi điểm)."),
-        BID_AMOUNT_TOO_LOW("Giá đặt phải cao hơn giá hiện tại."),
+        INVALID_REQUEST("Invalid request or missing information."),
+        INVALID_BID_AMOUNT("Invalid bid amount (e.g., lower than starting price)."),
+        BID_AMOUNT_TOO_LOW("Bid amount must be higher than the current price."),
 
         // Lỗi liên quan đến Auto-bid
-        AUTO_BID_NOT_FOUND("Cấu hình auto-bid cho người dùng này không tồn tại."),
-        INVALID_AUTO_BID_CONFIG("Cấu hình auto-bid không hợp lệ (ví dụ: giá tối đa không hợp lệ)."),
+        AUTO_BID_NOT_FOUND("Auto-bid configuration for this user does not exist."),
+        INVALID_AUTO_BID_CONFIG("Invalid auto-bid configuration (e.g., invalid maximum price)."),
 
-        // [THÊM MỚI] Lỗi tài chính và người dùng
-        USER_NOT_FOUND("Không tìm thấy thông tin tài khoản người dùng."),
-        INSUFFICIENT_BALANCE("Số dư trong ví không đủ để thực hiện giao dịch."),
-        SELF_BID_NOT_ALLOWED("Người bán không được phép đặt giá vào phiên đấu giá do chính mình tạo ra."),
+        // Lỗi tài chính và người dùng
+        USER_NOT_FOUND("User account information not found."),
+        INSUFFICIENT_BALANCE("Insufficient wallet balance to perform this transaction."),
+        SELF_BID_NOT_ALLOWED("Sellers are not allowed to bid on their own auctions."),
 
         // Lỗi hệ thống
-        OPERATION_FAILED("Thao tác thất bại do lỗi hệ thống.");
-
+        OPERATION_FAILED("Operation failed due to a system error.");
 
         private final String message;
 

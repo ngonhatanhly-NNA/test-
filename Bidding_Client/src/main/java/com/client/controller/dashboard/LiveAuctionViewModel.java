@@ -9,12 +9,12 @@ import java.util.Locale;
 
 public class LiveAuctionViewModel {
     // Các Property để View (Controller) Bind (trói) vào
-    private final StringProperty currentPrice = new SimpleStringProperty("0 VNĐ");
+    private final StringProperty currentPrice = new SimpleStringProperty("0 VND"); // [ĐÃ SỬA]
     private final StringProperty leader = new SimpleStringProperty("—");
     private final StringProperty itemName = new SimpleStringProperty("---");
     private final StringProperty itemType = new SimpleStringProperty("Type: GENERAL");
-    private final StringProperty status = new SimpleStringProperty("Tình trạng: ĐANG MỞ");
-    private final StringProperty remainingTime = new SimpleStringProperty("Còn lại: Đang tải...");
+    private final StringProperty status = new SimpleStringProperty("Status: OPEN"); // [ĐÃ SỬA]
+    private final StringProperty remainingTime = new SimpleStringProperty("Remaining: Loading..."); // [ĐÃ SỬA]
     private final StringProperty stepHint = new SimpleStringProperty("");
     private final BooleanProperty isAuctionActive = new SimpleBooleanProperty(true);
 
@@ -24,24 +24,25 @@ public class LiveAuctionViewModel {
     public void setAuctionDetail(AuctionDetailDTO a) {
         itemName.set(a.getItemName() != null ? a.getItemName() : ("Item #" + a.getItemId()));
         itemType.set("Type: " + (a.getItemType() != null ? a.getItemType() : "GENERAL"));
-        currentPrice.set(formatMoney(a.getCurrentPrice()) + " VNĐ");
-        leader.set("Người dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"));
-        status.set("Tình trạng: ĐANG MỞ");
+        currentPrice.set(formatMoney(a.getCurrentPrice()) + " VND"); // [ĐÃ SỬA]
+        leader.set("Leader: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—")); // [ĐÃ SỬA]
+        status.set("Status: OPEN"); // [ĐÃ SỬA]
         isAuctionActive.set(true);
         endTimeMillis = System.currentTimeMillis() + a.getRemainingTime();
-        
+
         if (a.getStepPrice() != null) {
-            stepHint.set("* Bước giá: " + formatMoney(a.getStepPrice()) + " VNĐ (Nhập số tiền muốn CỘNG THÊM)");
+            // [ĐÃ SỬA ĐÚNG LOGIC]: Nhập tổng số tiền, chứ không phải số tiền cộng thêm
+            stepHint.set("* Step Price: " + formatMoney(a.getStepPrice()) + " VND (Enter total amount to bid)");
         }
     }
 
     // Khi có người đặt giá thành công (Realtime)
     public void updateRealtime(AuctionUpdateDTO updateData) {
         if (updateData.getCurrentPrice() != null) {
-            currentPrice.set(formatMoney(updateData.getCurrentPrice()) + " VNĐ");
+            currentPrice.set(formatMoney(updateData.getCurrentPrice()) + " VND"); // [ĐÃ SỬA]
         }
         if (updateData.getHighestBidderName() != null) {
-            leader.set("Người dẫn đầu: " + updateData.getHighestBidderName());
+            leader.set("Leader: " + updateData.getHighestBidderName()); // [ĐÃ SỬA]
         }
         endTimeMillis = System.currentTimeMillis() + updateData.getRemainingTime();
     }
@@ -51,23 +52,23 @@ public class LiveAuctionViewModel {
         if (!isAuctionActive.get()) return;
         long remaining = endTimeMillis - System.currentTimeMillis();
         if (remaining <= 0) {
-            remainingTime.set("Còn lại: Hết giờ đấu giá");
+            remainingTime.set("Remaining: Auction Ended"); // [ĐÃ SỬA]
         } else {
             long sec = remaining / 1000;
             long h = sec / 3600;
             long m = (sec % 3600) / 60;
             long s = sec % 60;
-            if (h > 0) remainingTime.set("Còn lại: " + h + " giờ " + m + " phút " + s + " giây");
-            else if (m > 0) remainingTime.set("Còn lại: " + m + " phút " + s + " giây");
-            else remainingTime.set("Còn lại: " + s + " giây");
+            if (h > 0) remainingTime.set("Remaining: " + h + "h " + m + "m " + s + "s"); // [ĐÃ SỬA]
+            else if (m > 0) remainingTime.set("Remaining: " + m + "m " + s + "s"); // [ĐÃ SỬA]
+            else remainingTime.set("Remaining: " + s + "s"); // [ĐÃ SỬA]
         }
     }
 
     // Khóa phiên đấu giá
     public void lockAuction() {
         isAuctionActive.set(false);
-        status.set("FINISHED");
-        remainingTime.set("TIME UP");
+        status.set("Status: FINISHED"); // [ĐÃ SỬA]
+        remainingTime.set("Remaining: TIME UP"); // [ĐÃ SỬA]
     }
 
     // Getters cho việc Binding

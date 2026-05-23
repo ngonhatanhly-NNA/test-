@@ -45,7 +45,8 @@ public class BasicBidValidation implements BidValidationStrategy {
         BigDecimal currentWalletBalance = bidder.getWalletBalance();
         if (currentWalletBalance == null || currentWalletBalance.compareTo(request.getBidAmount()) < 0) {
             throw new AuctionException(AuctionException.ErrorCode.INSUFFICIENT_BALANCE,
-                    "Số dư không đủ. Cần: " + request.getBidAmount() + ", Hiện có: " + currentWalletBalance);
+                    "Insufficient wallet balance. Required: " + request.getBidAmount() + " VND, Available: " + currentWalletBalance + " VND."
+            );
         }
     }
 }

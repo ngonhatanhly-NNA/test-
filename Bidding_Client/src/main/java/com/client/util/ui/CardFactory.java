@@ -24,9 +24,9 @@ public class CardFactory {
                 .setCustomStyle("-fx-border-color: rgba(212,175,55,0.3);")
                 .setImage(imgUrl)
                 .setTitle(a.getItemName() != null ? a.getItemName() : "Item", "#F5F5F5", 14)
-                .addInfoText("Giá hiện tại: " + formatMoney(a.getCurrentPrice()) + " đ", "#D4AF37", true)
-                .addInfoText("📅 Từ: " + a.getStartTime(), "#A0A0A0", false)
-                .addInfoText("🏁 Đến: " + a.getEndTime(), "#E74C3C", true)
+                .addInfoText("Current Price: " + formatMoney(a.getCurrentPrice()) + " VND", "#D4AF37", true) // [ĐÃ SỬA]
+                .addInfoText("📅 From: " + a.getStartTime(), "#A0A0A0", false) // [ĐÃ SỬA]
+                .addInfoText("🏁 To: " + a.getEndTime(), "#E74C3C", true) // [ĐÃ SỬA]
                 .setOnClick(onClick)
                 .build();
     }
@@ -37,9 +37,9 @@ public class CardFactory {
                 .setCustomStyle("-fx-background-color: #181818; -fx-border-color: rgba(212,175,55,0.5); -fx-border-width: 1.5;")
                 .setImage(item.getThumbnailUrl())
                 .setTitle(item.getName() != null ? item.getName() : "Item #" + item.getId(), "#F5F5F5", 16)
-                .addInfoText("Giá khởi điểm: " + formatMoney(item.getStartingPrice()) + " VNĐ", "#D4AF37", true)
-                .addInfoText("Loại: " + item.getType(), "#A0A0A0", false)
-                .setActionButton("Tới phòng đấu giá", "-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700);", onGoLive)
+                .addInfoText("Start Price: " + formatMoney(item.getStartingPrice()) + " VND", "#D4AF37", true) // [ĐÃ SỬA]
+                .addInfoText("Category: " + item.getType(), "#A0A0A0", false) // [ĐÃ SỬA]
+                .setActionButton("Go to Auction", "-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700);", onGoLive) // [ĐÃ SỬA]
                 .setUserData(item.getId())
                 .build();
     }
@@ -49,11 +49,11 @@ public class CardFactory {
         return new UICardBuilder(ctx)
                 .setCustomStyle("-fx-border-color: rgba(212,175,55,0.3);")
                 .setTitle(a.getItemName(), "#F5F5F5", 16)
-                .addInfoText("Loại: " + a.getItemType(), "#A0A0A0", false)
-                .addInfoText("Giá: " + formatMoney(a.getCurrentPrice()) + " đ", "#D4AF37", true)
-                .addInfoText("Dẫn đầu: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"), "#E0E0E0", false)
-                .addInfoText("Còn lại: Đang tải...", "#A0A0A0", false) // Label này sẽ được Timeline update
-                .setActionButton("Vào đấu giá", "-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700);", onSelect)
+                .addInfoText("Category: " + a.getItemType(), "#A0A0A0", false) // [ĐÃ SỬA]
+                .addInfoText("Price: " + formatMoney(a.getCurrentPrice()) + " VND", "#D4AF37", true) // [ĐÃ SỬA]
+                .addInfoText("Leader: " + (a.getHighestBidderName() != null ? a.getHighestBidderName() : "—"), "#E0E0E0", false) // [ĐÃ SỬA]
+                .addInfoText("Remaining: Loading...", "#A0A0A0", false) // [ĐÃ SỬA]
+                .setActionButton("Enter Auction", "-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700);", onSelect) // [ĐÃ SỬA]
                 .setUserData(a.getAuctionId())
                 .build();
     }
@@ -76,10 +76,10 @@ public class CardFactory {
         return new UICardBuilder(ctx)
                 .setCustomStyle("-fx-border-color: rgba(76,175,80,0.5); -fx-border-width: 1.5;")
                 .setTitle("🏆 " + auction.getItemName(), "#F5F5F5", 15)
-                .addInfoText("Giá thắng: " + formatMoney(auction.getCurrentPrice()) + " VND", "#D4AF37", true)
-                .addInfoText("Người thắng: " + (auction.getHighestBidderName() != null ? auction.getHighestBidderName() : "Bạn"), "#A0A0A0", false)
-                .addInfoText("Loại: " + auction.getItemType(), "#A0A0A0", false)
-                .addBadge("✅ ĐÃ THẮNG", "rgba(76,175,80,0.1)", "#4CAF50", "rgba(76,175,80,0.4)")
+                .addInfoText("Winning Price: " + formatMoney(auction.getCurrentPrice()) + " VND", "#D4AF37", true) // [ĐÃ SỬA]
+                .addInfoText("Winner: " + (auction.getHighestBidderName() != null ? auction.getHighestBidderName() : "You"), "#A0A0A0", false) // [ĐÃ SỬA]
+                .addInfoText("Category: " + auction.getItemType(), "#A0A0A0", false) // [ĐÃ SỬA]
+                .addBadge("✅ WON", "rgba(76,175,80,0.1)", "#4CAF50", "rgba(76,175,80,0.4)") // [ĐÃ SỬA]
                 .build();
     }
 }
