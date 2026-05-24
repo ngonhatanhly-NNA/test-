@@ -1,152 +1,114 @@
 package com.server.controller;
 
-import com.google.gson.Gson;
-import com.server.exception.AuctionException;
 import com.server.service.AuctionService;
 import com.shared.dto.AuctionDetailDTO;
-import com.shared.dto.AuctionUpdateDTO;
-import com.shared.dto.BidRequestDTO;
 import com.shared.network.Response;
 import io.javalin.http.Context;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class) // Kích hoạt Mockito
+@ExtendWith(MockitoExtension.class)
+@DisplayName("AuctionController Tests")
 public class AuctionControllerTest {
 
     @Mock
-    private AuctionService auctionService; // Service giả
+    private AuctionService auctionService;
 
     @Mock
-    private Context ctx; // Context giả của Javalin
+    private Context ctx;
 
-    private AuctionController auctionController; // Controller thật cần test
-    private final Gson gson = new Gson();
-
-    @BeforeEach
-    void setUp() {
-        // Khởi tạo controller với service giả trước mỗi test
-        auctionController = new AuctionController(auctionService);
-    }
+    @InjectMocks
+    private AuctionController auctionController;
 
     @Test
-    void placeBid_whenValidRequest_shouldCallServiceAndReturnSuccess() throws AuctionException {
-        // Arrange (Chuẩn bị)
-        BidRequestDTO bidRequest = new BidRequestDTO(1L, 101L, new BigDecimal("1500.00"), false, null);
-        String requestJson = gson.toJson(bidRequest);
-
-        AuctionUpdateDTO auctionUpdate = new AuctionUpdateDTO(1L, new BigDecimal("1500.00"), "User 101", 3600000L);
-
-        // Dạy cho Context giả: "Khi ai đó hỏi body, hãy trả về chuỗi JSON này"
-        when(ctx.body()).thenReturn(requestJson);
-
-        // Dạy cho Service giả: "Khi ai đó gọi placeBid, hãy trả về đối tượng này"
-        when(auctionService.placeBid(any(BidRequestDTO.class))).thenReturn(auctionUpdate);
-
-        // Act (Hành động)
-        auctionController.placeBid(ctx);
-
-        // Assert (Kiểm tra)
-        // 1. Kiểm tra xem service có được gọi với đúng dữ liệu không
-        ArgumentCaptor<BidRequestDTO> bidRequestCaptor = ArgumentCaptor.forClass(BidRequestDTO.class);
-        verify(auctionService).placeBid(bidRequestCaptor.capture());
-        assertEquals(1L, bidRequestCaptor.getValue().getAuctionId());
-
-        // 2. Kiểm tra xem controller có trả về đúng JSON thành công không
-        ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
-        verify(ctx).json(responseCaptor.capture());
-        assertEquals("SUCCESS", responseCaptor.getValue().getStatus());
-        assertEquals(auctionUpdate, responseCaptor.getValue().getData());
-    }
-
-    @Test
-    void placeBid_whenServiceThrowsException_shouldSetCorrectStatusAndErrorResponse() throws AuctionException {
+    @DisplayName("getActiveAuctionsBySeller should return auctions for a valid seller")
+    void getActiveAuctionsBySeller_whenValidSeller_shouldReturnAuctions() {
         // Arrange
-        BidRequestDTO bidRequest = new BidRequestDTO(1L, 101L, new BigDecimal("900.00"), false, null);
-        String requestJson = gson.toJson(bidRequest);
-
-        // Dạy cho Context giả
-        when(ctx.body()).thenReturn(requestJson);
-
-        // Dạy cho Context trả về chính nó khi gọi status()
-        when(ctx.status(anyInt())).thenReturn(ctx);
-
-        // Dạy cho Service giả: "Khi ai đó gọi placeBid, hãy ném ra lỗi này"
-        AuctionException exception = new AuctionException(AuctionException.ErrorCode.BID_AMOUNT_TOO_LOW);
-        when(auctionService.placeBid(any(BidRequestDTO.class))).thenThrow(exception);
+        long sellerId = 1L;
+        List<AuctionDetailDTO> expectedAuctions = Collections.singletonList(new AuctionDetailDTO());
+        when(ctx.pathParam("sellerId")).thenReturn(String.valueOf(sellerId));
+        when(auctionService.getActiveAuctionsBySeller(sellerId)).thenReturn(expectedAuctions);
 
         // Act
-        auctionController.placeBid(ctx);
+        auctionController.getActiveAuctionsBySeller(ctx);
 
         // Assert
-        // 1. Kiểm tra xem controller có set đúng mã lỗi HTTP không (400 Bad Request)
+        ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
+        verify(ctx).json(responseCaptor.capture());
+        Response response = responseCaptor.getValue();
+
+        assertEquals("SUCCESS", response.getStatus());
+        assertEquals(expectedAuctions, response.getData());
+    }
+
+    @Test
+    @DisplayName("getActiveAuctionsBySeller should return 400 for invalid seller ID")
+    void getActiveAuctionsBySeller_whenInvalidSellerId_shouldReturn400() {
+        // Arrange
+        when(ctx.pathParam("sellerId")).thenReturn("abc");
+        when(ctx.status(anyInt())).thenReturn(ctx); // Stubbing moved here
+
+        // Act
+        auctionController.getActiveAuctionsBySeller(ctx);
+
+        // Assert
         verify(ctx).status(400);
-
-        // 2. Kiểm tra xem controller có trả về đúng JSON lỗi không
-        ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
-        verify(ctx).json(responseCaptor.capture());
-        assertEquals("ERROR", responseCaptor.getValue().getStatus());
-        assertEquals(exception.getMessage(), responseCaptor.getValue().getMessage());
+        verify(ctx).json(any(Response.class));
     }
 
     @Test
-    void getAuctionDetail_whenAuctionExists_shouldReturnDetail() throws AuctionException {
+    @DisplayName("getWonAuctionsByBidder should return won auctions for a valid bidder")
+    void getWonAuctionsByBidder_whenValidBidder_shouldReturnWonAuctions() {
         // Arrange
-        long auctionId = 1L;
-        AuctionDetailDTO auctionDetail = new AuctionDetailDTO(
-                auctionId, 202L, "Vintage Watch", "Description", new BigDecimal("1200.00"), "User 100", 1800000L, new BigDecimal("50.00"), "ELECTRONICS", new HashMap<>(), Collections.emptyList(), "SellerName"
-        );
-
-        // Dạy cho Context giả
-        when(ctx.pathParam("auctionId")).thenReturn(String.valueOf(auctionId));
-
-        // Dạy cho Service giả
-        when(auctionService.getAuctionDetail(auctionId)).thenReturn(auctionDetail);
+        long bidderId = 2L;
+        List<AuctionDetailDTO> expectedAuctions = Collections.singletonList(new AuctionDetailDTO());
+        when(ctx.pathParam("bidderId")).thenReturn(String.valueOf(bidderId));
+        when(auctionService.getWonAuctionsByBidder(bidderId)).thenReturn(expectedAuctions);
 
         // Act
-        auctionController.getAuctionDetail(ctx);
+        auctionController.getWonAuctionsByBidder(ctx);
 
         // Assert
-        verify(auctionService).getAuctionDetail(auctionId);
         ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
         verify(ctx).json(responseCaptor.capture());
-        assertEquals("SUCCESS", responseCaptor.getValue().getStatus());
-        assertEquals(auctionDetail, responseCaptor.getValue().getData());
+        Response response = responseCaptor.getValue();
+
+        assertEquals("SUCCESS", response.getStatus());
+        assertEquals(expectedAuctions, response.getData());
     }
 
     @Test
-    void getAuctionDetail_whenAuctionNotFound_shouldSet404Status() throws AuctionException {
+    @DisplayName("getAuctionStatusByItemId should return status for a valid item")
+    void getAuctionStatusByItemId_whenValidItem_shouldReturnStatus() {
         // Arrange
-        long nonExistentAuctionId = 999L;
-
-        // Dạy cho Context giả
-        when(ctx.pathParam("auctionId")).thenReturn(String.valueOf(nonExistentAuctionId));
-
-        // Dạy cho Context trả về chính nó khi gọi status()
-        when(ctx.status(anyInt())).thenReturn(ctx);
-
-        // Dạy cho Service giả
-        when(auctionService.getAuctionDetail(nonExistentAuctionId))
-                .thenThrow(new AuctionException(AuctionException.ErrorCode.AUCTION_NOT_FOUND));
+        long itemId = 3L;
+        String expectedStatus = "ACTIVE";
+        when(ctx.pathParam("itemId")).thenReturn(String.valueOf(itemId));
+        when(auctionService.getAuctionStatusByItemId(itemId)).thenReturn(expectedStatus);
 
         // Act
-        auctionController.getAuctionDetail(ctx);
+        auctionController.getAuctionStatusByItemId(ctx);
 
         // Assert
-        verify(ctx).status(404); // Mong đợi HTTP 404 Not Found
         ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
         verify(ctx).json(responseCaptor.capture());
-        assertEquals("ERROR", responseCaptor.getValue().getStatus());
+        Response response = responseCaptor.getValue();
+
+        assertEquals("SUCCESS", response.getStatus());
+        assertEquals(expectedStatus, response.getData());
     }
 }

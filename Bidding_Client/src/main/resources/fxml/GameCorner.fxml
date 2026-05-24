@@ -48,19 +48,19 @@
             <Button fx:id="btnPlay" mnemonicParsing="false" onAction="#handlePlayGame"
                     style="-fx-background-color: #242424; -fx-background-radius: 20;
                            -fx-text-fill: #E0E0E0; -fx-cursor: hand; -fx-padding: 7 15;"
-                    text="⏱️ Chơi Game (30s)" />
+                    text="⏱️ PlayGame (30s)" />
 
             <Button fx:id="btnFeed" mnemonicParsing="false" onAction="#handleFeedPet"
                     style="-fx-background-color: #FF4757; -fx-background-radius: 20;
                            -fx-text-fill: white; -fx-cursor: hand; -fx-padding: 7 15; -fx-font-weight: bold;"
-                    text="❤️ Cho Ăn (5 Bids)" />
+                    text="❤️ Feed Pet (5 Bids)" />
 
             <Button fx:id="btnGacha" mnemonicParsing="false" onAction="#handleRollGacha"
                     style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700);
                            -fx-background-radius: 20; -fx-text-fill: #121212;
                            -fx-font-weight: bold; -fx-cursor: hand;
                            -fx-padding: 7 20; -fx-font-size: 14px;"
-                    text="🎁 MỞ RƯƠNG BÁU (10 Bids)" />
+                    text="🎁 GACHAAAAA (10 Bids)" />
 
          </children>
       </HBox>

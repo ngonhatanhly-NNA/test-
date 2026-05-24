@@ -49,10 +49,10 @@ public class AuctionCommandService {
     private final ExecutorService bidDbSavers = Executors.newFixedThreadPool(5);
     private AuctionEventListener eventListener;
 
-    public AuctionCommandService(AuctionSharedState sharedState, AuctionRepository auctionRepository, 
-                                 AutoBidRepository autoBidRepository, BidTransactionRepository bidRepository, 
-                                 ItemService itemService, BidValidationChain validationChain, 
-                                 AntiSnipingStrategy antiSnipingStrategy, BidProcessor bidProcessor, 
+    public AuctionCommandService(AuctionSharedState sharedState, AuctionRepository auctionRepository,
+                                 AutoBidRepository autoBidRepository, BidTransactionRepository bidRepository,
+                                 ItemService itemService, BidValidationChain validationChain,
+                                 AntiSnipingStrategy antiSnipingStrategy, BidProcessor bidProcessor,
                                  AutoBidProcessor autoBidProcessor, AuctionScheduler scheduler,
                                  AuctionQueryService queryService) {
         this.sharedState = sharedState;
@@ -98,7 +98,7 @@ public class AuctionCommandService {
             Auction auction = sharedState.auctionCache.get(request.getAuctionId());
 
             validationChain.validate(request, auction);
-            
+
             // [FIX] Tạo batch riêng cho manual bid để đảm bảo nó được lưu trước khi xử lý auto bids
             List<BidTransaction> manualBidBatch = new ArrayList<>();
             bidProcessor.process(request, auction, manualBidBatch);
@@ -155,7 +155,7 @@ public class AuctionCommandService {
     public long createAuction(CreateAuctionDTO dto) throws AuctionException {
         try {
             logger.info("Bắt đầu xử lý tạo Auction: ItemId={}, SellerId={}, Start={}, End={}, Step={}",
-                    dto.getItemId(), dto.getSellerId(), dto.getStartTime(), dto.getEndTime(), dto.getStepPrice());
+                dto.getItemId(), dto.getSellerId(), dto.getStartTime(), dto.getEndTime(), dto.getStepPrice());
 
             if (dto.getItemId() <= 0 || dto.getSellerId() <= 0) {
                 // [ĐÃ ANH-HÓA]
@@ -208,7 +208,7 @@ public class AuctionCommandService {
             if (auction.getStatus() == Auction.AuctionStatus.SCHEDULED) {
                 sharedState.cacheAuction(auction);
                 scheduler.scheduleAuctionStart(auction);
-            } else { 
+            } else {
                 scheduler.cacheAndScheduleAuction(auction);
             }
 
@@ -225,7 +225,7 @@ public class AuctionCommandService {
             throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Error creating auction: " + e.getMessage());
         }
     }
-    
+
     /**
      * Hủy auto-bid cho một người dùng
      */
@@ -261,7 +261,7 @@ public class AuctionCommandService {
                 try {
                     Auction auction = sharedState.auctionCache.get(auctionId);
                     if (auction != null &&
-                            (auction.getStatus() == Auction.AuctionStatus.RUNNING || auction.getStatus() == Auction.AuctionStatus.OPEN)) {
+                        (auction.getStatus() == Auction.AuctionStatus.RUNNING || auction.getStatus() == Auction.AuctionStatus.OPEN)) {
 
                         List<BidTransaction> bidBatch = new ArrayList<>();
                         try {
@@ -274,7 +274,7 @@ public class AuctionCommandService {
                             // vì auto bid registration đã thành công
                             logger.warn("Auto-bid processing encountered error after registration: {}", e.getMessage());
                         }
-                        
+
                         AuctionUpdateDTO update = createUpdateDTO(auction);
                         if (eventListener != null) {
                             eventListener.onAuctionUpdate(update);
@@ -295,14 +295,14 @@ public class AuctionCommandService {
             throw new AuctionException(AuctionException.ErrorCode.OPERATION_FAILED, "Error configuring auto-bid: " + e.getMessage());
         }
     }
-    
+
     /**
      * Đăng ký auto-bid cho người dùng
      */
     private void registerAutoBid(BidRequestDTO request) {
         if (request.getBidAmount() != null) {
             AutoBidTracker autoBid = new AutoBidTracker(
-                    request.getAuctionId(), request.getBidderId(), request.getMaxAutoBidAmount()
+                request.getAuctionId(), request.getBidderId(), request.getMaxAutoBidAmount()
             );
             autoBid.setCustomStepPrice(request.getCustomStepPrice());
             autoBidRepository.saveOrUpdate(autoBid);
@@ -310,7 +310,7 @@ public class AuctionCommandService {
             logger.debug("Auto-bid enabled for auction {}: {}", request.getAuctionId(), request.getBidderId());
         }
     }
-    
+
     /**
      * Handle anti-sniping: Extend auction time nếu bid ở giây cuối
      */
@@ -322,7 +322,7 @@ public class AuctionCommandService {
             logger.debug("Auction time extended for auction {}: {} seconds", auction.getId(), antiSnipingStrategy.getExtensionMillis() / 1000);
         }
     }
-    
+
     /**
      * Xử lý tự động đặt giá cho các người dùng khác có auto-bid
      * Được gọi sau khi một đơn đặt giá thủ công thành công
@@ -333,16 +333,16 @@ public class AuctionCommandService {
 
     private AuctionUpdateDTO createUpdateDTO(Auction auction) {
         String bidderName = auction.getWinnerId() != null
-                ? sharedState.resolveUserDisplayName(auction.getWinnerId(), "User")
-                : "No bids";
+            ? sharedState.resolveUserDisplayName(auction.getWinnerId(), "User")
+            : "No bids";
         long remaining = Duration.between(LocalDateTime.now(), auction.getEndTime()).toMillis();
         return new AuctionUpdateDTO(auction.getId(), auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO,
-                bidderName, Math.max(0, remaining));
+            bidderName, Math.max(0, remaining));
     }
 
     /**
-      * Bắt đầu background thread để xử lý bid queue và lưu vào DB
-      */
+     * Bắt đầu background thread để xử lý bid queue và lưu vào DB
+     */
     private void startBidQueueProcessor() {
         for (int i = 0; i < 5; i++) {
             bidDbSavers.submit(() -> {
@@ -366,7 +366,7 @@ public class AuctionCommandService {
 
     private void persistBidBatch(BidPersistenceBatch batch) {
         ReentrantLock persistenceLock = sharedState.bidPersistenceLocks
-                .computeIfAbsent(batch.getAuctionId(), id -> new ReentrantLock());
+            .computeIfAbsent(batch.getAuctionId(), id -> new ReentrantLock());
         persistenceLock.lock();
         try {
             for (BidTransaction bid : batch.getBids()) {
@@ -380,7 +380,7 @@ public class AuctionCommandService {
 
     private long nextEventSequence(long auctionId) {
         AtomicLong sequence = sharedState.bidEventSequences.computeIfAbsent(auctionId,
-                id -> new AtomicLong(bidRepository.findMaxEventSequenceByAuction(id)));
+            id -> new AtomicLong(bidRepository.findMaxEventSequenceByAuction(id)));
         return sequence.incrementAndGet();
     }
 

@@ -2,85 +2,77 @@ package com.client.util;
 
 import javafx.animation.*;
 import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
-import javafx.scene.AnchorPane;
 
 public class BiddingPet {
     private ImageView mascotView;
     private Pane gameLayer;
     private Label speechBubble;
-	private VBox petContainer;
-    
-    private PauseTransition speechTimer;
+    private VBox petContainer; 
+	private Timeline speakTimeline;
 
     public BiddingPet (Pane layer) {
         this.gameLayer = layer;
         
-        // 1. TẠO HÌNH ẢNH PIKACHU
-        Image spriteSheet = new Image(getClass().getResourceAsStream("/images/pikachu.png"));
-        this.mascotView = new ImageView(spriteSheet);
-        int cols = 4; int rows = 4;
-        double frameW = spriteSheet.getWidth() / cols;
-        double frameH = spriteSheet.getHeight() / rows;
-        mascotView.setViewport(new Rectangle2D(0, 0, frameW, frameH));
+        Image iconImage = new Image(getClass().getResourceAsStream("/icons/icon.png"));
+        this.mascotView = new ImageView(iconImage);
         
+        mascotView.setFitWidth(100);
+        mascotView.setFitHeight(100);
+        mascotView.setPreserveRatio(true); // 
+        
+        // 2. TẠO BONG BÓNG CHAT (UI tông đen - vàng)
         speechBubble = new Label();
         speechBubble.setFont(Font.font("System", FontWeight.BOLD, 14));
-        speechBubble.setStyle(
-            "-fx-background-color: #242424; -fx-text-fill: #D4AF37;" +
-            "-fx-padding: 10px 15px; -fx-background-radius: 15px;" +
-            "-fx-border-color: #D4AF37; -fx-border-radius: 15px;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 5);"
-        );
-        speechBubble.setVisible(false);
+        speechBubble.setStyle("-fx-background-color: #242424; -fx-text-fill: #D4AF37; -fx-padding: 10px 15px; -fx-background-radius: 15px; -fx-border-color: #D4AF37; -fx-border-radius: 15px; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 5);");
+        speechBubble.setVisible(false); // Mặc định ẩn
         
-        // 3. ĐƯA PIKACHU VÀ BONG BÓNG VÀO VBOX (Cách này giúp chúng luôn dính lấy nhau)
-        petContainer = new VBox(10); // Khoảng cách 10px giữa bong bóng và Pikachu
-        petContainer.setAlignment(Pos.BOTTOM_CENTER); // Căn giữa
+        // 3. ĐÓNG GÓI VÀO CONTAINER
+        petContainer = new VBox(10); 
+        petContainer.setAlignment(Pos.BOTTOM_CENTER); 
         petContainer.getChildren().addAll(speechBubble, mascotView);
 
-        // 4. GHIM VBOX VÀO GÓC DƯỚI BÊN PHẢI
-        if (layer instanceof AnchorPane) {
-			AnchorPane.setBottomAnchor(petContainer, 30.0);
-			AnchorPane.setRightAnchor(petContainer, 30.0);
-		}
 
-		gameLayer.getChildren().add(petContainer);
-        // 5. EVENT CLICK
+        if (layer instanceof AnchorPane) {
+            AnchorPane.setBottomAnchor(petContainer, 30.0);
+            AnchorPane.setRightAnchor(petContainer, 30.0);
+        }
+
+        // 5. EVENT CLICK VÀO ICON
         mascotView.setOnMouseClicked(e -> {
             jumpCelebrate();
-            speak("Hi! Is there any item you want to get?");
+            speak("Hi! I'm hungry, feed me?");
         });
         
         mascotView.setStyle("-fx-cursor: hand;");
+        gameLayer.getChildren().add(petContainer);
     }
 
     // --- HÀM TRỢ LÝ ẢO NÓI CHUYỆN ---
-	public void speak(String text) {
+    public void speak(String text) {
+		if (speakTimeline != null) speakTimeline.stop();
+		
         speechBubble.setText(text);
         speechBubble.setVisible(true);
- 
-        if (speechTimer != null) {
-            speechTimer.stop();
-        }
- 
-        speechTimer = new PauseTransition(Duration.seconds(7));
-        speechTimer.setOnFinished(e -> speechBubble.setVisible(false));
-        speechTimer.play();
+
+        // Tự động tắt bong bóng chat sau 4 giây
+        speakTimeline = new Timeline(new KeyFrame(Duration.seconds(5), e -> {
+            speechBubble.setVisible(false);
+        }));
+        speakTimeline.play();
     }
 
-
-    // --- HIỆU ỨNG NHẢY LÊN ---
+    // --- HIỆU ỨNG NHẢY LÊN KHI CLICK ---
     public void jumpCelebrate() {
-        TranslateTransition jump = new TranslateTransition(Duration.millis(200), petContainer);
+        TranslateTransition jump = new TranslateTransition(Duration.millis(150), mascotView);
         jump.setByY(-30);
         jump.setCycleCount(2);
         jump.setAutoReverse(true);

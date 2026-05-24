@@ -174,9 +174,9 @@ class ItemServiceTest {
             Map<String, String> specifics = itemService.extractItemSpecifics(testItem);
 
             assertNotNull(specifics);
-            assertEquals("2020", specifics.get("Năm sản xuất"));
-            assertEquals("10000 km", specifics.get("Số KM"));
-            assertEquals("VIN123456", specifics.get("Số VIN"));
+            assertEquals("2020", specifics.get("Manufacture Year"));
+            assertEquals("10000 km", specifics.get("Mileage"));
+            assertEquals("VIN123456", specifics.get("VIN"));
         }
 
         @Test

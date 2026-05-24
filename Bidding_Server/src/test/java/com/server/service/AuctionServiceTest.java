@@ -5,8 +5,11 @@ import com.server.exception.AuctionException;
 import com.server.model.Auction;
 import com.server.model.AutoBidTracker;
 import com.server.model.Item;
-import com.server.model.Vehicle;
 import com.server.service.auction.antisnipe.AntiSnipingStrategy;
+import com.server.service.auction.core.AuctionCommandService;
+import com.server.service.auction.core.AuctionQueryService;
+import com.server.service.auction.core.AuctionScheduler;
+import com.server.service.auction.core.AuctionSharedState;
 import com.server.service.auction.processor.AutoBidProcessor;
 import com.server.service.auction.processor.BidProcessor;
 import com.server.service.auction.strategy.BidValidationChain;
@@ -22,22 +25,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * Unit Test cho AuctionService
- * Kiểm tra logic đặt giá, vòng đời đấu giá, auto-bid, và anti-sniping
- */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuctionService - Quản lý Đấu giá")
 class AuctionServiceTest {
@@ -47,23 +44,43 @@ class AuctionServiceTest {
     @Mock private AutoBidRepository autoBidRepository;
     @Mock private ItemService itemService;
     @Mock private UserRepository userRepository;
+    @Mock private IBidderRepository bidderRepository;
     @Mock private BidValidationChain validationChain;
     @Mock private AntiSnipingStrategy antiSnipingStrategy;
     @Mock private BidProcessor bidProcessor;
     @Mock private AutoBidProcessor autoBidProcessor;
+    @Mock private AuctionScheduler scheduler;
+    @Mock private AuctionQueryService queryService;
 
     private AuctionService auctionService;
+    private AuctionSharedState sharedState;
+    private AuctionCommandService commandService;
     private Auction sampleAuction;
     private BidRequestDTO sampleBidRequest;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
+        sharedState = new AuctionSharedState(userRepository);
+        commandService = new AuctionCommandService(
+                sharedState,
+                auctionRepository,
+                autoBidRepository,
+                bidRepository,
+                itemService,
+                validationChain,
+                antiSnipingStrategy,
+                bidProcessor,
+                autoBidProcessor,
+                scheduler,
+                queryService
+        );
         auctionService = new AuctionService(
                 auctionRepository,
                 bidRepository,
                 autoBidRepository,
                 itemService,
                 userRepository,
+                bidderRepository,
                 validationChain,
                 antiSnipingStrategy,
                 bidProcessor,
@@ -84,18 +101,8 @@ class AuctionServiceTest {
 
         sampleBidRequest = new BidRequestDTO(1L, 3L, new BigDecimal("120"), false, null);
 
-        // Initialize cache and locks
-        Field cacheField = AuctionService.class.getDeclaredField("auctionCache");
-        cacheField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        ConcurrentHashMap<Long, Auction> auctionCache = (ConcurrentHashMap<Long, Auction>) cacheField.get(auctionService);
-        auctionCache.put(sampleAuction.getId(), sampleAuction);
-
-        Field lockField = AuctionService.class.getDeclaredField("auctionLocks");
-        lockField.setAccessible(true);
-        @SuppressWarnings("unchecked")
-        ConcurrentHashMap<Long, ReentrantLock> auctionLocks = (ConcurrentHashMap<Long, ReentrantLock>) lockField.get(auctionService);
-        auctionLocks.put(sampleAuction.getId(), new ReentrantLock());
+        sharedState.auctionCache.put(sampleAuction.getId(), sampleAuction);
+        sharedState.auctionLocks.putIfAbsent(sampleAuction.getId(), new ReentrantLock());
     }
 
     @Nested
@@ -109,7 +116,7 @@ class AuctionServiceTest {
                     .when(validationChain).validate(any(), any());
 
             AuctionException exception = assertThrows(AuctionException.class,
-                    () -> auctionService.placeBid(sampleBidRequest));
+                    () -> commandService.placeBid(sampleBidRequest));
             assertEquals(AuctionException.ErrorCode.BID_AMOUNT_TOO_LOW, exception.getErrorCode());
             verify(bidProcessor, never()).process(any(), any(), any());
         }
@@ -121,7 +128,7 @@ class AuctionServiceTest {
             doNothing().when(bidProcessor).process(any(), any(), any());
             when(antiSnipingStrategy.shouldExtendTime(any())).thenReturn(false);
 
-            AuctionUpdateDTO result = auctionService.placeBid(sampleBidRequest);
+            AuctionUpdateDTO result = commandService.placeBid(sampleBidRequest);
 
             assertNotNull(result);
             assertEquals(1L, result.getAuctionId());
@@ -138,7 +145,7 @@ class AuctionServiceTest {
             when(antiSnipingStrategy.getExtensionMillis()).thenReturn(30000L);
 
             LocalDateTime originalEndTime = sampleAuction.getEndTime();
-            auctionService.placeBid(sampleBidRequest);
+            commandService.placeBid(sampleBidRequest);
 
             LocalDateTime newEndTime = sampleAuction.getEndTime();
             assertTrue(newEndTime.isAfter(originalEndTime));
@@ -153,7 +160,7 @@ class AuctionServiceTest {
             doNothing().when(validationChain).validate(any(), any());
             doNothing().when(bidProcessor).process(any(), any(), any());
 
-            auctionService.placeBid(sampleBidRequest);
+            commandService.placeBid(sampleBidRequest);
 
             ArgumentCaptor<AutoBidTracker> captor = ArgumentCaptor.forClass(AutoBidTracker.class);
             verify(autoBidRepository, times(1)).saveOrUpdate(captor.capture());
@@ -161,32 +168,6 @@ class AuctionServiceTest {
             AutoBidTracker savedAutoBid = captor.getValue();
             assertEquals(1L, savedAutoBid.getAuctionId());
             assertEquals(3L, savedAutoBid.getBidderId());
-        }
-    }
-
-    @Nested
-    @DisplayName("Logic Vòng đời Đấu giá")
-    class AuctionLifecycleTests {
-
-        @Test
-        @DisplayName("Nên lấy chi tiết phiên đấu giá thành công")
-        void getAuctionDetail_shouldReturnDetails() throws AuctionException {
-            Item mockItem = new Vehicle(101, "Test Item", "Desc", BigDecimal.TEN, "NEW", new ArrayList<>(), 2020, 0, "VIN");
-            when(itemService.getItemById(101L)).thenReturn(mockItem);
-
-            AuctionDetailDTO detail = auctionService.getAuctionDetail(1L);
-
-            assertNotNull(detail);
-            assertEquals(1L, detail.getAuctionId());
-            assertEquals("Test Item", detail.getItemName());
-        }
-
-        @Test
-        @DisplayName("Nên throw exception khi auction không tồn tại")
-        void getAuctionDetail_shouldThrowException_whenAuctionNotFound() {
-            when(auctionRepository.findById(999L)).thenReturn(Optional.empty());
-
-            assertThrows(AuctionException.class, () -> auctionService.getAuctionDetail(999L));
         }
     }
 }

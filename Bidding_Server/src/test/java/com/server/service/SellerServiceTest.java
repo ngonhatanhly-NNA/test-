@@ -5,6 +5,7 @@ import com.server.model.Item;
 import com.server.model.Role;
 import com.server.model.Seller;
 import com.server.model.Status;
+import com.server.model.Electronics;
 import com.shared.dto.ItemResponseDTO;
 import com.shared.network.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,17 +43,23 @@ class SellerServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Sử dụng đúng Constructor của Seller lấy từ model
         testSeller = new Seller(
                 1L, "seller1", "pass", "seller@test.com", "Test Seller",
                 "123456", "Address", Status.ACTIVE, Role.SELLER, BigDecimal.ZERO, "1234",
                 "Shop 1", "1234567890", 4.5, 10, true
         );
 
-        // Sử dụng đúng Constructor của Electronics (ép kiểu int cho ID)
-        testItem = new com.server.model.Electronics(
-                1, "Laptop", "Desc", new BigDecimal("1000"), "NEW", new ArrayList<>(), "Dell", "XPS", 12
-        );
+        testItem = new Electronics.Builder()
+                .id(1)
+                .name("Laptop")
+                .description("Desc")
+                .startingPrice(new BigDecimal("1000"))
+                .condition("NEW")
+                .imageUrls(new ArrayList<>())
+                .brand("Dell")
+                .model("XPS")
+                .warrantyMonths(12)
+                .build();
     }
 
     @Test

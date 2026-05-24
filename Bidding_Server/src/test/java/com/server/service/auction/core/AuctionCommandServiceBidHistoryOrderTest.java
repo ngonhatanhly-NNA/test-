@@ -21,8 +21,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,6 +36,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class AuctionCommandServiceBidHistoryOrderTest {
@@ -62,10 +65,11 @@ class AuctionCommandServiceBidHistoryOrderTest {
     private UserRepository userRepository;
 
     private AuctionCommandService commandService;
+    private AuctionSharedState sharedState;
 
     @BeforeEach
     void setUp() {
-        AuctionSharedState sharedState = new AuctionSharedState(userRepository);
+        sharedState = new AuctionSharedState(userRepository);
         Auction auction = new Auction();
         auction.setId(1L);
         auction.setStatus(Auction.AuctionStatus.RUNNING);
@@ -97,15 +101,17 @@ class AuctionCommandServiceBidHistoryOrderTest {
 
     @Test
     @DisplayName("Persist manual then auto bids in deterministic sequence")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void placeBid_shouldPersistManualThenAutoInOrder() throws Exception {
-        BidRequestDTO request = new BidRequestDTO(1L, 11L, new BigDecimal("120"));
+        commandService.shutdown();
+
+        BidRequestDTO request = new BidRequestDTO(1L, 11L, new BigDecimal("120"), false, null);
 
         doNothing().when(validationChain).validate(any(), any());
         when(antiSnipingStrategy.shouldExtendTime(any())).thenReturn(false);
         when(bidRepository.findMaxEventSequenceByAuction(1L)).thenReturn(0L);
 
         doAnswer(invocation -> {
-            @SuppressWarnings("unchecked")
             List<BidTransaction> bidBatch = invocation.getArgument(2);
             BidTransaction manual = new BidTransaction(1L, 11L, new BigDecimal("120"));
             manual.setAutoBid(false);
@@ -114,7 +120,6 @@ class AuctionCommandServiceBidHistoryOrderTest {
         }).when(bidProcessor).process(any(), any(), any());
 
         doAnswer(invocation -> {
-            @SuppressWarnings("unchecked")
             List<BidTransaction> bidBatch = invocation.getArgument(1);
             BidTransaction auto = new BidTransaction(1L, 22L, new BigDecimal("130"));
             auto.setAutoBid(true);
@@ -124,10 +129,21 @@ class AuctionCommandServiceBidHistoryOrderTest {
 
         commandService.placeBid(request);
 
-        ArgumentCaptor<List<BidTransaction>> captor = ArgumentCaptor.forClass(List.class);
-        verify(bidRepository, org.mockito.Mockito.timeout(2000)).saveBatchTransactional(captor.capture());
+        BidPersistenceBatch manualBatch = sharedState.bidQueue.take();
+        BidPersistenceBatch autoBatch = sharedState.bidQueue.take();
 
-        List<BidTransaction> persisted = captor.getValue();
+        Method persistMethod = AuctionCommandService.class.getDeclaredMethod("persistBidBatch", BidPersistenceBatch.class);
+        persistMethod.setAccessible(true);
+        persistMethod.invoke(commandService, manualBatch);
+        persistMethod.invoke(commandService, autoBatch);
+
+        ArgumentCaptor<List<BidTransaction>> captor = ArgumentCaptor.forClass((Class) List.class);
+        verify(bidRepository, times(2)).saveBatchTransactional(captor.capture());
+
+        List<List<BidTransaction>> allBatches = captor.getAllValues();
+        List<BidTransaction> persisted = new ArrayList<>();
+        allBatches.forEach(persisted::addAll);
+
         assertEquals(2, persisted.size());
         assertFalse(persisted.get(0).isAutoBid());
         assertTrue(persisted.get(1).isAutoBid());

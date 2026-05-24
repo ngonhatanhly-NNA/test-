@@ -56,7 +56,7 @@ public class DashboardController {
         // KHỞI TẠO PET TOÀN CỤC
         if (gameLayer != null && bidCounter != null) {
             gameManager = new MiniGameManager(gameLayer, bidCounter);
-            gameManager.getPet().speak("Welcome to T13 Auction System!");
+            gameManager.getPet().speak("Welcome to T13 Auction System BOSS!");
         }
 
         mainPane.loadView("ViewDashboard.fxml");
@@ -84,14 +84,14 @@ public class DashboardController {
     void handleBtnDashboard(ActionEvent event) {
         mainPane.loadView("ViewDashboard.fxml");
         setActiveButton(btnDashboard);
-        if (gameManager != null) gameManager.getPet().speak("Về trang chủ xem có gì hot không sếp!");
+        if (gameManager != null) gameManager.getPet().speak("Boss it seems the menu got some updates :333!");
     }
 
     @FXML
     void handleBtnLiveAuctions(ActionEvent event) {
         mainPane.loadView("ViewLiveAuctions.fxml");
         setActiveButton(btnLiveAuctions);
-        if (gameManager != null) gameManager.getPet().speak("Let's explore some interesting auction :3!");
+        if (gameManager != null) gameManager.getPet().speak("Let's explore some interesting auction boss:3!");
     }
 
     @FXML
@@ -101,7 +101,7 @@ public class DashboardController {
         if ("SELLER".equalsIgnoreCase(role)) mainPane.loadView("SellerDashboard.fxml");
         else if ("ADMIN".equalsIgnoreCase(role)) mainPane.loadView("AdminDashboard.fxml");
         setActiveButton(btnManagement);
-        if (gameManager != null) gameManager.getPet().speak("Đang vào khu vực quản lý hệ thống...");
+        if (gameManager != null) gameManager.getPet().speak("Ongoing ,let;s catch some cheater boss...");
     }
 
     @FXML
@@ -131,6 +131,6 @@ public class DashboardController {
     void handleOpenProfile(MouseEvent event) {
         mainPane.loadView("UserProfile.fxml");
         setActiveButton(null);
-        if (gameManager != null) gameManager.getPet().speak("Interesting, your privacy :>");
+        if (gameManager != null) gameManager.getPet().speak("Interesting, boss's privacy :>");
     }
 }
