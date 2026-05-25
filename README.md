@@ -42,18 +42,23 @@ Dự án sử dụng mô hình Client-Server, do đó bạn cần khởi chạy 
 ### 1. Yêu cầu hệ thống 
 * Java Development Kit (JDK) phiên bản 25 trở lên.
 * Maven đã được cài đặt và cấu hình biến môi trường.
-* MySQL Server (Chạy ở cổng mặc định `3306`).
+* MySQL Server (Chạy ở cổng mặc định `3306`). 
 
 ### 2. Khởi tạo Cơ sở dữ liệu (Database Setup)
 1. Mở MySQL Workbench hoặc CLI.
-2. Tạo một schema mới cho dự án.
-3. Chạy file script SQL được đính kèm trong source code: `script_db.sql` để tự động tạo cấu trúc các bảng (`Users`, `Bidder`, `Seller`, `Admin`, `Items`,...).
-4. Chạy file TEST để tạo tài khoản và các dữ liệu thử ban đầu
-5. Tạo file application.properties trong Bidding Server và ghi các thông tin về tài khoản sql của bạn
+2. Tạo một schema mới cho dự án (vd: auction_db).
+3. Chạy file script SQL được đính kèm trong source code: `script_db.sql`.
+4. Chạy file `TEST_DATA.sql` để tạo tài khoản và các dữ liệu thử ban đầu
+5. Tạo file application.properties trong Bidding Server và ghi các thông tin về tài khoản sql
+```
+db.url=jdbc:mysql://localhost:3306/tên_database_của_bạn
+db.user=root
+db.password=mật_khẩu_của_bạn
+```
 ### 3. Build Dự án với Maven
 Mở terminal tại thư mục gốc của dự án (nơi chứa file `pom.xml` tổng) và chạy lệnh:
 ```bash
-mvn clean install
+mvn clean install -DskipTests
 ```
  Server sẽ chạy ở:
 - REST: http://localhost:7070
@@ -66,7 +71,6 @@ mvn clean install
    ```
  2. Để chạy client, có thể tạo ra nhiều client khác nhau:
 ```
-
 mvn exec:java -pl Bidding_Client -Dexec.mainClass="com.client.Launcher"
 ```
 
@@ -133,7 +137,8 @@ Dự án được chia thành 3 module độc lập để đảm bảo Tách bi�
   * **Controller (UI):** * Quản lý các màn hình chức năng (Đăng nhập, Đăng ký, Dashboard, Phòng đấu giá...).
     * Xử lý các hiệu ứng chuyển cảnh động và quản lý hoạt họa đồ họa (ví dụ: `SpriteAnimation`). Điều hướng luồng tương tác của người dùng trên giao diện.
   * **Session Management:** Lưu trữ thông tin phiên làm việc của người dùng hiện tại qua đối tượng `UserSession`. Giúp duy trì trạng thái đăng nhập và cá nhân hóa trải nghiệm người dùng xuyên suốt ứng dụng.
-  * **Network / Sender:** * Thiết lập kết nối, đóng gói và gửi/nhận các gói dữ liệu JSON thông qua **Socket TCP** tới Server.
+  * **Network :** * Thiết lập kết nối, đóng gói và gửi/nhận các gói dữ liệu JSON thông qua **Socket TCP** tới Server.
+  * **Util : ** *Hỗ trợ các chức năng phụ như chuyển scene, chuyển panel, và visualize của ui, game.
     * Đồng thời, liên tục lắng nghe các tín hiệu cập nhật từ WebSocket để cập nhật giao diện thời gian thực (như khi xuất hiện AI Bidder, bước giá mới, đếm ngược thời gian,...).
 * **💡 Ý nghĩa:** Là nơi người dùng tương tác trực tiếp với hệ thống. Đảm bảo mọi luồng thông tin từ Server được hiển thị mượt mà, trực quan và cập nhật real-time theo từng mili-giây.
 
@@ -150,24 +155,52 @@ Hệ thống linh hoạt áp dụng các Mẫu thiết kế phần mềm để g
 * **State:** Quản lý vòng đời khép kín của một phiên đấu giá (SCHEDULED, ACTIVE, ENDED).
 
 ---
+Các chức năng đã hoàn thành
+## 1. Nhóm chức năng Bắt buộc (Core Features)
 
-## 🚀 Tiến độ dự án (Roadmap)
+### Quản lý người dùng
+* **Bảo mật:** Hệ thống đăng ký và đăng nhập tài khoản an toàn với cơ chế băm mật khẩu (**BCrypt**).
+* **Xác thực:** Sử dụng **JWT Token** để duy trì phiên làm việc.
+* **Phân quyền:** Hỗ trợ phân quyền chặt chẽ cho 3 vai trò:
+    * **Admin:** Quản trị viên hệ thống.
+    * **Seller:** Người bán hàng.
+    * **Bidder:** Người tham gia đấu giá.
 
-### Giai đoạn 1: Khởi tạo & Kiến trúc (Hoàn thành)
-- [x] Thiết lập kiến trúc Multi-module Maven (`shared`, `client`, `server`).
-- [x] Thiết kế hệ thống Entity & Data Models cốt lõi.
-- [x] Xây dựng cơ sở dữ liệu MySQL và cấu hình Singleton JDBC.
+### Quản lý sản phẩm & Phiên đấu giá
+* **Nghiệp vụ Seller:** Thực hiện CRUD (Thêm/Sửa/Xóa) sản phẩm và cấu hình chi tiết phiên đấu giá (giá khởi điểm, bước giá, thời gian).
+* **Vòng đời phiên:** Tự động quản lý trạng thái (`OPEN` -> `RUNNING` -> `FINISHED`).
+* **Xử lý kết thúc:** Tự động xác định người thắng cuộc ngay khi phiên đấu giá đóng lại.
 
-### Giai đoạn 2: Xác thực & UI Cơ bản (Hoàn thành)
-- [x] Xây dựng UI/UX màn hình Đăng nhập & Đăng ký (JavaFX).
-- [x] Thiết kế giao diện Sảnh chính (Dashboard / Auction Menu).
-- [x] Hoàn thiện luồng kết nối DB cho tính năng Register/Login qua Base `User`.
+### Nghiệp vụ đấu giá
+* **Kiểm tra hợp lệ:** Hệ thống kiểm tra logic đặt giá (giá mới phải cao hơn giá hiện tại + bước giá).
+* **Exception Hierarchy:** Xây dựng hệ thống phân cấp ngoại lệ để xử lý triệt để các lỗi logic:
+    * Đặt giá thấp hơn giá hiện tại.
+    * Đấu giá khi phiên đã kết thúc.
+    * Lỗi kết nối hoặc tranh chấp dữ liệu.
 
-### Giai đoạn 3: Nghiệp vụ & Thời gian thực (Đang phát triển)
-- [X] Hoàn thiện kết nối Socket 2 chiều Client - Server cho việc truyền tải DTO.
-- [X] Tích hợp Observer Pattern để broadcast giá đấu thời gian thực.
-- [X] Phát triển tính năng tạo phiên đấu giá (Create Item) và hiển thị danh sách live.
+---
 
-### Giai đoạn 4: Tối ưu & Mở rộng (Sắp tới)
-- [X] Hoàn thiện thuật toán Anti-sniping và Auto-bidding.
-- [ ] Kiểm thử đồng thời (Concurrency testing).
+## 2. Kỹ thuật & Concurrency (Bắt buộc)
+
+### Xử lý đấu giá đồng thời (Concurrent Bidding)
+* **An toàn dữ liệu:** Áp dụng các kỹ thuật khóa (Locking) để ngăn chặn triệt để tình trạng **Lost Update** và **Rollback**.
+* **Race Condition:** Đảm bảo tính nhất quán khi có hàng ngàn người cùng đặt giá tại một thời điểm.
+
+### Cập nhật thời gian thực (Realtime Update)
+* **Design Pattern:** Sử dụng **Observer Pattern** để quản lý các đối tượng theo dõi phiên.
+* **Công nghệ:** Kết nối **WebSocket** để broadcast (phát sóng) giá mới tới toàn bộ Client ngay lập tức mà không cần tải lại trang (Zero Refresh).
+
+---
+
+## 3. Nhóm chức năng Nâng cao (Advanced Features)
+
+* **Auto-Bidding:** Tính năng tự động trả giá thay người dùng dựa trên `maxBid` và `increment`. Sử dụng **PriorityQueue** để quản lý thứ tự ưu tiên đặt giá.
+* **Anti-sniping:** Thuật toán tự động gia hạn thêm thời gian cho phiên đấu giá nếu phát hiện có lượt bid mới trong những giây cuối cùng để chống chiến thuật "bắn tỉa".
+* **Bid History Visualization:** Hiển thị biểu đồ đường (**Line Chart**) theo thời gian thực ngay trên giao diện **JavaFX** để người dùng theo dõi biến động giá trực quan.
+
+### Chức năng Giải trí & Tương tác (Tính năng Sáng tạo - Bonus)
+Bên cạnh các nghiệp vụ cốt lõi của một sàn đấu giá, hệ thống còn tích hợp các tính năng giải trí độc đáo nhằm nâng cao trải nghiệm người dùng (UI/UX) và giữ chân người dùng trong thời gian chờ đợi:
+* **Game Corner (Góc Mini-game):** Tích hợp khu vực giải trí ngay trong ứng dụng (tích hợp qua `GameCornerController` và `MiniGameManager`). Người dùng có thể tham gia các trò chơi nhỏ với hiệu ứng hình ảnh động (Sprite Animation) mượt mà được tối ưu hóa trên JavaFX.
+* **Trợ lý Bidding Pet (Pet Ảo):** Tích hợp một thú cưng ảo trực tiếp trên giao diện (`BiddingPet`). Pet không chỉ là một yếu tố trang trí giúp giao diện bớt khô khan, mà còn có khả năng tương tác với người dùng, và đóng vai trò như một "trợ lý ảo" đồng hành trong suốt quá trình đấu giá.
+---
+LINK PDF và video
