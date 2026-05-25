@@ -10,6 +10,7 @@ import com.shared.dto.AuctionWinnerDTO;
 import com.shared.network.Response;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import com.client.util.ConfigReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class MyWebSocketClient extends WebSocketClient {
                     return;
                 }
             }
-            instance = new MyWebSocketClient(new URI("ws://localhost:8080"));
+            instance = new MyWebSocketClient(new URI(ConfigReader.getWebSocketUrl()));
             instance.connect();
         } catch (Exception e) {
             logger.error("Lỗi khi kết nối tới Server", e);

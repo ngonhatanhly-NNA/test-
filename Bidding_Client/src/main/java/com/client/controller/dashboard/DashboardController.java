@@ -12,7 +12,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.input.MouseEvent;
 
 import java.io.IOException;
-
+import com.client.util.DashboardSearchBridge;
 import com.client.util.SwitchPane;
 import com.client.util.SceneController;
 import com.client.session.ClientSession;
@@ -25,8 +25,7 @@ public class DashboardController {
     @FXML private Button btnDashboard, btnLiveAuctions, btnMyInventory, btnLogout, btnManagement, btnGameCorner;
     @FXML private Label lblUsername;
     @FXML private TextField searchField;
-    @FXML private CheckBox chkElectronics, chkFineArts, chkVehicles;
-
+   
     // --- LINH VẬT TOÀN CỤC ---
     @FXML private AnchorPane gameLayer;
     @FXML private Label bidCounter;
@@ -38,8 +37,14 @@ public class DashboardController {
     public void initialize() {
         instance = this;
         mainPane = new SwitchPane(mainBorderPane);
-
-        if (ClientSession.isLoggedIn()) {
+		
+		if (searchField != null) {
+			searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+				DashboardSearchBridge.publish(newVal); 
+			});
+		}
+		
+		if (ClientSession.isLoggedIn()) {
             lblUsername.setText(ClientSession.getUsername());
             if (btnManagement != null && "SELLER".equalsIgnoreCase(ClientSession.getRole())) {
                 btnManagement.setVisible(true);

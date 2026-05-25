@@ -65,18 +65,16 @@ public class ViewDashboardController {
     @FXML
     public void initialize() {
         instance = this;
+		
+		DashboardSearchBridge.setOnSearch(query -> {
+			Platform.runLater(() -> {
+				rebuildCardsWithQuery(query); 
+			});
+		});
         
         loadAuctionsFromServer();
 		loadItemsFromServer();
-		
-        DashboardSearchBridge.setOnSearch(q -> Platform.runLater(() -> {
-            if (searchField != null) {
-                searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            // Mỗi khi chữ thay đổi, gọi hàm rebuild lại giao diện
-					rebuildCards();
-				});
-            }
-        }));
+	
 
         if (sortCombo != null) {
             sortCombo.getItems().setAll("Latest (by ID)", "Starting Price: Low → High", "Starting Price: High → Low", "Name A → Z");
@@ -84,19 +82,11 @@ public class ViewDashboardController {
             sortCombo.setOnAction(e -> rebuildCards());
         }
         
-        if (searchField != null) searchField.textProperty().addListener((obs, o, n) -> rebuildCards());
         if (chkElectronics != null) chkElectronics.selectedProperty().addListener((o, a, b) -> rebuildCards());
-        if (chkArt != null) chkArt.selectedProperty().addListener((o, a, b) -> rebuildCards());
-        if (chkVehicle != null) chkVehicle.selectedProperty().addListener((o, a, b) -> rebuildCards());
+		if (chkArt != null) chkArt.selectedProperty().addListener((o, a, b) -> rebuildCards());
+		if (chkVehicle != null) chkVehicle.selectedProperty().addListener((o, a, b) -> rebuildCards());
 		
 		setupBannerSlideshow();
-    }
-
-    public void syncSidebarCategories(boolean electronics, boolean fineArts, boolean vehicles) {
-        if (chkElectronics != null) chkElectronics.setSelected(electronics);
-        if (chkArt != null) chkArt.setSelected(fineArts);
-        if (chkVehicle != null) chkVehicle.setSelected(vehicles);
-        rebuildCards();
     }
 
     @FXML
@@ -105,62 +95,27 @@ public class ViewDashboardController {
     }
 
 	private void loadAuctionsFromServer() {
+        new Thread(() -> {
+            List<AuctionDetailDTO> tempLive = new ArrayList<>();
+            List<AuctionDetailDTO> tempUp = new ArrayList<>();
+            try {
+                tempLive = AuctionNetwork.getActiveAuctions();
+                tempUp = AuctionNetwork.getUpcomingAuctions();
+            } catch (Exception e) {
+                System.out.println("Cảnh báo: Không thể tải phiên đấu giá: " + e.getMessage());
+            }
 
-		new Thread(() -> {
+            final List<AuctionDetailDTO> liveAuctions = tempLive;
+            final List<AuctionDetailDTO> upcomingAuctions = tempUp;
 
-			List<AuctionDetailDTO> tempLive = new ArrayList<>();
-			List<AuctionDetailDTO> tempUp = new ArrayList<>();
-
-			try {
-				tempLive = AuctionNetwork.getActiveAuctions();
-				tempUp = AuctionNetwork.getUpcomingAuctions();
-
-			} catch (Exception e) {
-				System.out.println(
-					"Cảnh báo: Không thể tải phiên đấu giá: "
-					+ e.getMessage()
-				);
-			}
-
-			final List<AuctionDetailDTO> liveAuctions = tempLive;
-			final List<AuctionDetailDTO> upcomingAuctions = tempUp;
-
-			Platform.runLater(() -> {
-
-				if (auctionSectionContainer == null)
-					return;
-
-				auctionSectionContainer
-					.getChildren()
-					.clear();
-
-				if (!liveAuctions.isEmpty()) {
-
-					auctionSectionContainer
-						.getChildren()
-						.add(
-							createAuctionSection(
-								"🔥 Live Auctions",
-								liveAuctions
-							)
-						);
-				}
-
-				if (!upcomingAuctions.isEmpty()) {
-
-					auctionSectionContainer
-						.getChildren()
-						.add(
-							createAuctionSection(
-								"⏰ Upcoming Auctions",
-								upcomingAuctions
-							)
-						);
-				}
-			});
-
-		}).start();
-	}
+            Platform.runLater(() -> {
+                if (auctionSectionContainer == null) return;
+                auctionSectionContainer.getChildren().clear();
+                if (!liveAuctions.isEmpty()) auctionSectionContainer.getChildren().add(createAuctionSection("🔥 Live Auctions", liveAuctions));
+                if (!upcomingAuctions.isEmpty()) auctionSectionContainer.getChildren().add(createAuctionSection("⏰ Upcoming Auctions", upcomingAuctions));
+            });
+        }).start();
+    }
     
     private VBox createAuctionSection(String title, List<AuctionDetailDTO> auctions) {
         VBox section = new VBox(15);
@@ -205,10 +160,16 @@ public class ViewDashboardController {
     private void rebuildCards() {
         if (itemContainer == null) return;
         itemContainer.getChildren().clear();
+        String currentQuery = DashboardSearchBridge.getLastQuery().toLowerCase(Locale.ROOT);
 
         List<ItemResponseDTO> filtered = allItems.stream()
                 .filter(this::matchesCategory)
-                .filter(this::matchesSearch)
+                .filter(item -> {
+                    if (currentQuery.isEmpty()) return true;
+                    String name = item.getName() != null ? item.getName().toLowerCase(Locale.ROOT) : "";
+                    String desc = item.getDescription() != null ? item.getDescription().toLowerCase(Locale.ROOT) : "";
+                    return name.contains(currentQuery) || desc.contains(currentQuery);
+                })
                 .sorted(comparatorForSort())
                 .collect(Collectors.toList());
 
@@ -223,16 +184,40 @@ public class ViewDashboardController {
             itemContainer.getChildren().add(CardFactory.createExploreItemCard(item, getClass(), e -> DashboardNavigation.openLiveAuctions()));
         }
     }
+	
+	private void rebuildCardsWithQuery(String query) {
+		if (itemContainer == null) return;
+		
+		// Lọc trực tiếp từ list allItems dựa trên query truyền vào
+		List<ItemResponseDTO> filtered = allItems.stream()
+				.filter(item -> {
+					String q = query.toLowerCase();
+					return item.getName().toLowerCase().contains(q) || 
+						   item.getDescription().toLowerCase().contains(q);
+				})
+				.collect(Collectors.toList());
 
-    private boolean matchesCategory(ItemResponseDTO item) {
-        String t = item.getType() != null ? item.getType().toUpperCase(Locale.ROOT) : "";
-        boolean any = (chkElectronics == null || !chkElectronics.isSelected()) && (chkArt == null || !chkArt.isSelected()) && (chkVehicle == null || !chkVehicle.isSelected());
-        if (any) return true;
-        if (chkElectronics != null && chkElectronics.isSelected() && "ELECTRONICS".equals(t)) return true;
-        if (chkArt != null && chkArt.isSelected() && "ART".equals(t)) return true;
-        if (chkVehicle != null && chkVehicle.isSelected() && "VEHICLE".equals(t)) return true;
-        return false;
-    }
+		itemContainer.getChildren().clear();
+		for (ItemResponseDTO item : filtered) {
+			itemContainer.getChildren().add(CardFactory.createExploreItemCard(item, getClass(), e -> DashboardNavigation.openLiveAuctions()));
+		}
+	}
+
+	private boolean matchesCategory(ItemResponseDTO item) {
+		String t = item.getType() != null ? item.getType().toUpperCase(Locale.ROOT) : "";
+		
+		// CheckBox đang nằm trực tiếp trong file này, gọi trực tiếp luôn
+		boolean e = (chkElectronics != null && chkElectronics.isSelected());
+		boolean a = (chkArt != null && chkArt.isSelected());
+		boolean v = (chkVehicle != null && chkVehicle.isSelected());
+		
+		if (!e && !a && !v) return true;
+		if (e && "ELECTRONICS".equals(t)) return true;
+		if (a && "ART".equals(t)) return true;
+		if (v && "VEHICLE".equals(t)) return true;
+		
+		return false;
+	}
 
     private boolean matchesSearch(ItemResponseDTO item) {
         if (searchField == null) return true;
@@ -252,68 +237,28 @@ public class ViewDashboardController {
             default -> Comparator.comparingLong(ItemResponseDTO::getId).reversed();
         };
     }
-	
-	private void setupBannerSlideshow() {
-    if (adBanner == null)
-        return;
-    try {
-        Image firstImage =
-            new Image(
-                getClass()
-                    .getResourceAsStream(
-                        adImages[0]
-                    )
-            );
+    
+    private void setupBannerSlideshow() {
+        if (adBanner == null) return;
+        try {
+            Image firstImage = new Image(getClass().getResourceAsStream(adImages[0]));
+            adBanner.setImage(firstImage);
+        } catch (Exception e) {
+            System.err.println("Không load được banner đầu tiên");
+        }
 
-        adBanner.setImage(firstImage);
-
-    } catch (Exception e) {
-
-        System.err.println(
-            "Không load được banner đầu tiên"
-        );
-
-        e.printStackTrace();
-    }
-
-    Timeline timeline = new Timeline(
-
-        new KeyFrame(
-            Duration.seconds(3),
-
-            event -> {
-
-                currentImageIndex =
-                    (currentImageIndex + 1)
-                    % adImages.length;
-
+        Timeline timeline = new Timeline(
+            new KeyFrame(Duration.seconds(3), event -> {
+                currentImageIndex = (currentImageIndex + 1) % adImages.length;
                 try {
-
-                    Image nextImage =
-                        new Image(
-                            getClass()
-                                .getResourceAsStream(
-                                    adImages[currentImageIndex]
-                                )
-                        );
-
+                    Image nextImage = new Image(getClass().getResourceAsStream(adImages[currentImageIndex]));
                     adBanner.setImage(nextImage);
-
                 } catch (Exception e) {
-
-                    System.err.println(
-                        "Lỗi load ảnh: "
-                        + adImages[currentImageIndex]
-                    );
+                    System.err.println("Lỗi load ảnh: " + adImages[currentImageIndex]);
                 }
-            }
-        )
-    );
-
-    timeline.setCycleCount(
-        Timeline.INDEFINITE
-    );
-
-    timeline.play();
-}
+            })
+        );
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.play();
+    }
 } 

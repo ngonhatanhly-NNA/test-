@@ -31,7 +31,7 @@
                      
                      <Region HBox.hgrow="ALWAYS" />
                      
-                     <TextField prefHeight="40.0" promptText="🔍 Search auctions..." style="-fx-background-color: #121212; -fx-text-fill: #F5F5F5; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 20; -fx-border-color: rgba(212,175,55,0.3); -fx-border-radius: 20; -fx-pref-width: 320; -fx-padding: 0 20; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.8), 8, 0, 0, 2);" />
+                     <TextField prefHeight="40.0" fx:id="searchField" promptText="🔍 Search auctions..." style="-fx-background-color: #121212; -fx-text-fill: #F5F5F5; -fx-prompt-text-fill: #A0A0A0; -fx-background-radius: 20; -fx-border-color: rgba(212,175,55,0.3); -fx-border-radius: 20; -fx-pref-width: 320; -fx-padding: 0 20; -fx-font-size: 14px; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.8), 8, 0, 0, 2);" />
                      
                      <Region HBox.hgrow="ALWAYS" />
                      

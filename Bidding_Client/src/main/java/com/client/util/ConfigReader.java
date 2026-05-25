@@ -9,7 +9,6 @@ public class ConfigReader {
     private static final Logger logger = LoggerFactory.getLogger(ConfigReader.class);
     private static final Properties properties = new Properties();
 
-    // Khối static này sẽ tự động chạy 1 lần duy nhất khi ứng dụng Client khởi động
     static {
         try (InputStream input = ConfigReader.class.getClassLoader()
                 .getResourceAsStream("client-config.properties")) {
@@ -25,10 +24,10 @@ public class ConfigReader {
     }
 
     public static String getHttpUrl() {
-        return properties.getProperty("server.http.url", "http://localhost:8080");
+        return properties.getProperty("server.http.url", "http://localhost:7070");
     }
 
     public static String getWebSocketUrl() {
-        return properties.getProperty("server.websocket.url", "ws://localhost:8887");
+        return properties.getProperty("server.websocket.url", "ws://localhost:8080");
     }
 }

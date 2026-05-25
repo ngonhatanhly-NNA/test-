@@ -2,7 +2,7 @@ package com.server.config;
 
 import java.util.Arrays;
 import java.util.List;
-import java.net.InetSocketAddress; // [THÊM MỚI]
+import java.net.InetSocketAddress;
 
 import com.server.DAO.*;
 import com.server.controller.*;
@@ -34,7 +34,7 @@ public class AppConfig {
     }
 
     public static AppComponents buildDependencies() {
-        // ... (Khởi tạo DAO giữ nguyên) ...
+     
         UserRepository userRepo = new UserRepository();
         ItemRepository itemRepo = new ItemRepository();
         AuctionRepository auctionRepo = new AuctionRepository();
@@ -51,7 +51,7 @@ public class AppConfig {
         AutoBidProcessor autoProc = new AutoBidProcessor(autoBidRepo, auctionRepo, bidderRepoReal);
         
         //  Khởi tạo WebSocket ở Cổng 8080
-        Broadcaster broadcaster = new Broadcaster(new InetSocketAddress("localhost", 8080));
+        Broadcaster broadcaster = new Broadcaster(new InetSocketAddress("0.0.0.0", 8080));
 
         AuthService authService = new AuthService(userRepo);
         ItemService itemService = new ItemService(itemRepo);
@@ -70,7 +70,6 @@ public class AppConfig {
         auctionService.setEventListener(broadcaster); // 1. Auction gửi event cho Webscoket
         broadcaster.setAuctionService(auctionService); // 2. Websocket gửi lệnh ngược lại cho Auction
 
-        // ... (Controllers & Route giữ nguyên) ...
         AuthController authController = new AuthController(authService, jwtUtil);
         AuctionController auctionController = new AuctionController(auctionService);
         AdminController adminController = new AdminController(adminService);
@@ -84,7 +83,6 @@ public class AppConfig {
             bidderController, sellerController, itemService, auctionService, jwtUtil, 
             userController, imageController, commandFactory); 
 
-        // [CẬP NHẬT] Trả về 3 tham số
         return new AppComponents(apiRouter, auctionService, broadcaster);
     }
 }
