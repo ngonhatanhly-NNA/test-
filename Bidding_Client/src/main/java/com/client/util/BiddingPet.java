@@ -18,6 +18,8 @@ public class BiddingPet {
     private Label speechBubble;
     private VBox petContainer; 
 	private Timeline speakTimeline;
+	private SmallAnimation currentAnimation;
+	private PauseTransition idleTimer;
 	
 	private String[] happyPhrases = {"Great!", "Awesome!", "You're the best!", "So cool!"};
 	private String[] hungryPhrases = {"Feed me, boss!", "I'm starving!", "Bids please~"};
@@ -26,8 +28,10 @@ public class BiddingPet {
     public BiddingPet (Pane layer) {
         this.gameLayer = layer;
         
-        Image iconImage = new Image(getClass().getResourceAsStream("/icons/icon.png"));
-        this.mascotView = new ImageView(iconImage);
+        this.mascotView = new ImageView();
+        mascotView.setFitWidth(100);
+        mascotView.setFitHeight(100);
+        mascotView.setPreserveRatio(true);
         
         mascotView.setFitWidth(100);
         mascotView.setFitHeight(100);
@@ -51,14 +55,46 @@ public class BiddingPet {
         mascotView.setOnMouseClicked(e -> {
             jumpCelebrate();
             speak("Hi! I'm hungry, feed me?");
+			changeState("/images/LuciusSpin.png", 8, 4, 64, 64);
+        });
+		
+		idleTimer = new PauseTransition(Duration.seconds(30));
+        idleTimer.setOnFinished(e -> {
+            // Khi hết 30s không ai tương tác, chuyển sang animation đọc sách
+            changeState("/images/Luciuscolumnpio.png", 16, 4, 64, 64);
+            // Có thể cho 1 câu thoại nhỏ kiểu lẩm bẩm
+            speechBubble.setText("Zzz... Boss is not interesting in me anymore :<...");
+            speechBubble.setVisible(true);
         });
         
         mascotView.setStyle("-fx-cursor: hand;");
         gameLayer.getChildren().add(petContainer);
+		changeState("/images/Lucius_sentado.png", 4, 4, 64, 64);
     }
-
+	
+	public void changeState(String spriteSheetPath, int frames, int cols, int width, int height) {
+			if (currentAnimation != null) {
+				currentAnimation.stop();
+			}
+			
+			try {
+				Image newSprite = new Image(getClass().getResourceAsStream(spriteSheetPath));
+				mascotView.setImage(newSprite);
+			   
+				currentAnimation = new SmallAnimation(
+					mascotView, 
+					Duration.millis(800), // Tốc độ animation
+					frames, cols, 0, 0, width, height
+				);
+				currentAnimation.setCycleCount(Animation.INDEFINITE);
+				currentAnimation.play();
+			} catch (Exception e) {
+				System.err.println("Không tìm thấy ảnh: " + spriteSheetPath);
+			}
+		}
     // --- HÀM TRỢ LÝ ẢO NÓI CHUYỆN ---
     public void speak(String text) {
+		resetIdleTimer();
 		if (speakTimeline != null) speakTimeline.stop();
 		
         speechBubble.setText(text);
@@ -66,19 +102,18 @@ public class BiddingPet {
 
         speakTimeline = new Timeline(new KeyFrame(Duration.seconds(5), e -> {
             speechBubble.setVisible(false);
+			changeState("/images/Lucius_libro.png", 4, 4, 64, 64);
         }));
         speakTimeline.play();
     }
+	
+
 	
 	public void speak(String text, boolean isRandom) {
 		if (isRandom && text.equals("Yummy! Thank you boss!")) {
 			text = happyPhrases[rand.nextInt(happyPhrases.length)];
 		}
-		if (speakTimeline != null) speakTimeline.stop();
-		speechBubble.setText(text);
-		speechBubble.setVisible(true);
-		speakTimeline = new Timeline(new KeyFrame(Duration.seconds(4), e -> speechBubble.setVisible(false)));
-		speakTimeline.play();
+		speak(text);
 	}
 
     // --- HIỆU ỨNG NHẢY LÊN KHI CLICK ---
