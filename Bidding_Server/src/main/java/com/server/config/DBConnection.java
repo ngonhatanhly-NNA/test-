@@ -14,9 +14,9 @@ public class DBConnection {
     private static final Logger logger = LoggerFactory.getLogger(DBConnection.class);
 
     // Biến static lưu trữ instance duy nhất
-    private static DBConnection instance;
+    private static volatile DBConnection instance;
     private HikariDataSource dataSource;
-	private Properties properties;
+    private Properties properties;
 
     // Khóa constructor không cho tạo ngoài
     private DBConnection() {
@@ -68,15 +68,17 @@ public class DBConnection {
         if (value == null || value.trim().isEmpty()) {
             value = System.getenv(envKey);
         }
-        
-        //Nếu vẫn không có, dùng giá trị mặc định
         return (value == null || value.trim().isEmpty()) ? fallback : value;
     }
 
     // Cổng lấy Singleton Thread-safe
-    public static synchronized DBConnection getInstance() {
+    public static DBConnection getInstance() {
         if (instance == null) {
-            instance = new DBConnection();
+            synchronized (DBConnection.class) {
+                if (instance == null) {
+                    instance = new DBConnection();
+                }
+            }
         }
         return instance;
     }
@@ -90,6 +92,13 @@ public class DBConnection {
         } catch (SQLException e) {
             logger.error("Failed to obtain connection from HikariCP pool: {}", e.getMessage(), e);
             throw e;
+        }
+    }
+	
+	public void closePool() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            logger.info("Đã đóng HikariCP pool an toàn, giải phóng tài nguyên.");
         }
     }
 }

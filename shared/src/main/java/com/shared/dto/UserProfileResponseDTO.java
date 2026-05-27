@@ -30,16 +30,17 @@ public class UserProfileResponseDTO implements Serializable {
 
     @SerializedName("walletBalance")
     private double walletBalance; // Cần thiết để hiển thị số dư
-	
-	@SerializedName("avatarUrl")
+
+    // [ĐÃ FIX]: Thêm trường nhận URL Avatar
+    @SerializedName("avatarUrl")
     private String avatarUrl;
 
     public UserProfileResponseDTO() {
     }
 
-    // Constructor nhận các tham số tương ứng
+    // [ĐÃ FIX]: Bổ sung avatarUrl vào constructor đầy đủ
     public UserProfileResponseDTO(long id, String username, String email, String fullName,
-                                  String phoneNumber, String address, String role, double walletBalance) {
+                                  String phoneNumber, String address, String role, double walletBalance, String avatarUrl) {
         this.id = id;
         this.username = username;
         this.email = email;
@@ -48,7 +49,7 @@ public class UserProfileResponseDTO implements Serializable {
         this.address = address;
         this.role = role;
         this.walletBalance = walletBalance;
-		this.avatarUrl = avatarUrl;
+        this.avatarUrl = avatarUrl;
     }
 
     public String getRole() {
@@ -82,11 +83,12 @@ public class UserProfileResponseDTO implements Serializable {
     public double getWalletBalance() {
         return walletBalance;
     }
-	
-	public String getAvatarUrl() {
+    public String getAvatarUrl() {
         return avatarUrl;
     }
-    // Getters để JavaFX xử lí
+	public void setAvatarUrl(String avatarUrl) {
+		this.avatarUrl = avatarUrl;
+	}
 
     @Override
     public boolean equals(Object o) {
@@ -96,14 +98,13 @@ public class UserProfileResponseDTO implements Serializable {
         return id == that.id && Double.compare(that.walletBalance, walletBalance) == 0 &&
                 Objects.equals(username, that.username) && Objects.equals(email, that.email) &&
                 Objects.equals(fullName, that.fullName) && Objects.equals(phoneNumber, that.phoneNumber) &&
-                Objects.equals(address, that.address) && Objects.equals(role, that.role);
+                Objects.equals(address, that.address) && Objects.equals(role, that.role) &&
+                Objects.equals(avatarUrl, that.avatarUrl); // Cập nhật Equals
     }
-	
-
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, email, fullName, phoneNumber, address, role, walletBalance);
+        return Objects.hash(id, username, email, fullName, phoneNumber, address, role, walletBalance, avatarUrl);
     }
 
     @Override
@@ -117,6 +118,7 @@ public class UserProfileResponseDTO implements Serializable {
                 ", address='" + address + '\'' +
                 ", role='" + role + '\'' +
                 ", walletBalance=" + walletBalance +
+                ", avatarUrl='" + avatarUrl + '\'' + // [ĐÃ FIX]: Cập nhật ToString để hiển thị ở Logs
                 '}';
     }
 }

@@ -1,6 +1,5 @@
 package com.client.controller.dashboard;
 
-import com.client.util.DashboardNavigation;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -10,9 +9,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.input.MouseEvent;
-
+import javafx.application.Platform;
 import java.io.IOException;
 import com.client.util.DashboardSearchBridge;
+import com.client.util.DashboardNavigation;
 import com.client.util.SwitchPane;
 import com.client.util.SceneController;
 import com.client.session.ClientSession;
@@ -57,6 +57,20 @@ public class DashboardController {
                 btnManagement.setManaged(false);
             }
         }
+		
+		DashboardNavigation.setOpenLiveAuctions(() -> {
+            handleBtnLiveAuctions(null); 
+        });
+
+        DashboardNavigation.setNavigateToAuctionDetail(auctionId -> {
+            handleBtnLiveAuctions(null); 
+         
+            Platform.runLater(() -> {
+                if (ViewLiveAuctions.getInstance() != null) {
+                    ViewLiveAuctions.getInstance().handleRefreshAuctions();
+                }
+            });
+        });
 
         // KHỞI TẠO PET TOÀN CỤC
         if (gameLayer != null && bidCounter != null) {
@@ -68,7 +82,6 @@ public class DashboardController {
         setActiveButton(btnDashboard);
     }
 
-    // HÀM QUAN TRỌNG: Cho phép các class khác mượn gameManager
     public MiniGameManager getGameManager() {
         return gameManager;
     }

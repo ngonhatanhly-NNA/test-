@@ -19,7 +19,6 @@ public class Auction extends Entity {
     private List<BidTransaction> bidHistory = new ArrayList<>();
 
     public enum AuctionStatus { SCHEDULED, OPEN, RUNNING, FINISHED, CANCELED, PAID, CLOSED }
-
     public Auction() {
         super(); 
     }

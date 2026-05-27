@@ -30,4 +30,8 @@ public class ConfigReader {
     public static String getWebSocketUrl() {
         return properties.getProperty("server.websocket.url", "ws://localhost:8080");
     }
+	
+	public static String getProperty(String key) {
+        return properties.getProperty(key); 
+    }
 }

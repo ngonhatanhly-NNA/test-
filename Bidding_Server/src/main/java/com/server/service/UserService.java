@@ -74,7 +74,7 @@ public class UserService {
         map.put("role", user.getRole().name());
         map.put("status", user.getStatus().name());
 		String avatar = user.getAvatarUrl();
-        map.put("avatarUrl", avatar != null ? avatar : "DB_null");
+        map.put("avatarUrl", user.getAvatarUrl());
 		
 		if (user instanceof Bidder) {
 			map.put("walletBalance", ((Bidder) user).getWalletBalance());

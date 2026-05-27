@@ -6,7 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
-
+import javafx.application.Platform;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ArrayList;
@@ -139,7 +139,14 @@ public class AuctionUIHelper {
                            "-fx-background-radius: 8;");
         btnSelect.setMaxWidth(Double.MAX_VALUE);
 
-        btnSelect.setOnAction(e -> onSelectCallback.accept(a));
+        btnSelect.setOnAction(e -> {
+            try {
+                Platform.runLater(() -> onSelectCallback.accept(a));
+            } catch (Exception ex) {
+                System.err.println("Lỗi khi ấn nút Enter Auction: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        });
 
         card.getChildren().addAll(nameLbl, typeLbl, sellerLbl, specificsLbl, priceLbl, leaderLbl, timeLbl, scheduleInfoLbl, btnSelect);
         card.setUserData(a.getAuctionId());

@@ -59,12 +59,13 @@ public class ViewLiveAuctions {
     private Timeline countdownTimeline;
     private static ViewLiveAuctions instance;
 
-    public ViewLiveAuctions() { instance = this; }
+    public ViewLiveAuctions() { 
+        instance = this; 
+    }
+    
     public static ViewLiveAuctions getInstance() { return instance; }
     public static ViewLiveAuctions getExistingInstance() { return instance; }
-	public long getCurrentAuctionId() { 
-        return currentAuctionId; 
-    }
+    public long getCurrentAuctionId() { return currentAuctionId; }
 
     @FXML
     public void initialize() {
@@ -78,7 +79,6 @@ public class ViewLiveAuctions {
                 if (customStepPriceField != null) { customStepPriceField.setVisible(n); customStepPriceField.setManaged(n); }
             });
         }
-
         // --- MVVM DATA BINDING ---
         if (currentPriceLabel != null) currentPriceLabel.textProperty().bind(viewModel.currentPriceProperty());
         if (leaderLabel != null) leaderLabel.textProperty().bind(viewModel.leaderProperty());
@@ -104,9 +104,7 @@ public class ViewLiveAuctions {
         countdownTimeline.setCycleCount(Animation.INDEFINITE);
         countdownTimeline.play();
 
-        // ==========================================
         // ĐĂNG KÝ BẮT SỰ KIỆN TỪ WEBSOCKET
-        // ==========================================
         EventBus.getInstance().subscribe(AuctionUpdateDTO.class, dto -> {
             Platform.runLater(() -> updatePriceRealtime(dto));
         });
@@ -116,7 +114,6 @@ public class ViewLiveAuctions {
         });
 
         EventBus.getInstance().subscribe(AuctionFinishedEvent.class, event -> {
-            // Truy cập thẳng biến auctionId, không có dấu ()
             Platform.runLater(() -> handleAuctionFinishedNoWinner(event.auctionId)); 
         });
 
@@ -151,21 +148,37 @@ public class ViewLiveAuctions {
         if (refreshButton != null) refreshButton.setDisable(true);
         actionService.fetchActiveAuctions(list -> {
             if (refreshButton != null) refreshButton.setDisable(false);
-            if (list == null || list.isEmpty()) { showError("Auction is not open"); return; }
+            if (list == null || list.isEmpty()) { 
+                showError("No open auctions at the moment."); 
+                if (auctionsContainer != null) auctionsContainer.getChildren().clear();
+                return; 
+            }
             if (auctionsContainer != null) {
                 auctionsContainer.getChildren().clear();
                 list.forEach(a -> {
                     VBox card = AuctionUIHelper.createAuctionCard(a, selectedA -> {
-                        applyAuctionDetail(selectedA);
-                        showInfo("Selected: " + selectedA.getItemName() + ". You can place your bid right next to it!");
+                        Platform.runLater(() -> {
+                            applyAuctionDetail(selectedA);
+                            showInfo("Selected: " + selectedA.getItemName() + ". You can place your bid right next to it!");
+                        });
                     });
+                    
+                    // Thêm sự kiện click chuột trái vào thẳng VBox Card để backup nếu nút kia hỏng
+                    card.setOnMouseClicked(e -> {
+                        applyAuctionDetail(a);
+                        showInfo("Selected via Card click: " + a.getItemName());
+                    });
+                    
                     auctionsContainer.getChildren().add(card);
                 });
             }
-            applyAuctionDetail(list.get(0));
+            // Auto load cái đầu tiên nếu chưa chọn cái nào
+            if (currentAuctionId <= 0 && !list.isEmpty()) {
+                applyAuctionDetail(list.get(0));
+            }
         }, err -> {
             if (refreshButton != null) refreshButton.setDisable(false);
-            showError("Lỗi mạng: " + err.getMessage());
+            showError("Network Error: " + err.getMessage());
         });
     }
 
@@ -176,8 +189,14 @@ public class ViewLiveAuctions {
     }
 
     private void applyAuctionDetail(AuctionDetailDTO a) {
+        if (a == null) return;
         currentAuctionId = a.getAuctionId();
-        try { if (MyWebSocketClient.getInstance() != null) MyWebSocketClient.getInstance().joinRoom(currentAuctionId); } catch (Exception ignored) {}
+        
+        try { 
+            if (MyWebSocketClient.getInstance() != null) {
+                MyWebSocketClient.getInstance().joinRoom(currentAuctionId); 
+            }
+        } catch (Exception ignored) {}
         
         viewModel.setAuctionDetail(a); 
 
@@ -186,7 +205,10 @@ public class ViewLiveAuctions {
         
         AuctionUIHelper.renderItemSpecifics(a.getItemSpecifics(), itemSpecificsBox);
         AuctionUIHelper.updateItemImage(a, itemImageView, getClass());
-        if (bidAmountField != null && a.getStepPrice() != null && bidAmountField.getText().trim().isEmpty()) bidAmountField.setText(AuctionUIHelper.formatMoney(a.getStepPrice()));
+        
+        if (bidAmountField != null && a.getStepPrice() != null && bidAmountField.getText().trim().isEmpty()) {
+            bidAmountField.setText(AuctionUIHelper.formatMoney(a.getStepPrice()));
+        }
         
         updateCountdownRealtime();
 
@@ -218,7 +240,11 @@ public class ViewLiveAuctions {
             res -> {
                 if ("SUCCESS".equals(res.getStatus())) {
                     showInfo("Bid placed successfully!");
-                    if (isAuto && autoBidStatusLabel != null) { autoBidStatusLabel.setVisible(true); autoBidStatusLabel.setText("✓ Auto-bid enter"); autoBidStatusLabel.setStyle("-fx-text-fill: green;"); }
+                    if (isAuto && autoBidStatusLabel != null) { 
+                        autoBidStatusLabel.setVisible(true); 
+                        autoBidStatusLabel.setText("✓ Auto-bid enter"); 
+                        autoBidStatusLabel.setStyle("-fx-text-fill: green;"); 
+                    }
                 } else showError(res.getMessage());
             }, this::showError);
     }
@@ -259,8 +285,6 @@ public class ViewLiveAuctions {
                 viewModel.updateRealtime(updateData);
                 updateCountdownRealtime();
                 
-                // [OPTION A FIX] Fetch full bid history từ API thay vì tạo giả từ websocket
-                // Điều này ensure dữ liệu luôn chính xác: bidderId, isAutoBid, timestamp thực tế
                 CompletableFuture.supplyAsync(() -> {
                     try {
                         return AuctionNetwork.getBidHistory(updateData.getAuctionId());
@@ -272,7 +296,6 @@ public class ViewLiveAuctions {
                     if (history != null && !history.isEmpty()) {
                         localBidLogs.put(updateData.getAuctionId(), new ArrayList<>(history));
 
-                        // Cập nhật price chart với dữ liệu từ DB (đầy đủ + chính xác)
                         if (priceSeries != null) {
                             priceSeries.getData().clear();
                             history.forEach(bh -> {
@@ -318,6 +341,7 @@ public class ViewLiveAuctions {
 
     private void updateAuctionCardInList(AuctionUpdateDTO updateData) {
         boolean found = false;
+        if (auctionsContainer == null) return;
         for (var node : auctionsContainer.getChildren()) {
             if (node.getUserData() instanceof Long id && id == updateData.getAuctionId() && node instanceof VBox card) {
                 card.getChildren().stream().filter(c -> c instanceof Label).map(c -> (Label) c).forEach(lbl -> {
@@ -346,7 +370,12 @@ public class ViewLiveAuctions {
                 return;
             }
         }
-        VBox newCard = AuctionUIHelper.createAuctionCard(detail, selectedA -> { applyAuctionDetail(selectedA); showInfo("Selected: " + selectedA.getItemName()); });
+        VBox newCard = AuctionUIHelper.createAuctionCard(detail, selectedA -> { 
+            applyAuctionDetail(selectedA); 
+            showInfo("Selected: " + selectedA.getItemName()); 
+        });
+        newCard.setOnMouseClicked(e -> applyAuctionDetail(detail));
+        
         auctionsContainer.getChildren().add(0, newCard);
         if (currentAuctionId <= 0) applyAuctionDetail(detail);
     }
@@ -354,7 +383,10 @@ public class ViewLiveAuctions {
     public void removeAuctionRealtime(long auctionId) {
         if (auctionsContainer == null) return;
         auctionsContainer.getChildren().removeIf(node -> node.getUserData() instanceof Long id && id == auctionId);
-        if (auctionId == currentAuctionId) { currentAuctionId = 0; viewModel.lockAuction(); }
+        if (auctionId == currentAuctionId) { 
+            currentAuctionId = 0; 
+            viewModel.lockAuction(); 
+        }
     }
     
     public void handleAuctionFinishedNoWinner(long auctionId) {
@@ -370,13 +402,20 @@ public class ViewLiveAuctions {
     }
     
     @FXML private void handleToggleSidebar(ActionEvent event) {
-        auctionListSidebar.setVisible(!auctionListSidebar.isVisible());
-        auctionListSidebar.setManaged(auctionListSidebar.isVisible()); 
+        if (auctionListSidebar != null) {
+            auctionListSidebar.setVisible(!auctionListSidebar.isVisible());
+            auctionListSidebar.setManaged(auctionListSidebar.isVisible()); 
+        }
     }
 
     public void lockAuctionUI() {
         viewModel.lockAuction();
         if (statusLabel != null) statusLabel.setStyle("-fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+    }
+    public void cleanup() {
+        if (countdownTimeline != null) {
+            countdownTimeline.stop();
+        }
     }
     
     private void showError(String msg) { ToastUtil.showError(msg); }

@@ -14,7 +14,8 @@ public class DashboardSearchBridgeTest {
 
     @BeforeEach
     void setUp() {
-        DashboardSearchBridge.setOnSearch(null);
+        // Cực kỳ quan trọng: Xóa sạch dữ liệu tĩnh còn sót lại từ bài test trước đó
+        DashboardSearchBridge.resetForTest();
     }
 
     @Test
@@ -27,6 +28,7 @@ public class DashboardSearchBridgeTest {
         List<String> received = new ArrayList<>();
         DashboardSearchBridge.setOnSearch(received::add);
         DashboardSearchBridge.publish("auction");
+        
         assertEquals(1, received.size());
         assertEquals("auction", received.get(0));
     }
@@ -36,6 +38,8 @@ public class DashboardSearchBridgeTest {
         List<String> received = new ArrayList<>();
         DashboardSearchBridge.setOnSearch(received::add);
         DashboardSearchBridge.publish(null);
+        
+        assertEquals(1, received.size());
         assertEquals("", received.get(0));
     }
 
@@ -45,8 +49,10 @@ public class DashboardSearchBridgeTest {
         DashboardSearchBridge.setOnSearch(first::add);
         DashboardSearchBridge.setOnSearch(second::add);
         DashboardSearchBridge.publish("test");
+        
         assertTrue(first.isEmpty());
         assertEquals(1, second.size());
+        assertEquals("test", second.get(0));
     }
 
     @Test
@@ -56,7 +62,9 @@ public class DashboardSearchBridgeTest {
         DashboardSearchBridge.publish("q1");
         DashboardSearchBridge.publish("q2");
         DashboardSearchBridge.publish("q3");
+        
         assertEquals(3, received.size());
+        assertEquals("q3", received.get(2));
     }
 
     @Test
@@ -64,6 +72,8 @@ public class DashboardSearchBridgeTest {
         List<String> received = new ArrayList<>();
         DashboardSearchBridge.setOnSearch(received::add);
         DashboardSearchBridge.publish("");
+        
+        assertEquals(1, received.size());
         assertEquals("", received.get(0));
     }
 }

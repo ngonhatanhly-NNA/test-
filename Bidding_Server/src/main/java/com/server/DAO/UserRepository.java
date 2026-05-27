@@ -56,8 +56,8 @@ public class UserRepository implements IUserRepository {
 				pstmtUser.setString(4, user.getFullName());
 				pstmtUser.setString(5, user.getPhoneNumber());
 				pstmtUser.setString(6, user.getAddress());
-				pstmtUser.setString(7, user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
-				pstmtUser.setString(8, user.getRole() != null ? user.getRole().name() : "BIDDER");
+				pstmtUser.setString(7, user.getStatus() != null ? user.getStatus().name() : Status.ACTIVE.name());
+				pstmtUser.setString(8, user.getRole() != null ? user.getRole().name() : Role.BIDDER.name());
 				int affectedRows = pstmtUser.executeUpdate();
 				if (affectedRows == 0) {
 					conn.rollback();
@@ -82,7 +82,16 @@ public class UserRepository implements IUserRepository {
 			return false;
 		} finally {
 			if (conn != null) {
-				try { conn.setAutoCommit(true); conn.close(); } catch (Exception ex) { logger.error("Connection close failed: {}", ex.getMessage(), ex); }
+				try {  //  tách biệt autocommit tránh rò rỉ connection
+					conn.setAutoCommit(true); 
+				} catch (Exception ex) { 
+					logger.error("SetAutoCommit true failed: {}", ex.getMessage(), ex); 
+				}
+				try { 
+					conn.close(); // Lệnh close này LÀ BẮT BUỘC để trả Connection về Hikari Pool
+				} catch (Exception ex) { 
+					logger.error("Connection close failed: {}", ex.getMessage(), ex); 
+				}
 			}
 		}
 	}
@@ -134,7 +143,16 @@ public class UserRepository implements IUserRepository {
 			return false;
 		} finally {
 			if (conn != null) {
-				try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) { logger.error("Connection close failed: {}", e.getMessage(), e); }
+				try { 
+					conn.setAutoCommit(true); 
+				} catch (Exception e) { 
+					logger.error("SetAutoCommit failed: {}", e.getMessage(), e); 
+				}
+				try { 
+					conn.close(); 
+				} catch (Exception e) { 
+					logger.error("Connection close failed: {}", e.getMessage(), e); 
+				}
 			}
 		}
 	}

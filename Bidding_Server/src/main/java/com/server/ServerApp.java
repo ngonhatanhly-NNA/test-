@@ -39,7 +39,7 @@ public class ServerApp {
         // 3. Khởi động WebSocket (Đã được config chạy ngầm sẵn ở cổng 8080 bên AppConfig)
         appComponents.broadcaster.start();
 
-        // 4. Khởi động REST API (CỔNG 7070)
+        // 4. Khởi động REST API (Server )
         logger.info("=== TRẠM REST API CHẠY CỔNG 7070 ===");
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());

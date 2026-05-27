@@ -88,7 +88,7 @@ public class AuthControllerTest {
         String requestJson = gson.toJson(loginRequest);
 
         UserProfileResponseDTO mockProfile = new UserProfileResponseDTO(
-                1L, "testuser", "test@test.com", "Test User", "123", "Addr", "BIDDER", 100.0
+                1L, "testuser", "test@test.com", "Test User", "123", "Addr", "BIDDER", 100.0, null
         );
 
         String mockToken = "mock.jwt.token";
@@ -115,7 +115,7 @@ public class AuthControllerTest {
         // Arrange
         String username = "testuser";
         UserProfileResponseDTO mockProfile = new UserProfileResponseDTO(
-                1L, "testuser", "test@test.com", "Test User", "123", "Addr", "BIDDER", 100.0
+                1L, "testuser", "test@test.com", "Test User", "123", "Addr", "BIDDER", 100.0, null
         );
 
         when(ctx.attribute("auth.username")).thenReturn(username);

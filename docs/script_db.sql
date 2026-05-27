@@ -1,31 +1,10 @@
--- ============================================================
--- SCRIPT KHỞI TẠO DATABASE VÀ BẢNG (TEAM 13)
--- ============================================================
-
 CREATE DATABASE IF NOT EXISTS auction_db;
 USE auction_db;
 
--- ============================================================
--- 1. XÓA BẢNG CŨ (DROP TABLES) - Xóa bảng con trước, bảng cha sau
--- ============================================================
-SET FOREIGN_KEY_CHECKS = 0; -- Tạm tắt kiểm tra khóa ngoại để xóa thoải mái
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS auto_bids, bid_transactions, wallet_transactions, auctions, items, sellers, bidders, admins, users;
+SET FOREIGN_KEY_CHECKS = 1;
 
-DROP TABLE IF EXISTS auto_bids;
-DROP TABLE IF EXISTS bid_transactions;
-DROP TABLE IF EXISTS auctions;
-DROP TABLE IF EXISTS items;
-DROP TABLE IF EXISTS sellers;
-DROP TABLE IF EXISTS bidders;
-DROP TABLE IF EXISTS admins;
-DROP TABLE IF EXISTS users;
-
-SET FOREIGN_KEY_CHECKS = 1; -- Bật lại kiểm tra khóa ngoại
-
--- ============================================================
--- 2. TẠO BẢNG MỚI (CREATE TABLES) - Tạo bảng cha trước, bảng con sau
--- ============================================================
-
--- BẢNG CHA: Users
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -35,10 +14,10 @@ CREATE TABLE users (
     role VARCHAR(20) NOT NULL,
     phoneNumber VARCHAR(20),
     address VARCHAR(255),
-    status VARCHAR(20)
+    status VARCHAR(20),
+    avatar_url VARCHAR(255) DEFAULT NULL
 );
 
--- BẢNG CON: Admins
 CREATE TABLE admins (
     user_id INT PRIMARY KEY,
     roleLevel VARCHAR(50),
@@ -46,15 +25,14 @@ CREATE TABLE admins (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- BẢNG CON: Bidders
 CREATE TABLE bidders (
     user_id INT PRIMARY KEY,
     walletBalance DOUBLE DEFAULT 0.0,
     creditCardInfo VARCHAR(255),
+    reserved_amount DECIMAL(19, 2) DEFAULT 0.00,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- BẢNG CHÁU: Sellers (extends Bidders)
 CREATE TABLE sellers (
     bidder_id INT PRIMARY KEY,
     shopName VARCHAR(100),
@@ -65,7 +43,6 @@ CREATE TABLE sellers (
     FOREIGN KEY (bidder_id) REFERENCES bidders(user_id) ON DELETE CASCADE
 );
 
--- BẢNG CHA: Items
 CREATE TABLE items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     seller_id INT NOT NULL,
@@ -87,7 +64,6 @@ CREATE TABLE items (
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- BẢNG: Auctions
 CREATE TABLE auctions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     item_id INT NOT NULL,
@@ -101,13 +77,13 @@ CREATE TABLE auctions (
     status VARCHAR(20),
     created_at DATETIME,
     updated_at DATETIME,
+    version INT DEFAULT 0,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE,
     FOREIGN KEY (seller_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (highest_bidder_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (winner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- BẢNG: Bid Transactions
 CREATE TABLE bid_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     auction_id INT NOT NULL,
@@ -122,7 +98,6 @@ CREATE TABLE bid_transactions (
 );
 CREATE INDEX idx_bid_transactions_order ON bid_transactions(auction_id, event_seq DESC, id DESC);
 
--- BẢNG: Auto Bids
 CREATE TABLE auto_bids (
     id INT AUTO_INCREMENT PRIMARY KEY,
     auction_id INT NOT NULL,
@@ -135,28 +110,15 @@ CREATE TABLE auto_bids (
     FOREIGN KEY (auction_id) REFERENCES auctions(id) ON DELETE CASCADE,
     FOREIGN KEY (bidder_id) REFERENCES users(id) ON DELETE CASCADE
 );
-ALTER TABLE bidders ADD COLUMN reserved_amount DECIMAL(19, 2) DEFAULT 0.00;
--- Tiền đang "giữ lại" do các bid hiện tại (chưa thanh toán)
-ALTER TABLE users ADD COLUMN avatar_url VARCHAR(255) DEFAULT NULL;
 
-
-
-USE auction_db;
-
--- Xóa bảng cũ nếu tồn tại
-DROP TABLE IF EXISTS wallet_transactions;
-
--- Tạo lại đúng cấu trúc (user_id dùng INT để khớp với users.id)
 CREATE TABLE wallet_transactions (
-                                     id          INT AUTO_INCREMENT PRIMARY KEY,
-                                     user_id     INT NOT NULL,
-                                     amount      DECIMAL(15, 2) NOT NULL,
-                                     type        VARCHAR(20) NOT NULL,
-                                     description VARCHAR(255) NOT NULL,
-                                     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                     INDEX idx_wallet_tx_user_id (user_id),
-                                     INDEX idx_wallet_tx_created_at (created_at),
-                                     CONSTRAINT fk_wallet_tx_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    amount DECIMAL(15, 2) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_wallet_tx_user_id (user_id),
+    INDEX idx_wallet_tx_created_at (created_at),
+    CONSTRAINT fk_wallet_tx_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-ALTER TABLE auctions ADD COLUMN version INT DEFAULT 0;

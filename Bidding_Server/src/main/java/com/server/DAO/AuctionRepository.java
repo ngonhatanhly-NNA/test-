@@ -82,8 +82,7 @@ public class AuctionRepository implements IAuctionRepository {
 
     @Override
     public void save(Auction auction) {
-        // Use optimistic locking: only update when version matches, and increment version on success.
-        String sql = "UPDATE auctions SET current_highest_bid = ?, winner_id = ?, status = ?, end_time = ?, updated_at = NOW() WHERE id = ?";
+        String sql = "UPDATE auctions SET current_highest_bid = ?, winner_id = ?, status = ?, end_time = ?, updated_at = NOW(), version = version + 1 WHERE id = ? AND version = ?";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -98,15 +97,23 @@ public class AuctionRepository implements IAuctionRepository {
             } else {
                 pstmt.setNull(2, Types.BIGINT);
             }
-
-            pstmt.setString(3, auction.getStatus().name());
-            pstmt.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
+			// Check null Localdate time và kiểm tra null enum status
+            pstmt.setString(3, auction.getStatus() != null ? auction.getStatus().name() : "OPEN");
+            if (auction.getEndTime() != null) {
+                pstmt.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
+            } else {
+                pstmt.setNull(4, Types.TIMESTAMP);
+            }
             pstmt.setLong(5, auction.getId());
-
-            int affected = pstmt.executeUpdate();
+			pstmt.setInt(6, auction.getVersion());
+            
+			int affected = pstmt.executeUpdate();
             if (affected == 0) {
                 logger.error("Không tìm thấy auction {} để cập nhật", auction.getId());
                 throw new RuntimeException("Không tìm thấy auction " + auction.getId());
+            } else {
+                // Cập nhật lại version cho object trên RAM sau khi lưu thành công
+                auction.setVersion(auction.getVersion() + 1);
             }
         } catch (SQLException e) {
             logger.error("Lỗi update phiên đấu giá {}: {}", auction.getId(), e.getMessage(), e);
@@ -116,20 +123,28 @@ public class AuctionRepository implements IAuctionRepository {
 
     @Override
     public long create(Auction auction) {
-        String sql = "INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, created_at, updated_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
-
+        String sql = "INSERT INTO auctions (item_id, seller_id, start_time, end_time, step_price, current_highest_bid, winner_id, status, version, created_at, updated_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NOW(), NOW())";
         try (Connection conn = DBConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setLong(1, auction.getItemId());
             pstmt.setLong(2, auction.getSellerId());
-            pstmt.setTimestamp(3, Timestamp.valueOf(auction.getStartTime()));
-            pstmt.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
+            if (auction.getStartTime() != null) {
+                pstmt.setTimestamp(3, Timestamp.valueOf(auction.getStartTime()));
+            } else {
+                pstmt.setNull(3, Types.TIMESTAMP);
+            }
+
+            if (auction.getEndTime() != null) {
+                pstmt.setTimestamp(4, Timestamp.valueOf(auction.getEndTime()));
+            } else {
+                pstmt.setNull(4, Types.TIMESTAMP);
+            }
             pstmt.setBigDecimal(5, auction.getStepPrice() != null ? auction.getStepPrice() : BigDecimal.ZERO);
             pstmt.setBigDecimal(6, auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO);
             pstmt.setNull(7, Types.BIGINT);
-            pstmt.setString(8, auction.getStatus().name());
+			pstmt.setString(8, auction.getStatus() != null ? auction.getStatus().name() : "OPEN");
 
             int rows = pstmt.executeUpdate();
             if (rows == 0) {
@@ -138,7 +153,10 @@ public class AuctionRepository implements IAuctionRepository {
 
             try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
-                    return generatedKeys.getLong(1);
+                    long newId = generatedKeys.getLong(1);
+                    auction.setId(newId);
+                    auction.setVersion(0); // Đồng bộ version
+                    return newId;
                 }
             }
         } catch (SQLException e) {

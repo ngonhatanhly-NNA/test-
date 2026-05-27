@@ -173,7 +173,7 @@ public class AuthService {
             wallet = ((Bidder) user).getWalletBalance().doubleValue();
         }
 
-        return new UserProfileResponseDTO(
+        UserProfileResponseDTO dto = new UserProfileResponseDTO(
                 (int) user.getId(),
                 user.getUsername(),
                 user.getEmail(),
@@ -181,7 +181,12 @@ public class AuthService {
                 user.getPhoneNumber(),
                 user.getAddress(),
                 user.getRole().name(),
-                wallet
+                wallet,
+                user.getAvatarUrl()     
         );
+        
+        dto.setAvatarUrl(user.getAvatarUrl());
+        
+        return dto;
     }
 }

@@ -171,10 +171,19 @@ public class UserProfileController {
                                 // ---Xử lý URL trả về từ Server ---
                                 if (avatarUrl.startsWith("/api/images/")) {
 
-                                    String fullServerUrl = "http://localhost:8080" + avatarUrl;
+                                    // [FIX LỖI CỰC MẠNH]: Đổi 8080 thành 7070 để khớp với Server
+                                    String fullServerUrl = "http://localhost:7070" + avatarUrl;
 
                                     // Tham số 'true' giúp ảnh load ngầm (background loading) không làm đơ giao diện
                                     imageToDisplay = new Image(fullServerUrl, true);
+
+                                    // [BỔ SUNG BỌC THÉP]: Bắt sự kiện nếu load ảnh ngầm bị lỗi mạng/sai đường dẫn
+                                    imageToDisplay.errorProperty().addListener((obs, oldVal, newVal) -> {
+                                        if (newVal) {
+                                            System.err.println("[Profile] Tải ảnh từ Server thất bại, quay về ảnh mặc định! URL: " + fullServerUrl);
+                                            loadDefaultAvatar();
+                                        }
+                                    });
                                 }
 
                                 else {

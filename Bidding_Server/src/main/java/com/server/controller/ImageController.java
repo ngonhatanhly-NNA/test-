@@ -61,10 +61,12 @@ public class ImageController {
             return;
         }
 
-        try (FileInputStream fileInputStream = new FileInputStream(imageFile)) {
+        try {
             String mimeType = Files.probeContentType(imagePath);
             ctx.contentType(mimeType != null ? mimeType : "application/octet-stream");
-            ctx.result(fileInputStream);
+
+            ctx.result(new FileInputStream(imageFile));
+
         } catch (Exception e) {
             logger.error("Lỗi khi đọc file ảnh '{}': {}", filename, e.getMessage(), e);
             ctx.status(500).json(new Response("ERROR", "Lỗi khi đọc file: " + e.getMessage(), null));
