@@ -40,7 +40,7 @@ public class NetworkClientTest {
     @Test
     void testAuthHeaderPresentWhenTokenSet() throws Exception {
         UserProfileResponseDTO p = new UserProfileResponseDTO(
-                1L, "user", "e@e.com", "Full", "0", "HN", "BIDDER", 0.0);
+                1L, "user", "e@e.com", "Full", "0", "HN", "BIDDER", 0.0, null);
         ClientSession.setSession(p, "abc-token");
 
         HttpRequest req = NetworkClient.newRequestBuilder(

@@ -17,7 +17,7 @@ public class ClientSessionTest {
 
     private UserProfileResponseDTO makeProfile(long id, String username, String role) {
         return new UserProfileResponseDTO(id, username, "email@test.com",
-                "Full Name", "0123456789", "Hanoi", role, 0.0);
+                "Full Name", "0123456789", "Hanoi", role, 0.0, null);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class ClientSessionTest {
     @Test
     void testSetUserNullUsernameStoresEmpty() {
         UserProfileResponseDTO p = new UserProfileResponseDTO(
-                3L, null, null, null, null, null, null, 0.0);
+                3L, null, null, null, null, null, null, 0.0, null);
         ClientSession.setUser(p);
         assertEquals("", ClientSession.getUsername());
         assertEquals("", ClientSession.getRole());

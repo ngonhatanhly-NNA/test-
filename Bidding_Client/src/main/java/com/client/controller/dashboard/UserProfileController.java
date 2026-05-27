@@ -170,14 +170,9 @@ public class UserProfileController {
 
                                 // ---Xử lý URL trả về từ Server ---
                                 if (avatarUrl.startsWith("/api/images/")) {
-
-                                    // [FIX LỖI CỰC MẠNH]: Đổi 8080 thành 7070 để khớp với Server
                                     String fullServerUrl = "http://localhost:7070" + avatarUrl;
-
-                                    // Tham số 'true' giúp ảnh load ngầm (background loading) không làm đơ giao diện
                                     imageToDisplay = new Image(fullServerUrl, true);
 
-                                    // [BỔ SUNG BỌC THÉP]: Bắt sự kiện nếu load ảnh ngầm bị lỗi mạng/sai đường dẫn
                                     imageToDisplay.errorProperty().addListener((obs, oldVal, newVal) -> {
                                         if (newVal) {
                                             System.err.println("[Profile] Tải ảnh từ Server thất bại, quay về ảnh mặc định! URL: " + fullServerUrl);
@@ -197,14 +192,6 @@ public class UserProfileController {
                                         if (resourceUrl != null) {
                                             imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
                                         }
-                                    }
-                                }
-
-                                // Ảnh mặc định nếu không load được gì
-                                if (imageToDisplay == null || imageToDisplay.isError()) {
-                                    java.net.URL defaultUrl = getClass().getResource("/images/shopkeeper.png");
-                                    if (defaultUrl != null) {
-                                        imageToDisplay = new Image(defaultUrl.toExternalForm(), true);
                                     }
                                 }
 
@@ -246,7 +233,7 @@ public class UserProfileController {
     private void loadDefaultAvatar() {
         Platform.runLater(() -> {
             try {
-                java.net.URL defaultUrl = getClass().getResource("/images/shopkeeper.png");
+                java.net.URL defaultUrl = getClass().getResource("/images/scene6.gif");
                 if (defaultUrl != null && avatarView != null) {
                     avatarView.setImage(new Image(defaultUrl.toExternalForm(), true));
                 }
@@ -359,8 +346,7 @@ public class UserProfileController {
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
                     if (txtPassword != null) txtPassword.clear();
-                    // Reload lại dữ liệu từ server để hiển thị thông tin mới nhất
-                    // (bao gồm shopName và bankAccountNumber vừa lưu)
+                   
                     loadUserDataFromAPI();
                 } else {
                     if (lblStatus != null) {
@@ -503,11 +489,9 @@ public class UserProfileController {
             }
 
             try {
-                //Hiển thị tạm thời trên giao diện cho người dùng thấy
+
                 Image newAvatar = new Image(selectedFile.toURI().toString());
                 if (avatarView != null) avatarView.setImage(newAvatar);
-
-                //Dùng File Builder đọc file và chuyển thành Base64
                 byte[] fileContent = Files.readAllBytes(selectedFile.toPath());
                 String base64String = Base64.getEncoder().encodeToString(fileContent);
 
