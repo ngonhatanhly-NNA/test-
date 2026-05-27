@@ -98,8 +98,7 @@ public class AuctionCommandService {
             Auction auction = sharedState.auctionCache.get(request.getAuctionId());
 
             validationChain.validate(request, auction);
-
-            // [FIX] Tạo batch riêng cho manual bid để đảm bảo nó được lưu trước khi xử lý auto bids
+			
             List<BidTransaction> manualBidBatch = new ArrayList<>();
             bidProcessor.process(request, auction, manualBidBatch);
             handleAntiSniping(auction);

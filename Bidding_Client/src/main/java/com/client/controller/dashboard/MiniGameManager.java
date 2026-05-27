@@ -299,16 +299,16 @@ public class MiniGameManager {
 					glow.setSpread(0.8);
 					rewardView.setEffect(glow);
 
+					pet.speak("Wow! Great reward, boss!", true);
+					pet.jumpCelebrate();
+					pet.changeState("/images/LuciusSpin.png", 8, 4, 0, 0, 96, 96, Animation.INDEFINITE);
+				}
+				
 					RotateTransition wobble = new RotateTransition(Duration.millis(70), rewardView);
 					wobble.setByAngle(12);
 					wobble.setCycleCount(8);
 					wobble.setAutoReverse(true);
 
-					pet.speak("Wow! Great reward, boss!", true);
-					pet.jumpCelebrate();
-					pet.changeState("/images/LuciusSpin.png", 8, 4, 0, 0, 96, 96, Animation.INDEFINITE);
-
-					// Animation cho đồ xịn
 					PauseTransition delay = new PauseTransition(Duration.seconds(2.5));
 					ParallelTransition fadeAndShrink = new ParallelTransition();
 					FadeTransition fadeOut = new FadeTransition(Duration.seconds(0.6), rewardView);
@@ -324,7 +324,6 @@ public class MiniGameManager {
 						pet.setToDefaultState(); // Trả pet về bình thường sau khi xong
 					});
 					seq.play();
-				}
 			} catch (Exception e) {
 				System.err.println("Lỗi load Gacha: " + e.getMessage());
 			}

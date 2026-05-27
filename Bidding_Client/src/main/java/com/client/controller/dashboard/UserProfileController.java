@@ -32,11 +32,11 @@ import javafx.util.Duration;
 import java.nio.file.Files;
 import java.util.Base64;
 import java.io.File;
-import javafx.fxml.FXMLLoader; 
-import javafx.scene.Parent; 
-import javafx.scene.Scene; 
-import javafx.stage.Stage; 
-import javafx.stage.Modality; 
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+import javafx.stage.Modality;
 
 public class UserProfileController {
 
@@ -98,7 +98,7 @@ public class UserProfileController {
         if (loggedInUsername == null || loggedInUsername.trim().isEmpty()) {
             if(lblStatus != null) {
                 lblStatus.setText("Please log in to continue.");
-                lblStatus.setStyle("-fx-text-fill: #EF4444;"); 
+                lblStatus.setStyle("-fx-text-fill: #EF4444;");
             }
             return;
         }
@@ -127,7 +127,7 @@ public class UserProfileController {
     private void loadUserDataFromAPI() {
         if (lblStatus != null) {
             lblStatus.setText("Loading...");
-            lblStatus.setStyle("-fx-text-fill: #D4AF37;"); 
+            lblStatus.setStyle("-fx-text-fill: #D4AF37;");
         }
 
         authNetwork.getUserProfile(loggedInUsername).thenAccept(response -> {
@@ -138,8 +138,8 @@ public class UserProfileController {
                     try {
                         JsonElement dataElement = gson.toJsonTree(response.getData());
                         JsonObject jsonData = dataElement.getAsJsonObject();
-						
-						System.out.println("=== DATA TỪ SERVER CHÍNH XÁC LÀ: " + jsonData.toString());
+
+                        System.out.println("=== DATA TỪ SERVER CHÍNH XÁC LÀ: " + jsonData.toString());
 
                         String role = jsonData.has("role") ? jsonData.get("role").getAsString() : "BIDDER";
                         currentUserRole = role.toUpperCase();
@@ -164,48 +164,48 @@ public class UserProfileController {
                         // PHẦN LOAD AVATAR ĐÃ ĐƯỢC CHUẨN HOÁ GỌN GÀNG
                         // ==========================================
                         if (jsonData.has("avatarUrl") && !jsonData.get("avatarUrl").isJsonNull()) {
-							String avatarUrl = jsonData.get("avatarUrl").getAsString();
-							try {
-								Image imageToDisplay = null;
-								
-								// ---Xử lý URL trả về từ Server ---
-								if (avatarUrl.startsWith("/api/images/")) {
-									
-									String fullServerUrl = "http://localhost:8080" + avatarUrl; 
-									
-									// Tham số 'true' giúp ảnh load ngầm (background loading) không làm đơ giao diện
-									imageToDisplay = new Image(fullServerUrl, true); 
-								} 
-								
-								else {
-									java.io.File localFile = new java.io.File(avatarUrl);
-									if (localFile.exists()) {
-										imageToDisplay = new Image(localFile.toURI().toString(), true);
-									}
-									if (imageToDisplay == null) {
-										String resourcePath = avatarUrl.startsWith("/") ? avatarUrl : "/images/" + avatarUrl;
-										java.net.URL resourceUrl = getClass().getResource(resourcePath);
-										if (resourceUrl != null) {
-											imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
-										}
-									}
-								}
+                            String avatarUrl = jsonData.get("avatarUrl").getAsString();
+                            try {
+                                Image imageToDisplay = null;
 
-								// Ảnh mặc định nếu không load được gì
-								if (imageToDisplay == null || imageToDisplay.isError()) {
-									java.net.URL defaultUrl = getClass().getResource("/images/shopkeeper.png");
-									if (defaultUrl != null) {
-										imageToDisplay = new Image(defaultUrl.toExternalForm(), true);
-									}
-								}
+                                // ---Xử lý URL trả về từ Server ---
+                                if (avatarUrl.startsWith("/api/images/")) {
 
-								if (avatarView != null && imageToDisplay != null) {
-									avatarView.setImage(imageToDisplay);
-								}
-							} catch (Exception e) {
-								System.err.println("Lỗi quét ảnh Profile: " + e.getMessage());
-							}
-						}
+                                    String fullServerUrl = "http://localhost:8080" + avatarUrl;
+
+                                    // Tham số 'true' giúp ảnh load ngầm (background loading) không làm đơ giao diện
+                                    imageToDisplay = new Image(fullServerUrl, true);
+                                }
+
+                                else {
+                                    java.io.File localFile = new java.io.File(avatarUrl);
+                                    if (localFile.exists()) {
+                                        imageToDisplay = new Image(localFile.toURI().toString(), true);
+                                    }
+                                    if (imageToDisplay == null) {
+                                        String resourcePath = avatarUrl.startsWith("/") ? avatarUrl : "/images/" + avatarUrl;
+                                        java.net.URL resourceUrl = getClass().getResource(resourcePath);
+                                        if (resourceUrl != null) {
+                                            imageToDisplay = new Image(resourceUrl.toExternalForm(), true);
+                                        }
+                                    }
+                                }
+
+                                // Ảnh mặc định nếu không load được gì
+                                if (imageToDisplay == null || imageToDisplay.isError()) {
+                                    java.net.URL defaultUrl = getClass().getResource("/images/shopkeeper.png");
+                                    if (defaultUrl != null) {
+                                        imageToDisplay = new Image(defaultUrl.toExternalForm(), true);
+                                    }
+                                }
+
+                                if (avatarView != null && imageToDisplay != null) {
+                                    avatarView.setImage(imageToDisplay);
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Lỗi quét ảnh Profile: " + e.getMessage());
+                            }
+                        }
 
                         setupUIByRoleStrategy(profile, role);
                     } catch (Exception e) {
@@ -233,7 +233,7 @@ public class UserProfileController {
             return null;
         });
     }
-    
+
     private void loadDefaultAvatar() {
         Platform.runLater(() -> {
             try {
@@ -346,14 +346,16 @@ public class UserProfileController {
             Platform.runLater(() -> {
                 if ("SUCCESS".equals(response.getStatus())) {
                     if (lblStatus != null) {
-                        lblStatus.setText("Profile updated successfully!"); // [ĐÃ SỬA]
+                        lblStatus.setText("Profile updated successfully!");
                         lblStatus.setStyle("-fx-text-fill: #10B981;");
                     }
-                    if (lblHeaderName != null && txtFullName != null) lblHeaderName.setText(txtFullName.getText());
                     if (txtPassword != null) txtPassword.clear();
+                    // Reload lại dữ liệu từ server để hiển thị thông tin mới nhất
+                    // (bao gồm shopName và bankAccountNumber vừa lưu)
+                    loadUserDataFromAPI();
                 } else {
                     if (lblStatus != null) {
-                        lblStatus.setText("Update failed: " + response.getMessage()); // [ĐÃ SỬA]
+                        lblStatus.setText("Update failed: " + response.getMessage());
                         lblStatus.setStyle("-fx-text-fill: #EF4444;");
                     }
                 }

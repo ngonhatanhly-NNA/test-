@@ -40,8 +40,7 @@ public class ManualBidProcessor implements BidProcessor {
         if (auction.getStatus() == Auction.AuctionStatus.OPEN) {
             auction.setStatus(Auction.AuctionStatus.RUNNING);
         }
-
-        // GIÁ MỚI CHÍNH LÀ GIÁ REQUEST GỬI LÊN (Không cộng dồn nữa)
+		
         BigDecimal newHighestPrice = request.getBidAmount();
         BigDecimal currentHighestBid = auction.getCurrentHighestBid() != null ? auction.getCurrentHighestBid() : BigDecimal.ZERO;
 

@@ -13,15 +13,15 @@ public class Auction extends Entity {
     private BigDecimal stepPrice;
     private BigDecimal currentHighestBid;
     private Long winnerId;
-    // optimistic locking version
+
     private int version = 0;
     private AuctionStatus status;
     private List<BidTransaction> bidHistory = new ArrayList<>();
 
-    public enum AuctionStatus { SCHEDULED, OPEN, RUNNING, FINISHED, CANCELED, PAID }
+    public enum AuctionStatus { SCHEDULED, OPEN, RUNNING, FINISHED, CANCELED, PAID, CLOSED }
 
     public Auction() {
-        super(); // Gọi Entity constructor
+        super(); 
     }
 
     // Override setters để auto update timestamp

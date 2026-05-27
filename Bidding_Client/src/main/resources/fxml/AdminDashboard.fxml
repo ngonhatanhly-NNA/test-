@@ -69,10 +69,6 @@
                         <HBox alignment="CENTER_LEFT" spacing="15">
                             <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #E0E0E0;" text="System Accounts" HBox.hgrow="ALWAYS" />
                             
-                            <Button onAction="#showAllUsers" prefHeight="45.0" style="-fx-background-color: transparent; -fx-text-fill: #D4AF37; -fx-border-color: rgba(212,175,55,0.5); -fx-border-radius: 8; -fx-cursor: hand;" text="Reload All Users">
-                                <font><Font name="System Bold" size="14.0" /></font>
-                            </Button>
-                            
                             <TextField fx:id="txtSearchUsername" prefHeight="45.0" prefWidth="320.0" promptText="🔍 Search user by name..." style="-fx-background-color: rgba(0,0,0,0.3); -fx-text-fill: #F5F5F5; -fx-prompt-text-fill: #64748B; -fx-background-radius: 10; -fx-border-color: rgba(212,175,55,0.3); -fx-border-radius: 10; -fx-font-size: 14px; -fx-padding: 0 15; -fx-effect: innershadow(gaussian, rgba(0,0,0,0.8), 6, 0, 0, 2);" />
                             
                             <Button onAction="#handleSearchUser" prefHeight="45.0" prefWidth="130.0" style="-fx-background-color: #242424; -fx-text-fill: #D4AF37; -fx-border-color: rgba(212,175,55,0.4); -fx-border-radius: 10; -fx-background-radius: 10; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 0);" text="SEARCH">
@@ -106,7 +102,6 @@
                         
                         <HBox alignment="CENTER_LEFT" spacing="20">
                             <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #E0E0E0;" text="📊 Product Performance Analytics" HBox.hgrow="ALWAYS" />
-                            <Button onAction="#loadProductAnalytics" prefHeight="45.0" style="-fx-background-color: rgba(16,185,129,0.2); -fx-text-fill: #34D399; -fx-border-color: #10B981; -fx-border-radius: 10; -fx-background-radius: 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-padding: 0 25;" text="GENERATE REPORT" />
                         </HBox>
 
                         <TableView fx:id="tableItems" style="-fx-background-color: transparent; -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 10; -fx-background-radius: 10; -fx-font-size: 14px;" VBox.vgrow="ALWAYS">
@@ -133,7 +128,6 @@
                         
                         <HBox alignment="CENTER_LEFT">
                             <Label style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #D4AF37; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.2), 5, 0, 0, 0);" text="💰 System Revenue " HBox.hgrow="ALWAYS" />
-                            <Button onAction="#loadRevenueData" prefHeight="45.0" style="-fx-background-color: linear-gradient(to right, #D4AF37, #FFD700); -fx-text-fill: #121212; -fx-background-radius: 10; -fx-cursor: hand; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(212,175,55,0.4), 15, 0, 0, 0); -fx-padding: 0 25;" text="DOWNLOAD REPORT" />
                         </HBox>
 
                         <TextArea fx:id="textAreaRevenue" editable="false" promptText="Click 'DOWNLOAD REPORT' not working" style="-fx-font-family: 'Consolas'; -fx-font-size: 15px; -fx-background-color: rgba(0,0,0,0.3); -fx-control-inner-background: rgba(0,0,0,0.3); -fx-border-color: rgba(255,255,255,0.05); -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 15; -fx-text-fill: #E0E0E0;" wrapText="true" VBox.vgrow="ALWAYS" />

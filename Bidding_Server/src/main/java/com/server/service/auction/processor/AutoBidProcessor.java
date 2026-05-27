@@ -23,7 +23,6 @@ import com.server.model.Wallet; // Sử dụng Wallet model của team
 public class AutoBidProcessor {
     private final AutoBidRepository autoBidRepository;
 
-    // [THÊM MỚI] Cần AuctionRepository để lưu cái giá cuối cùng mà Bot vừa chốt xuống DB
     private final AuctionRepository auctionRepository;
 
     // [THÊM MỚI] Cần BidderRepository để thao tác móc ví trừ tiền của Bot

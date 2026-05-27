@@ -47,10 +47,14 @@ public class ViewDashboardController {
 	
 	private final String[] adImages = {
         "/images/banner.png",
-        "/images/banner1.png",
         "/images/banner2.png",
-		"/images/banner3.png",
-		"/images/banner4.png"
+		"/images/scene2.gif",
+		"/images/scene3.png",
+		"/images/scene4.gif",
+		"/images/scene5_a.png",
+		"/images/scene5_b.png",
+		"/images/scene6.gif",
+		"/images/scene7.gif"
     };
 	private int currentImageIndex = 0;
     private final ItemNetwork itemNetwork = new ItemNetwork();
@@ -205,8 +209,7 @@ public class ViewDashboardController {
 
 	private boolean matchesCategory(ItemResponseDTO item) {
 		String t = item.getType() != null ? item.getType().toUpperCase(Locale.ROOT) : "";
-		
-		// CheckBox đang nằm trực tiếp trong file này, gọi trực tiếp luôn
+
 		boolean e = (chkElectronics != null && chkElectronics.isSelected());
 		boolean a = (chkArt != null && chkArt.isSelected());
 		boolean v = (chkVehicle != null && chkVehicle.isSelected());
