@@ -7,10 +7,14 @@ import com.server.DAO.AdminRepository;
 import com.server.model.*;
 import com.shared.dto.ItemResponseDTO;
 import com.shared.network.Response;
-
+import com.server.DAO.BidTransactionRepository;
+import com.server.model.BidTransaction;
+import com.shared.dto.BidHistoryDTO;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -108,4 +112,32 @@ public class AdminService {
         userRepo.updateUserStatus(user.getId(), Status.ACTIVE);
         return new Response("SUCCESS", "User unbanned", null);
     }
+	
+	public Response getGlobalTransactions() {
+        List<Map<String, String>> list = adminRepo.getAllSystemTransactions();
+        return new Response("SUCCESS", "Lấy lịch sử giao dịch thành công", list);
+    }
+
+    public Response getAllAuctionsForAdmin() {
+        List<Map<String, String>> list = adminRepo.getAllAuctionsForAdmin();
+        return new Response("SUCCESS", "Lấy danh sách phiên đấu giá thành công", list);
+    }
+	
+	public Response getDetailedAuctionHistory(long auctionId) {
+		BidTransactionRepository bidRepo = new BidTransactionRepository();
+		List<BidTransaction> transactions = bidRepo.findByAuction(auctionId);
+		List<BidHistoryDTO> historyList = new ArrayList<>();
+		for (BidTransaction t : transactions) {
+			User user = userRepo.getUserById(t.getBidderId());
+			String username = (user != null) ? user.getUsername() : "Người dùng #" + t.getBidderId();
+
+			BidHistoryDTO dto = new BidHistoryDTO();
+			dto.setBidderName(username);
+			dto.setBidAmount(t.getBidAmount());
+			dto.setTimestamp(t.getTimestamp());
+			dto.setIsAutoBid(t.isAutoBid());   // THÊM DÒNG NÀY
+			historyList.add(dto);
+		}
+		return new Response("SUCCESS", "Lấy lịch sử chi tiết từ DB thành công", historyList);
+	}
 }

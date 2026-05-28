@@ -157,21 +157,33 @@ public class AuctionCommandService {
                 dto.getItemId(), dto.getSellerId(), dto.getStartTime(), dto.getEndTime(), dto.getStepPrice());
 
             if (dto.getItemId() <= 0 || dto.getSellerId() <= 0) {
-                // [ĐÃ ANH-HÓA]
                 throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "ItemId and SellerId must be greater than 0.");
             }
             if (dto.getStepPrice() == null || dto.getStepPrice().compareTo(BigDecimal.ZERO) <= 0) {
-                // [ĐÃ ANH-HÓA]
                 throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "Step price must be greater than 0.");
             }
 
+			List<Auction> existingAuctions = auctionRepository.findByItemId(dto.getItemId());
+				boolean alreadySold = existingAuctions.stream().anyMatch(a ->
+						a.getStatus() == Auction.AuctionStatus.FINISHED && a.getWinnerId() != null && a.getWinnerId() > 0);
+				if (alreadySold) {
+					throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST,
+							"Sản phẩm này đã được bán. Không thể tạo lại phiên đấu giá.");
+				}
+				
+			boolean hasActive = existingAuctions.stream().anyMatch(a ->
+					a.getStatus() == Auction.AuctionStatus.SCHEDULED ||
+					a.getStatus() == Auction.AuctionStatus.OPEN ||
+					a.getStatus() == Auction.AuctionStatus.RUNNING);
+			if (hasActive) {
+				throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST,
+						"Sản phẩm này đang trong phiên đấu giá.");
+    }
             Item item = itemService.getItemById(dto.getItemId());
             if (item == null) {
-                // [ĐÃ ANH-HÓA]
                 throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item does not exist or invalid subtype.");
             }
             if (item.getSellerId() > 0 && item.getSellerId() != dto.getSellerId()) {
-                // [ĐÃ ANH-HÓA]
                 throw new AuctionException(AuctionException.ErrorCode.INVALID_REQUEST, "Item does not belong to this seller.");
             }
 
@@ -179,7 +191,6 @@ public class AuctionCommandService {
             java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(dto.getEndTime());
 
             if (endTime.isBefore(startTime)) {
-                // [ĐÃ ANH-HÓA]
                 throw new AuctionException(AuctionException.ErrorCode.INVALID_BID_AMOUNT, "End time must be after start time.");
             }
 

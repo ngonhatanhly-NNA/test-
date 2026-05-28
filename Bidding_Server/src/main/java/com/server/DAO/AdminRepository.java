@@ -1,5 +1,6 @@
 package com.server.DAO;
 
+import java.util.*;
 import com.server.config.DBConnection;
 import com.server.model.Admin;
 import com.server.model.Seller;
@@ -51,12 +52,57 @@ public class AdminRepository implements IAdminRepository {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             logger.error("Lỗi cập nhật last login IP cho admin {}: {}", adminId, e.getMessage(), e);
-        }
-    }
+		}
+	}
+	
+	public List<Map<String, String>> getAllSystemTransactions() {
+		List<Map<String, String>> list = new ArrayList<>();
+		String sql = "SELECT wt.id, u.username, wt.type, wt.amount, wt.created_at " +
+					 "FROM wallet_transactions wt " +
+					 "JOIN users u ON wt.user_id = u.id " +
+					 "ORDER BY wt.created_at DESC LIMIT 100";
+		try (Connection conn = DBConnection.getInstance().getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql);
+			 ResultSet rs = pstmt.executeQuery()) {
+			while (rs.next()) {
+				Map<String, String> row = new HashMap<>();
+				row.put("id", String.valueOf(rs.getLong("id")));
+				row.put("username", rs.getString("username"));
+				row.put("type", rs.getString("type"));        // cột trong DB là 'type'
+				row.put("amount", rs.getBigDecimal("amount").toPlainString());
+				row.put("time", rs.getTimestamp("created_at").toString());
+				list.add(row);
+			}
+		} catch (SQLException e) {
+			logger.error("Lỗi lấy giao dịch toàn hệ thống: {}", e.getMessage(), e);
+		}
+		return list;
+	}
 
-    // This method is now moved to UserRepository
-    // @Override
-    // public boolean updateUserStatus(long userId, Status newStatus) { ... }
+    // 2. Lấy toàn bộ danh sách phiên đấu giá (cả đã xong và đang chạy)
+	public List<Map<String, String>> getAllAuctionsForAdmin() {
+		List<Map<String, String>> list = new ArrayList<>();
+		String sql = "SELECT a.id, i.name AS itemName, a.status, a.end_time " +
+					 "FROM auctions a " +
+					 "JOIN items i ON a.item_id = i.id " +
+					 "ORDER BY a.created_at DESC";
+		try (Connection conn = DBConnection.getInstance().getConnection();
+			 PreparedStatement pstmt = conn.prepareStatement(sql);
+			 ResultSet rs = pstmt.executeQuery()) {
+			while (rs.next()) {
+				Map<String, String> row = new HashMap<>();
+				row.put("id", String.valueOf(rs.getLong("id")));
+				row.put("itemName", rs.getString("itemName"));
+				row.put("status", rs.getString("status"));
+				Timestamp ts = rs.getTimestamp("end_time");
+				row.put("endTime", ts != null ? ts.toString() : "N/A");
+				list.add(row);
+			}
+		} catch (SQLException e) {
+			logger.error("Lỗi lấy danh sách đấu giá: {}", e.getMessage(), e);
+		}
+		return list;
+	}
 
     @Override
     public boolean promoteToSeller(Seller seller) {

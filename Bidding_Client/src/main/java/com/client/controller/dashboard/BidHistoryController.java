@@ -89,9 +89,6 @@ public class BidHistoryController {
 
             row.getChildren().addAll(avatar, userInfo, spacer, priceInfo);
 
-            // ========================================================
-            // HIỆU ỨNG LED TRƯỢT VÔ CỰC DÀNH RIÊNG CHO TOP 1
-            // ========================================================
             if (i == 0) {
                 // 1. Chữ Top 1 cho màu Nổi bật
                 priceLbl.setStyle("-fx-font-weight: 900; -fx-font-size: 19px; -fx-text-fill: #FF007A;");

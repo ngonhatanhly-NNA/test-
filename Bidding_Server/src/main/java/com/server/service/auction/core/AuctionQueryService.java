@@ -9,6 +9,9 @@ import com.server.service.ItemService;
 import com.shared.dto.AuctionDetailDTO;
 import com.shared.dto.BidHistoryDTO;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -24,6 +27,7 @@ public class AuctionQueryService {
     private final AuctionRepository auctionRepository;
     private final ItemService itemService;
 	private AuctionScheduler scheduler;
+	private static final Logger logger = LoggerFactory.getLogger(AuctionQueryService.class);
 
     public AuctionQueryService(AuctionSharedState sharedState, AuctionRepository auctionRepository, ItemService itemService) {
         this.sharedState = sharedState;
@@ -140,30 +144,46 @@ public class AuctionQueryService {
      * - FINISHED: item đã đấu giá xong (FINISHED)                → hiển thị badge
      * - NONE:     chưa có phiên nào                              → cho phép tạo
      */
-    public String getAuctionStatusByItemId(long itemId) {
-		// Kieermt tra trong cache
-        boolean activeInCache = sharedState.auctionCache.values().stream()
-                .anyMatch(a -> a.getItemId() == itemId &&
-                        (a.getStatus() == Auction.AuctionStatus.SCHEDULED
-                                || a.getStatus() == Auction.AuctionStatus.OPEN
-                                || a.getStatus() == Auction.AuctionStatus.RUNNING));
-        if (activeInCache) return "ACTIVE";
-		
-		// Kiểm tra trogn db, phòng TH cache chưa load
-        List<Auction> dbAuctions = auctionRepository.findByItemId(itemId);
-        for (Auction a : dbAuctions) {
-            Auction.AuctionStatus s = a.getStatus();
-            if (s == Auction.AuctionStatus.SCHEDULED || s == Auction.AuctionStatus.OPEN || s == Auction.AuctionStatus.RUNNING) {
-                return "ACTIVE";
-            }
-        }
-		
-		// Kieermt tra đẫ có fisnish chauw
-        boolean hasFinished = dbAuctions.stream().anyMatch(a -> a.getStatus() == Auction.AuctionStatus.FINISHED);
-        if (hasFinished) return "FINISHED";
+	public String getAuctionStatusByItemId(long itemId) {
+		// 1. Kiểm tra cache: có phiên đang hoạt động không?
+		boolean activeInCache = sharedState.auctionCache.values().stream()
+				.anyMatch(a -> a.getItemId() == itemId &&
+						(a.getStatus() == Auction.AuctionStatus.SCHEDULED
+								|| a.getStatus() == Auction.AuctionStatus.OPEN
+								|| a.getStatus() == Auction.AuctionStatus.RUNNING));
+		if (activeInCache) {
+			logger.debug("Item {} is ACTIVE (found in cache)", itemId);
+			return "ACTIVE";
+		}
 
-        return "NONE";
-    }
+		// 2. Lấy tất cả các phiên đấu giá của item này từ DB (bao gồm cả FINISHED)
+		List<Auction> dbAuctions = auctionRepository.findByItemId(itemId);
+		if (dbAuctions.isEmpty()) {
+			logger.debug("Item {} has no auction record -> NONE", itemId);
+			return "NONE";
+		}
+
+		// 3. Kiểm tra nếu có bất kỳ phiên nào đang hoạt động (dù cache không có, vẫn check DB để an toàn)
+		for (Auction a : dbAuctions) {
+			Auction.AuctionStatus s = a.getStatus();
+			if (s == Auction.AuctionStatus.SCHEDULED || s == Auction.AuctionStatus.OPEN || s == Auction.AuctionStatus.RUNNING) {
+				logger.debug("Item {} is ACTIVE (found in DB with status {})", itemId, s);
+				return "ACTIVE";
+			}
+		}
+
+		// 4. Kiểm tra xem đã có phiên nào kết thúc với người thắng chưa
+		boolean hasSold = dbAuctions.stream().anyMatch(a ->
+				a.getStatus() == Auction.AuctionStatus.FINISHED && a.getWinnerId() != null && a.getWinnerId() > 0);
+		if (hasSold) {
+			logger.debug("Item {} is SOLD (found FINISHED auction with winner)", itemId);
+			return "SOLD";
+		}
+
+		// 5. Còn lại: hoặc chưa từng có phiên nào, hoặc chỉ có phiên FINISHED nhưng không có winner
+		logger.debug("Item {} is NONE (no active auction, no sold record)", itemId);
+		return "NONE";
+	}
 
 	/*
 	* Chuyển thành DTO -> Controller

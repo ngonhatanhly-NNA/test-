@@ -24,6 +24,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -131,47 +133,127 @@ public class SellerDashboardController {
      * Nếu muốn status chính xác hơn, cần thêm field status vào ItemResponseDTO.
      */
     private void setupTableColumns() {
-        if (colItemId != null) {
-            colItemId.setCellValueFactory(data ->
-                    new SimpleStringProperty(String.valueOf(data.getValue().getId())));
-        }
-        if (colItemName != null) {
-            colItemName.setCellValueFactory(data ->
-                    new SimpleStringProperty(data.getValue().getName()));
-        }
-        if (colStartingPrice != null) {
-            colStartingPrice.setCellValueFactory(data -> {
-                BigDecimal price = data.getValue().getStartingPrice();
-                String formatted = (price != null) ? currencyFormat.format(price) + " VND" : "---";
-                return new SimpleStringProperty(formatted);
-            });
-        }
-        if (colCategory != null) {
-            colCategory.setCellValueFactory(data ->
-                    new SimpleStringProperty(data.getValue().getType()));
-        }
-        if (colStatus != null) {
-            // [ĐÃ SỬA] Lấy status từ ItemResponseDTO nếu có, fallback về "ACTIVE"
-            // (Item trong bảng này là item thuộc sở hữu của seller, mặc định là ACTIVE)
-            colStatus.setCellValueFactory(data -> {
-                // ItemResponseDTO hiện chưa có trường status riêng.
-                // Giá trị "ACTIVE" ở đây nghĩa là "item tồn tại trong kho và có thể đấu giá".
-                // Để hiển thị trạng thái auction chính xác (OPEN/RUNNING/FINISHED),
-                // cần bổ sung field auctionStatus vào ItemResponseDTO và server trả về.
-                // Hiện tại giữ "ACTIVE" là trạng thái item (không phải auction).
-                return new SimpleStringProperty("ACTIVE");
-            });
-        }
-        if (colAction != null) {
-            colAction.setCellValueFactory(data ->
-                    new SimpleStringProperty("Details"));
-        }
+		if (colItemId != null) {
+			colItemId.setCellValueFactory(data ->
+					new SimpleStringProperty(String.valueOf(data.getValue().getId())));
+		}
+		if (colItemName != null) {
+			colItemName.setCellValueFactory(data ->
+					new SimpleStringProperty(data.getValue().getName()));
+		}
+		if (colStartingPrice != null) {
+			colStartingPrice.setCellValueFactory(data -> {
+				BigDecimal price = data.getValue().getStartingPrice();
+				String formatted = (price != null) ? currencyFormat.format(price) + " VND" : "---";
+				return new SimpleStringProperty(formatted);
+			});
+		}
+		if (colCategory != null) {
+			colCategory.setCellValueFactory(data ->
+					new SimpleStringProperty(data.getValue().getType()));
+		}
+		if (colStatus != null) {
+			// Cột status sẽ được cập nhật động sau khi gọi API, tạm thời để trống
+			colStatus.setCellValueFactory(data -> new SimpleStringProperty("Loading..."));
+		}
+		if (colAction != null) {
+			colAction.setCellFactory(col -> new TableCell<ItemResponseDTO, String>() {
+				private final Button btn = new Button();
+				{
+					btn.setOnAction(e -> {
+						ItemResponseDTO item = getTableView().getItems().get(getIndex());
+						// Gọi API kiểm tra status trước khi mở popup (đảm bảo an toàn)
+						sellerNetwork.getAuctionStatusByItemId(item.getId()).thenAccept(response -> {
+							if ("SUCCESS".equals(response.getStatus())) {
+								String status = response.getData().toString();
+								Platform.runLater(() -> {
+									if ("NONE".equals(status)) {
+										openCreateAuctionDialog(item);
+									} else if ("ACTIVE".equals(status)) {
+										showAlert("Cannot Create Auction", "This product is currently in an active auction session.");
+									} else if ("SOLD".equals(status)) {
+										showAlert("Cannot Create Auction", "This product has already been sold.");
+									} else {
+										showAlert("Cannot Create Auction", "Unknown status: " + status);
+									}
+								});
+							} else {
+								Platform.runLater(() -> showAlert("Error", "Failed to check auction status: " + response.getMessage()));
+							}
+						}).exceptionally(ex -> {
+							Platform.runLater(() -> showAlert("Error", "Network error while checking status: " + ex.getMessage()));
+							return null;
+						});
+					});
+				}
+				@Override
+				protected void updateItem(String item, boolean empty) {
+					super.updateItem(item, empty);
+					if (empty) {
+						setGraphic(null);
+					} else {
+						ItemResponseDTO data = getTableView().getItems().get(getIndex());
+						// Cập nhật text nút và trạng thái dựa trên API gọi bất đồng bộ
+						btn.setText("Open Auction");
+						btn.setDisable(false);
+						// Gọi API để lấy status và cập nhật giao diện (disable nếu không thể)
+						sellerNetwork.getAuctionStatusByItemId(data.getId()).thenAccept(response -> {
+							if ("SUCCESS".equals(response.getStatus())) {
+								String status = response.getData().toString();
+								Platform.runLater(() -> {
+									if ("ACTIVE".equals(status)) {
+										btn.setDisable(true);
+										btn.setText("Auctioning");
+									} else if ("SOLD".equals(status)) {
+										btn.setDisable(true);
+										btn.setText("Sold");
+									} else {
+										btn.setDisable(false);
+										btn.setText("Open Auction");
+									}
+									// Cập nhật cột status tương ứng
+									if (colStatus != null && getIndex() >= 0 && getIndex() < getTableView().getItems().size()) {
+										// Có thể cập nhật cell status bằng cách refresh, nhưng tạm thời bỏ qua để đơn giản
+									}
+								});
+							}
+						}).exceptionally(ex -> {
+							Platform.runLater(() -> {
+								btn.setDisable(true);
+								btn.setText("Error");
+							});
+							return null;
+						});
+						setGraphic(btn);
+					}
+				}
+			});
+		}
+		if (tableItems != null) {
+			tableItems.setItems(allItems);
+			tableItems.setPlaceholder(new Label("No products"));
+		}
+	}
 
-        if (tableItems != null) {
-            tableItems.setItems(allItems);
-            tableItems.setPlaceholder(new Label("No products"));
-        }
-    }
+	// Thêm method openCreateAuctionDialog
+	private void openCreateAuctionDialog(ItemResponseDTO item) {
+		try {
+			javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/CreateAuctionPopup.fxml"));
+			javafx.scene.Parent root = loader.load();
+			CreateAuctionController controller = loader.getController();
+			controller.initData(item.getId());
+			javafx.stage.Stage stage = new javafx.stage.Stage();
+			stage.setTitle("Create Auction for " + item.getName());
+			stage.setScene(new javafx.scene.Scene(root));
+			stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+			stage.showAndWait();
+			// Sau khi đóng popup, refresh live auctions và statistics
+			loadLiveAuctions();
+			loadSellerStatistics();
+		} catch (Exception e) {
+			showAlert("Error", "Cannot open auction creation form: " + e.getMessage());
+		}
+	}
 
     @FXML
     private void loadDashboardData() {

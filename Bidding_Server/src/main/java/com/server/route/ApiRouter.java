@@ -209,5 +209,8 @@ public class ApiRouter {
         app.get("/api/admin/finance/revenue-estimate", ctx -> adminController.getRevenueEstimate(ctx));
         app.get("/api/admin/users/{username}/activity", ctx -> adminController.getUserActivityLog(ctx));
         app.post("/api/admin/auctions/cancel", ctx -> adminController.cancelAuction(ctx));
+		app.post("/api/admin/transactions", commandFactory.getAdminTransactions());
+		app.get("/api/admin/auctions/{id}/history", commandFactory.getAdminDetailedHistory());
+		app.post("/api/admin/auctions", commandFactory.getAdminAllAuctions());
     }
 }

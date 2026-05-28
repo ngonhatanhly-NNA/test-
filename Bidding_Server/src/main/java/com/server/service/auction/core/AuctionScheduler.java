@@ -187,6 +187,9 @@ public class AuctionScheduler {
                             logger.error("Error loading auction winner: {}", e.getMessage(), e);
                         }
                     }
+					
+					auction.setStatus(Auction.AuctionStatus.FINISHED);
+					auctionRepository.save(auction); // Lưu winner_id cùng lúc
 
                     sharedState.auctionCache.remove(auctionId);
                     sharedState.auctionLocks.remove(auctionId);

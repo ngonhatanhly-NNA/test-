@@ -1,5 +1,13 @@
 package com.client.controller.dashboard;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonSerializer;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.reflect.TypeToken;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.client.network.AdminNetwork;
 import com.client.network.AuctionNetwork;
 import com.google.gson.Gson;
@@ -22,6 +30,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 public class AdminDashboardController {
 
@@ -54,17 +63,72 @@ public class AdminDashboardController {
 
     // Financial Report
     @FXML private TextArea textAreaRevenue;
-
-    private final Gson gson = new Gson();
+	// Giao dịch
+	@FXML private TableView<Map<String, String>> tableTransactions;
+    @FXML private TableColumn<Map<String, String>, String> colTransId;
+    @FXML private TableColumn<Map<String, String>, String> colTransUser;
+    @FXML private TableColumn<Map<String, String>, String> colTransType;
+    @FXML private TableColumn<Map<String, String>, String> colTransAmount;
+    @FXML private TableColumn<Map<String, String>, String> colTransTime;
+	
+	// Lịch sử đấu giá
+	@FXML private TableView<Map<String, String>> tableAdminAuctions;
+    @FXML private TableColumn<Map<String, String>, String> colAucId;
+    @FXML private TableColumn<Map<String, String>, String> colAucItem;
+    @FXML private TableColumn<Map<String, String>, String> colAucStatus;
+    @FXML private TableColumn<Map<String, String>, String> colAucEndTime;
+    @FXML private TableColumn<Map<String, String>, Void> colAucAction; // Cột này chứa Nút bấm
+	
+    private final Gson gson = new GsonBuilder()
+    .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>) (json, type, context) ->
+        LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+    .registerTypeAdapter(LocalDateTime.class, (JsonSerializer<LocalDateTime>) (src, type, context) ->
+        new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
+    .create();
     private boolean usersLoaded = false;
     private boolean itemAnalyticsLoaded = false;
     private final NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(Locale.of("vi", "VN"));
 
     @FXML
     public void initialize() {
+        // 1. Setup Table Columns cho Giao dịch
+        colTransId.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("id")));
+        colTransUser.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("username")));
+        colTransType.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("type")));
+        colTransAmount.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("amount")));
+        colTransTime.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("time")));
+
+        // 2. Setup Table Columns cho Đấu giá
+        colAucId.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("id")));
+        colAucItem.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("itemName")));
+        colAucStatus.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("status")));
+        colAucEndTime.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue().get("endTime")));
+        
+        // 3. Setup Nút "Xem lịch sử" cho bảng Đấu giá
+        setupAuctionHistoryButton();
+
+        // 4. Setup các cột khác
         setupUserTableColumns();
         setupItemTableColumns();
-        setupTabPaneListener();
+        
+        // 5. Setup Listener cho TabPane (Tự động load khi chuyển tab)
+        tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
+            if (newTab == null) return;
+            String text = newTab.getText();
+            if ("Transaction Logs".equals(text)) {
+                loadGlobalTransactions();
+            } else if ("Auction History".equals(text)) {
+                loadAdminAuctions();
+            } else if ("User Management".equals(text) && !usersLoaded) {
+                loadAllUsers();
+                usersLoaded = true;
+            } else if ("Item Analysis".equals(text) && !itemAnalyticsLoaded) {
+                loadProductAnalytics(null);
+                itemAnalyticsLoaded = true;
+            }
+        });
+
+        // 6. Load dữ liệu ban đầu
         loadDashboardData();
     }
 
@@ -360,7 +424,92 @@ public class AdminDashboardController {
             setGraphic(hBox);
         }
     }
+	
+	@FXML
+    private void loadGlobalTransactions() {
+        System.out.println(">>> Đang gọi API lấy Lịch sử Giao dịch...");
+        com.client.network.AdminNetwork.getGlobalTransactions().thenAcceptAsync(res -> {
+            System.out.println(">>> [API Giao Dịch] Status: " + res.getStatus());
+            System.out.println(">>> [API Giao Dịch] Message: " + res.getMessage());
+            System.out.println(">>> [API Giao Dịch] Data: " + res.getData());
+            
+            if ("SUCCESS".equals(res.getStatus()) && res.getData() != null) {
+                try {
+                    java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<java.util.Map<String, String>>>(){}.getType();
+                    java.util.List<java.util.Map<String, String>> list = new com.google.gson.Gson().fromJson(new com.google.gson.Gson().toJson(res.getData()), listType);
+                    System.out.println(">>> [API Giao Dịch] Đã Parse được: " + list.size() + " dòng!");
+                    if (tableTransactions != null) tableTransactions.getItems().setAll(list);
+                } catch (Exception e) {
+                    System.out.println(">>> [Lỗi Parse JSON Giao Dịch]: " + e.getMessage());
+                }
+            }
+        }, javafx.application.Platform::runLater);
+    }
 
+    @FXML
+    private void loadAdminAuctions() {
+        System.out.println(">>> Đang gọi API lấy Lịch sử Đấu giá...");
+        com.client.network.AdminNetwork.getAllAuctionsForAdmin().thenAcceptAsync(res -> {
+            System.out.println(">>> [API Đấu Giá] Status: " + res.getStatus());
+            System.out.println(">>> [API Đấu Giá] Message: " + res.getMessage());
+            System.out.println(">>> [API Đấu Giá] Data: " + res.getData());
+            
+            if ("SUCCESS".equals(res.getStatus()) && res.getData() != null) {
+                try {
+                    java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<java.util.Map<String, String>>>(){}.getType();
+                    java.util.List<java.util.Map<String, String>> list = new com.google.gson.Gson().fromJson(new com.google.gson.Gson().toJson(res.getData()), listType);
+                    System.out.println(">>> [API Đấu Giá] Đã Parse được: " + list.size() + " dòng!");
+                    if (tableAdminAuctions != null) tableAdminAuctions.getItems().setAll(list);
+                } catch (Exception e) {
+                    System.out.println(">>> [Lỗi Parse JSON Đấu Giá]: " + e.getMessage());
+                }
+            }
+        }, javafx.application.Platform::runLater);
+    }
+	
+	private void setupAuctionHistoryButton() {
+		colAucAction.setCellFactory(param -> new TableCell<>() {
+			private final Button btn = new Button("📜 Xem Lịch Sử");
+			{
+				btn.setOnAction(e -> {
+					Map<String, String> row = getTableView().getItems().get(getIndex());
+					String idStr = row.get("id");
+					if (idStr == null) {
+						Platform.runLater(() -> showAlert("Lỗi", "Không tìm thấy ID phiên đấu giá."));
+						return;
+					}
+					long auctionId = Long.parseLong(idStr);
+					AdminNetwork.getAuctionDetailedHistory(auctionId).thenAccept(res -> {
+						if ("SUCCESS".equals(res.getStatus()) && res.getData() != null) {
+							try {
+								TypeToken<List<com.shared.dto.BidHistoryDTO>> token = new TypeToken<List<com.shared.dto.BidHistoryDTO>>() {};
+								List<com.shared.dto.BidHistoryDTO> history = gson.fromJson(gson.toJson(res.getData()), token.getType());
+								if (history.isEmpty()) {
+									Platform.runLater(() -> showAlert("Thông báo", "Phiên đấu giá chưa có lượt đấu nào."));
+								} else {
+									Platform.runLater(() -> com.client.util.BidHistoryUtil.showBidHistoryBoard(auctionId, history));
+								}
+							} catch (Exception ex) {
+								ex.printStackTrace();
+								Platform.runLater(() -> showAlert("Lỗi", "Không thể parse dữ liệu: " + ex.getMessage()));
+							}
+						} else {
+							Platform.runLater(() -> showAlert("Lỗi", "Không lấy được lịch sử: " + (res.getMessage() != null ? res.getMessage() : "Unknown")));
+						}
+					}).exceptionally(ex -> {
+						ex.printStackTrace();
+						Platform.runLater(() -> showAlert("Lỗi", "Lỗi kết nối: " + ex.getMessage()));
+						return null;
+					});
+				});
+			}
+			@Override
+			protected void updateItem(Void item, boolean empty) {
+				super.updateItem(item, empty);
+				setGraphic(empty ? null : btn);
+			}
+		});
+	}
     @FXML private void refreshData(ActionEvent event) { /* ... */ }
     @FXML private void logout(ActionEvent event) { /* ... */ }
     @FXML private void handleSearchUser(ActionEvent event) { /* ... */ }

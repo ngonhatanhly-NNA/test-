@@ -52,11 +52,16 @@ public class DashboardController {
             } else if (btnManagement != null && "ADMIN".equalsIgnoreCase(ClientSession.getRole())) {
                 btnManagement.setVisible(true);
                 btnManagement.setManaged(true);
+				btnLiveAuctions.setVisible(false);
+				btnLiveAuctions.setManaged(false);
+				btnMyInventory.setVisible(false);
+				btnMyInventory.setManaged(false);
             } else if (btnManagement != null) {
                 btnManagement.setVisible(false);
                 btnManagement.setManaged(false);
             }
         }
+		
 		
 		DashboardNavigation.setOpenLiveAuctions(() -> {
             handleBtnLiveAuctions(null); 

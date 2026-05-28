@@ -146,6 +146,14 @@ public class SellerNetwork {
                 response -> gson.fromJson(response.body(), Response.class)
         );
     }
+	
+	public CompletableFuture<Response> getAuctionStatusByItemId(long itemId) {
+		HttpRequest request = NetworkClient.newRequestBuilder(URI.create("http://localhost:7070/api/auctions/item/" + itemId + "/status"))
+				.GET()
+				.build();
+		return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+				.thenApply(response -> gson.fromJson(response.body(), Response.class));
+	}
 
     /**
      * Lớp helper để gửi request cập nhật số dư

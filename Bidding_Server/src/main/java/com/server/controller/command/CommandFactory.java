@@ -23,6 +23,12 @@ public class CommandFactory {
     // --- User Commands ---
     public Handler updateProfile() { return new UpdateProfileCommand(userService); }
 
+	// --- Admin Commands ---
+    public Handler getAdminTransactions() { return new AdminGetTransactionsCommand(); }
+	public Handler getAdminDetailedHistory() { return new AdminGetDetailedHistoryCommand(); }
+    
+    public Handler getAdminAllAuctions() { return new AdminGetAllAuctionsCommand(); }
+	
     // --- Item Commands ---
     public Handler getAllItems() { return new GetAllItemsCommand(itemService); }
     public Handler createItem() { return new CreateItemCommand(itemService); }

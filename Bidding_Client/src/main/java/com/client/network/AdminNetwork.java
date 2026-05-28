@@ -204,4 +204,43 @@ public class AdminNetwork {
                 .thenApply(response -> gson.fromJson(response.body(), Response.class))
                 .exceptionally(e -> new Response("ERROR", "Không thể lấy lịch hoạt động", null));
     }
+	
+	/**
+     * Lấy toàn bộ lịch sử giao dịch toàn hệ thống cho Admin
+     */
+    public static CompletableFuture<Response> getGlobalTransactions() {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/transactions"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.noBody()) // API dùng POST theo ApiRouter
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> gson.fromJson(response.body(), Response.class))
+                .exceptionally(e -> new Response("ERROR", "Không thể lấy lịch sử giao dịch", null));
+    }
+
+    /**
+     * Lấy toàn bộ danh sách phiên đấu giá cho Admin
+     */
+    public static CompletableFuture<Response> getAllAuctionsForAdmin() {
+        HttpRequest request = NetworkClient.newRequestBuilder(URI.create(BASE_URL + "/auctions"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.noBody()) // API dùng POST theo ApiRouter
+                .build();
+
+        return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> gson.fromJson(response.body(), Response.class))
+                .exceptionally(e -> new Response("ERROR", "Không thể lấy danh sách đấu giá", null));
+    }
+	
+	public static CompletableFuture<Response> getAuctionDetailedHistory(long auctionId) {
+    // Gọi lên đường dẫn GET vừa tạo ở Server
+    HttpRequest request = NetworkClient.newRequestBuilder(java.net.URI.create(BASE_URL + "/auctions/" + auctionId + "/history"))
+            .GET()
+            .build();
+
+    return NetworkClient.getInstance().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+            .thenApply(response -> gson.fromJson(response.body(), Response.class))
+            .exceptionally(e -> new Response("ERROR", "Không thể lấy lịch sử từ DB", null));
+}
 }
