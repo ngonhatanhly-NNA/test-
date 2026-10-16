@@ -1,15 +1,42 @@
-version: '3.8'
 services:
-  bidding-db:
-    image: mysql:8.0
-    container_name: bidding_mysql
+  postgres:
+    image: postgres:16-alpine
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE:  # Đổi tên thành DB thật của bạn
-    ports:
-      - "3306:3306"
+      POSTGRES_USER: ${POSTGRES_USER:-exam}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-exam}
+      POSTGRES_DB: ${POSTGRES_DB:-exam}
     volumes:
-      # Map thư mục chứa file SQL của bạn vào thư mục tự chạy của MySQL
-      # Khi container bật lên, nó sẽ tự quét và import 2 file này!
-      - ./docs/script_db.sql:/docker-entrypoint-initdb.d/1_script_db.sql
-      - ./docs/TEST_DATA.sql:/docker-entrypoint-initdb.d/2_TEST_DATA.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-exam}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-exam}:${POSTGRES_PASSWORD:-exam}@postgres:5432/${POSTGRES_DB:-exam}
+      STORAGE_PATH: /data/storage
+    volumes:
+      - storage:/data/storage
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  storage:
