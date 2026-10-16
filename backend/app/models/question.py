@@ -25,6 +25,7 @@ class Question(Base):
     import_warnings: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    parameter_config = Column(JSON, nullable=True, default=None)
 
     exam: Mapped["Exam"] = relationship(back_populates="questions")  # noqa: F821
     choices: Mapped[list["Choice"]] = relationship(  # noqa: F821

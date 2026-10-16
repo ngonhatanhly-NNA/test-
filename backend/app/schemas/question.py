@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Literal
-
+from typing import Any, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 QuestionType = Literal["multiple_choice"]
@@ -11,7 +11,20 @@ MAX_CHOICES = 10
 def _clean(value: str) -> str:
     return value.strip()
 
+class VariableRangeSpec(BaseModel):
+    min: float = 1.0
+    max: float = 10.0
+    step: float = 1.0
 
+class ParameterConfigSchema(BaseModel):
+    enabled: bool = False
+    template: Optional[str] = None
+    variables: Dict[str, VariableRangeSpec] = {}
+    correct_formula: str = ""
+    distractor_formulas: list[str] = []
+    decimals: int = 2
+    unit: str = ""
+    
 class ChoiceIn(BaseModel):
     """Choice payload. `id` set -> update that choice; no `id` -> create a new one."""
 
@@ -90,6 +103,7 @@ class QuestionUpdate(BaseModel):
     parameterized: bool | None = None
     shuffleable: bool | None = None
     choices: list[ChoiceIn] | None = None
+    parameter_config: Optional[Dict[str, Any]] = None
 
     @field_validator("content")
     @classmethod
@@ -129,6 +143,7 @@ class QuestionOut(BaseModel):
     choices: list[ChoiceOut]
     created_at: datetime
     updated_at: datetime
+    parameter_config: Optional[Dict[str, Any]] = None
 
     @field_validator("import_warnings", mode="before")
     @classmethod

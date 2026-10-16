@@ -19,3 +19,5 @@ class GenerationConfig(Base):
     difficulty_mode: Mapped[str] = mapped_column(String(16), default="same", nullable=False)
     seed: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    
+    vary_parameters = Column(Boolean, nullable=False, default=False)

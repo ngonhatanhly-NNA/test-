@@ -14,6 +14,7 @@ from app.services.exam_service import collect_approval_problems, get_exam
 from app.services.question_version_service import get_or_create_question_version
 from app.services.shuffle_service import QuestionPlanInput, plan_version
 from app.services.version_validator import has_errors, validate_exam_version
+from app.services.parameter_service import ParameterService
 
 logger = logging.getLogger("app.generator")
 
@@ -36,6 +37,17 @@ def generate_exam_versions(db: Session, exam_id: str, config: GenerationConfigIn
     """Create N versions from an approved exam. Original questions are never modified:
     each version stores question snapshots, an order and a label->choice mapping."""
     exam = get_exam(db, exam_id)
+    if config.vary_parameters and getattr(q, "parameter_config", None):
+        rendered_content, processed_choices, sampled_params = ParameterService.apply_parameters(
+            question_content=q.content,
+            choices=raw_choices,
+            parameter_config=q.parameter_config,
+            rng=rng,
+        )
+    else:
+        rendered_content = q.content
+        processed_choices = [dict(c) for c in raw_choices]
+        sampled_params = {}
     if exam.status not in GENERATABLE:
         raise ConflictError("EXAM_NOT_APPROVED", "Cần duyệt đề thi trước khi tạo mã đề")
     problems = collect_approval_problems(exam)

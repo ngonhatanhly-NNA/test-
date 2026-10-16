@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import Response
+from app.services.pdf_generator import build_exam_versions_zip_bundle
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
@@ -63,4 +65,17 @@ def export_exam_version_pdf(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+@router.get("/exams/{exam_id}/export-zip")
+def export_all_versions_zip(exam_id: int, db: Session = Depends(get_db)):
+    versions = VersionService.list_versions_with_details(db, exam_id)
+    exam_title = versions[0]["exam_title"] if versions else f"Exam_{exam_id}"
+    zip_bytes = build_exam_versions_zip_bundle(exam_title, versions)
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="tron_bo_de_thi_{exam_id}.zip"'
+        },
     )

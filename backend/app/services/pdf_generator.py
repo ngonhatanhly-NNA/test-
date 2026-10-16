@@ -16,6 +16,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+import zipfile
 
 FONT_PATH = os.getenv(
     "PDF_FONT_PATH", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -170,3 +171,22 @@ class PDFGeneratorService:
         doc.build(story)
         buffer.seek(0)
         return buffer.read()
+ 
+def build_exam_versions_zip_bundle(
+    exam_title: str,
+    versions_payload: list[dict],
+) -> bytes:
+    """
+    Đóng gói toàn bộ PDF đề thi và PDF đáp án của tất cả mã đề vào 1 file .zip.
+    """
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for v in versions_payload:
+            code = v["version_code"]
+            exam_pdf = generate_exam_version_pdf(v, include_answers=False)
+            key_pdf = generate_exam_version_pdf(v, include_answers=True)
+            zf.writestr(f"De_thi/De_thi_ma_{code}.pdf", exam_pdf)
+            zf.writestr(f"Dap_an/Dap_an_ma_{code}.pdf", key_pdf)
+
+    zip_buffer.seek(0)
+    return zip_buffer.read()

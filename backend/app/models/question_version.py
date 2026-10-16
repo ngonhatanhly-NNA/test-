@@ -22,3 +22,7 @@ class QuestionVersion(Base):
     content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Thêm vào class QuestionVersion:
+    rendered_content = Column(Text, nullable=True)
+    parameter_values = Column(JSON, nullable=True)
+    rendered_choices = Column(JSON, nullable=True)

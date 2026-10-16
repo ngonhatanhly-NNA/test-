@@ -1,7 +1,21 @@
 export type ExamStatus =
   | "UPLOADED" | "PARSING" | "DRAFT_REVIEW" | "APPROVED"
   | "GENERATING" | "GENERATED" | "EXPORTED";
+export interface VariableSpec {
+  min: number;
+  max: number;
+  step: number;
+}
 
+export interface ParameterConfig {
+  enabled: boolean;
+  template: string;
+  variables: Record<string, VariableSpec>;
+  correct_formula: string;
+  distractor_formulas: string[];
+  decimals: number;
+  unit: string;
+}
 export interface Exam {
   id: string;
   name: string;
@@ -37,6 +51,7 @@ export interface Question {
   image_ids: string[];
   import_warnings: string[];
   choices: Choice[];
+  parameter_config?: ParameterConfig | null;
 }
 
 export interface ChoiceInput {
